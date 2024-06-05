@@ -1,0 +1,103 @@
+.TH TXM 1 "June 2023" "txm 1.0" "User Commands"
+.SH NAME
+txm \- A tmux helper tool
+.SH SYNOPSIS
+.B txm
+[\fICOMMAND\fR] [\fIOPTIONS\fR]
+.SH DESCRIPTION
+\fBtxm\fR is a command-line utility to make working with tmux more efficient and user-friendly. It provides a set of commands to manage tmux sessions, windows, panes, and perform various actions.
+.SH COMMANDS
+.TP
+\fBnew\fR [\fISESSION_NAME\fR]
+Create a new session.
+.TP
+\fBlist\fR
+List all sessions.
+.TP
+\fBattach\fR [\fISESSION_NAME\fR]
+Attach to a session.
+.TP
+\fBdetach\fR
+Detach from the current session.
+.TP
+\fBrename\fR \fIOLD_NAME\fR \fINEW_NAME\fR
+Rename a session.
+.TP
+\fBkill\fR \fISESSION_NAME\fR
+Kill a session.
+.TP
+\fBswitch\fR \fISESSION_NAME\fR
+Switch to a different session.
+.TP
+\fBnew-window\fR \fIWINDOW_NAME\fR
+Create a new window.
+.TP
+\fBrename-window\fR \fIOLD_NAME\fR \fINEW_NAME\fR
+Rename a window.
+.TP
+\fBclose-window\fR \fIWINDOW_NAME\fR
+Close a window.
+.TP
+\fBswitch-window\fR \fIWINDOW_NAME\fR
+Switch to a different window.
+.TP
+\fBvsplit\fR
+Split pane vertically.
+.TP
+\fBhsplit\fR
+Split pane horizontally.
+.TP
+\fBnavigate\fR \fIDIRECTION\fR
+Navigate between panes (U, D, L, R).
+.TP
+\fBresize\fR \fIDIRECTION\fR \fIAMOUNT\fR
+Resize pane (U, D, L, R) by AMOUNT.
+.TP
+\fBclose-pane\fR
+Close the current pane.
+.TP
+\fBzoom\fR
+Zoom in/out of the current pane.
+.TP
+\fBrun\fR \fICOMMAND\fR
+Execute a command in the current pane.
+.TP
+\fBsave-layout\fR \fILAYOUT_NAME\fR
+Save the current session layout.
+.TP
+\fBrestore-layout\fR \fILAYOUT_NAME\fR
+Restore a previously saved session layout.
+.TP
+\fBset-option\fR \fIOPTION\fR \fIVALUE\fR
+Set a tmux option.
+.TP
+\fBexecute-script\fR \fIPANE_ID\fR \fISCRIPT_FILE\fR
+Execute a script in a specific pane.
+.TP
+\fBbroadcast\fR \fIINPUT\fR
+Broadcast input to all panes.
+.SH CONFIGURATION
+\fBtxm\fR can be configured using a configuration file located at \fI$HOME/.txm/config\fR. The configuration file allows users to set default options and customize the behavior of \fBtxm\fR.
+.SH EXAMPLES
+.TP
+Create a new session:
+.B txm new my-session
+.TP
+List all sessions:
+.B txm list
+.TP
+Attach to a session:
+.B txm attach my-session
+.TP
+Split pane vertically:
+.B txm vsplit
+.TP
+Resize pane up by 5 units:
+.B txm resize U 5
+.TP
+Execute a script in a specific pane:
+.B txm execute-script 0.1 script.sh
+.SH AUTHOR
+Written by [Your Name].
+.SH SEE ALSO
+\fBtmux\fR(1)
