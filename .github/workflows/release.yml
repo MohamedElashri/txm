@@ -11,6 +11,8 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-latest, windows-latest, macOS-latest]
+    permissions:
+      contents: write        
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
