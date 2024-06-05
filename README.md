@@ -44,6 +44,14 @@ For example, on Unix-based systems (Linux and macOS), you can follow these steps
    Replace `<platform>` with the appropriate platform name (`ubuntu-latest`, or `macOS-latest`).
 
 
+You can use the install script to automate the installation process:
+
+```bash
+curl -s https://raw.githubusercontent.com/MohamedElashri/txm-go/main/install.sh | bash
+```
+
+This script will download the appropriate binary for your platform and install it in `/usr/local/bin`.
+
 ### Building from Source
 
 If you prefer to build `txm` from the source code, follow these steps:
