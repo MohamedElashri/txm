@@ -1,12 +1,11 @@
 package main
 
 import (
-    "fmt"
-    "io/ioutil"
-    "os"
-    "os/exec"
-    "path/filepath"
-    "strings"
+	"fmt"
+	"os"
+	"os/exec"
+	"path/filepath"
+	"strings"
 )
 
 const (
@@ -207,7 +206,7 @@ func saveLayout(layoutName string) {
         fmt.Printf("Error getting window layout: %v\n", err)
         return
     }
-    err = ioutil.WriteFile(layoutPath, output, 0644)
+    err = os.WriteFile(layoutPath, output, 0644)
     if err != nil {
         fmt.Printf("Error saving layout: %v\n", err)
         return
@@ -221,7 +220,7 @@ func restoreLayout(layoutName string) {
         fmt.Printf("Layout %s not found\n", layoutName)
         return
     }
-    layout, err := ioutil.ReadFile(layoutPath)
+    layout, err := os.ReadFile(layoutPath)
     if err != nil {
         fmt.Printf("Error reading layout file: %v\n", err)
         return
@@ -236,7 +235,7 @@ func setOption(option, value string) {
 }
 
 func executeScript(paneID, scriptFile string) {
-    script, err := ioutil.ReadFile(scriptFile)
+    script, err := os.ReadFile(scriptFile)
     if err != nil {
         fmt.Printf("Error reading script file: %v\n", err)
         return
