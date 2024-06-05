@@ -19,7 +19,72 @@
 
 ## Installation
 
-TBW
+### Using Pre-built Binaries
+
+You can download pre-built binaries for your operating system from the [releases page](https://github.com/MohamedElashri/txm-go/releases). Look for the latest release and download the appropriate ZIP file for your platform:
+
+- `txm-ubuntu-latest.zip`: Ubuntu (Linux)
+- `txm-macOS-latest.zip`: macOS
+
+Once downloaded, extract the ZIP file to obtain the `txm` binary. You can then move the binary to a directory in your system's `PATH` for easy access from the command line.
+
+For example, on Unix-based systems (Linux and macOS), you can follow these steps:
+
+1. Download the appropriate ZIP file for your platform.
+2. Extract the ZIP file:
+
+   ```bash
+   unzip txm-<platform>.zip
+   ```
+3. Move the `txm` binary to a directory in your `PATH`, such as `/usr/local/bin`:
+
+   ```bash
+   sudo mv txm-<platform> /usr/local/bin/txm
+   ```
+   Replace `<platform>` with the appropriate platform name (`ubuntu-latest`, or `macOS-latest`).
+
+
+### Building from Source
+
+If you prefer to build `txm` from the source code, follow these steps:
+
+1. Ensure you have [Go](https://golang.org/) installed on your system (version 1.17 or later).
+
+2. Clone the `txm-go` repository:
+
+   ```bash
+   git clone https://github.com/MohamedElashri/txm-go
+   ```
+
+3. Navigate to the project directory:
+
+   ```bash
+   cd txm-go
+   ```
+
+4. Initialize the Go module:
+
+   ```bash
+   go mod init github.com/MohamedElashri/txm-go
+   ```
+
+5. Build the `txm` binary:
+   
+   ```bash
+   go build -o txm
+   ```
+
+   This will create a binary named `txm` in the current directory.
+
+6. (Optional) Move the `txm` binary to a directory in your system's `PATH` for easy access from the command line.
+
+   For example, on Unix-based systems (Linux and macOS):
+   ```
+   sudo mv txm /usr/local/bin/
+   ```
+
+After completing the installation steps, you can run `txm` from the command line to start using the tmux manager.
+
 
 ## Usage
 
