@@ -136,6 +136,17 @@ man txm
 
 Or you can consult the [documentation](docs.md)
 
+
+## Uninstall
+
+You can use the `uninstall.sh` script to nuke the installation of txm including any config files and logs. 
+
+You can also directly execute the script from the shell (not recommended though)
+
+```bash
+curl -s https://raw.githubusercontent.com/MohamedElashri/txm-go/main/uninstall.sh | bash
+```
+
 ## Configuration
 
 `txm` can be configured using a configuration file located at `$HOME/.txm/config`. The configuration file allows you to set default options and customize the behavior of `txm`.
