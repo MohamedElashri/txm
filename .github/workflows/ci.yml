@@ -21,3 +21,4 @@ jobs:
         run: |
           go build -o txm-${{ matrix.os }}
           zip txm-${{ matrix.os }}.zip txm-${{ matrix.os }}
+        working-directory: ./src  
