@@ -6,6 +6,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"strings"
+    "golang.org/x/crypto/ssh/terminal"
 )
 
 const (
@@ -86,9 +87,10 @@ func runTmuxCommand(args ...string) {
     cmd := exec.Command("tmux", args...)
     cmd.Stdout = os.Stdout
     cmd.Stderr = os.Stderr
+    cmd.Stdin = os.Stdin
     err := cmd.Run()
     if err != nil {
-        fmt.Printf("Error running tmux command: %v\n", err)
+        fmt.Printf("Error running tmux command: %v\nCommand: tmux %s\n", err, strings.Join(args, " "))
     }
 }
 
@@ -102,6 +104,10 @@ func listSessions() {
 }
 
 func attachSession(sessionName string) {
+    if !terminal.IsTerminal(int(os.Stdin.Fd())) {
+        fmt.Println("Not running in an interactive terminal.")
+        return
+    }
     runTmuxCommand("attach-session", "-t", sessionName)
 }
 
