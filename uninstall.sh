@@ -36,11 +36,17 @@ if ! command -v txm &> /dev/null; then
   exit 0
 fi
 
-# Prompt for confirmation
-read -p "Are you sure you want to uninstall txm? (y/n): " CONFIRM
-if [ "$CONFIRM" != "y" ]; then
-  echo -e "${BLUE}Uninstall aborted. Exiting.${NC}"
-  exit 0
+# Check if running in non-interactive mode
+if [ -t 0 ]; then
+  # Running interactively
+  read -p "Are you sure you want to uninstall txm? (y/n): " CONFIRM
+  if [ "$CONFIRM" != "y" ]; then
+    echo -e "${BLUE}Uninstall aborted. Exiting.${NC}"
+    exit 0
+  fi
+else
+  # Running non-interactively (e.g., piped from curl)
+  echo -e "${YELLOW}Running in non-interactive mode. Proceeding with uninstallation.${NC}"
 fi
 
 # Remove the txm binary
