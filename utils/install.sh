@@ -89,7 +89,7 @@ echo -e "${BLUE}Fetching the latest release information...${NC}"
 RELEASE_INFO=$(curl -s "$LATEST_RELEASE_URL")
 
 # Extract the download URL for the current platform
-DOWNLOAD_URL=$(echo "$RELEASE_INFO" | jq -r ".assets[] | select(.name | contains(\"$OS\")) | .browser_download_url")
+DOWNLOAD_URL=$(echo "$RELEASE_INFO" | jq -r ".assets[] | select(.name | contains(\"$OS.zip\")) | .browser_download_url")
 
 if [ -z "$DOWNLOAD_URL" ]; then
   error_exit "No compatible binary found for $OS in the latest release."
@@ -101,7 +101,7 @@ curl -LO "$DOWNLOAD_URL" || error_exit "Failed to download the txm binary."
 
 # Extract the downloaded ZIP file
 echo -e "${BLUE}Extracting the downloaded ZIP file...${NC}"
-unzip -o "txm-$OS-latest.zip" || error_exit "Failed to extract the downloaded ZIP file."
+unzip -o "txm-$OS.zip" || error_exit "Failed to extract the downloaded ZIP file."
 
 # Move the binary to /usr/local/bin
 echo -e "${BLUE}Moving the txm binary to /usr/local/bin...${NC}"
