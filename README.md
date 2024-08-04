@@ -50,6 +50,14 @@ You can use the install script to automate the installation process:
 curl -s https://raw.githubusercontent.com/MohamedElashri/txm-go/main/utils/install.sh | bash
 ```
 
+or if you want to install it for your non-root account user only. 
+
+```bash
+curl -s https://raw.githubusercontent.com/MohamedElashri/txm-go/main/utils/install_no_root.sh | bash
+```
+
+
+
 This script will download the appropriate binary for your platform and install it in `/usr/local/bin`.
 
 ### Building from Source
