@@ -23,8 +23,8 @@
 
 You can download pre-built binaries for your operating system from the [releases page](https://github.com/MohamedElashri/txm-go/releases). Look for the latest release and download the appropriate ZIP file for your platform:
 
-- `txm-ubuntu-latest.zip`: Ubuntu (Linux)
-- `txm-macOS-latest.zip`: macOS
+- `txm-ubuntu.zip`: Ubuntu (Linux)
+- `txm-macOS.zip`: macOS
 
 Once downloaded, extract the ZIP file to obtain the `txm` binary. You can then move the binary to a directory in your system's `PATH` for easy access from the command line.
 
