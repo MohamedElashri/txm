@@ -1,6 +1,6 @@
 # txm - A tmux Helper Tool
 
-`txm` is a command-line utility designed to make working with tmux more efficient and user-friendly. It provides a set of commands to manage tmux sessions, windows, panes, and perform various actions. This is the Go port (and extension) of the original [txm](https://github.com/MohamedElashri/txm) written in Python. Another bash version can be found [here](https://github.com/MohamedElashri/txm-bash).
+`txm` is a command-line utility designed to make working with tmux more efficient and user-friendly. It provides a set of commands to manage tmux sessions, windows, panes, and perform various actions. This project started as Go port (and extension) of the original [txm](https://github.com/MohamedElashri/txm-python) written in Python. Another bash version can be found [here](https://github.com/MohamedElashri/txm-bash). But now this is where txm is being developed and the other versions are archived. 
 
 ## Features
 
