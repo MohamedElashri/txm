@@ -133,10 +133,28 @@ For complete documentation, see [docs.md](docs.md).
 - `NO_COLOR`: Disable colored output
 - `TERM`: Used for terminal capability detection
 
+## Update 
+
+To update txm to the latest version, you simply need to run the following command:
+
+```bash
+txm update
+```
+
+If you have installed it as system-wide, you need to run the following command:
+
+```bash
+sudo txm update
+```
+
+
 ## Uninstallation
 
 Remove txm and its configurations:
 
+There are `unistall` option to uninstall txm that you can use it to uninstall txm from your system.
+
+If something went wrong during the this process, you can uninstall txm using the following script:
 
 For user-local uninstallation
 ```bash
