@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"strings"
 
 	"golang.org/x/term"
@@ -17,6 +18,13 @@ const (
 	colorMagenta = "\x1b[35m"
 	colorReset   = "\x1b[0m"
 )
+
+var commonTmuxPaths = []string{
+	"/usr/bin/tmux",
+	"/usr/local/bin/tmux",
+	"/opt/homebrew/bin/tmux",
+	"/home/linuxbrew/.linuxbrew/bin/tmux",
+}
 
 type SessionManager struct {
 	tmuxAvailable bool
@@ -114,8 +122,45 @@ func (sm *SessionManager) logError(msg string) {
 }
 
 func checkTmuxAvailable() bool {
-	_, err := exec.LookPath("tmux")
-	return err == nil
+	// First try the regular PATH-based lookup
+	if _, err := exec.LookPath("tmux"); err == nil {
+		return true
+	}
+
+	// Then check common installation locations
+	for _, path := range commonTmuxPaths {
+		if _, err := os.Stat(path); err == nil {
+			return true
+		}
+	}
+
+	return false
+}
+
+func preserveEnvironment(cmd *exec.Cmd) {
+	if os.Getuid() == 0 { // If running as root/sudo
+		userPath := os.Getenv("SUDO_USER")
+		if userPath != "" {
+			// Get the original user's home directory
+			output, err := exec.Command("getent", "passwd", userPath).Output()
+			if err == nil {
+				fields := strings.Split(string(output), ":")
+				if len(fields) > 5 {
+					homeDir := fields[5]
+					// Construct a comprehensive PATH
+					paths := []string{
+						"/usr/local/bin",
+						"/usr/bin",
+						"/bin",
+						filepath.Join(homeDir, ".local/bin"),
+						"/home/linuxbrew/.linuxbrew/bin",
+						filepath.Join(homeDir, "/.linuxbrew/bin"),
+					}
+					cmd.Env = append(os.Environ(), "PATH="+strings.Join(paths, ":"))
+				}
+			}
+		}
+	}
 }
 
 func (sm *SessionManager) sessionExists(name string) bool {
@@ -133,6 +178,7 @@ func (sm *SessionManager) sessionExists(name string) bool {
 
 func (sm *SessionManager) runTmuxCommand(args ...string) error {
 	cmd := exec.Command("tmux", args...)
+	preserveEnvironment(cmd)
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	cmd.Stdin = os.Stdin
@@ -141,6 +187,7 @@ func (sm *SessionManager) runTmuxCommand(args ...string) error {
 
 func (sm *SessionManager) runScreenCommand(args ...string) error {
 	cmd := exec.Command("screen", args...)
+	preserveEnvironment(cmd)
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	cmd.Stdin = os.Stdin
