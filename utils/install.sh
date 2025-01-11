@@ -147,10 +147,10 @@ unzip -o "txm-$OS.zip" || error_exit "Failed to extract the downloaded ZIP file.
 # Move the binary to installation directory
 echo -e "${BLUE}Moving the txm binary to $INSTALL_BIN_DIR...${NC}"
 if [ "$SYSTEM_INSTALL" = true ]; then
-    sudo mv "txm-$OS-latest" "$INSTALL_BIN_DIR/txm" || error_exit "Failed to move the txm binary"
+    sudo mv "txm-$OS" "$INSTALL_BIN_DIR/txm" || error_exit "Failed to move the txm binary"
     sudo chmod 755 "$INSTALL_BIN_DIR/txm"
 else
-    mv "txm-$OS-latest" "$INSTALL_BIN_DIR/txm" || error_exit "Failed to move the txm binary"
+    mv "txm-$OS" "$INSTALL_BIN_DIR/txm" || error_exit "Failed to move the txm binary"
     chmod 755 "$INSTALL_BIN_DIR/txm"
 fi
 
