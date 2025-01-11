@@ -1,366 +1,227 @@
 # txm Documentation
 
-`txm` is a command-line tool for managing tmux sessions, windows, and panes. It provides a convenient way to create, navigate, and manipulate tmux sessions and layouts.
+`txm` is a terminal session manager that primarily works with tmux while providing GNU Screen as a fallback option. This documentation covers all available commands and their usage.
 
 ## Table of Contents
 
-- [txm Documentation](#txm-documentation)
-  - [Table of Contents](#table-of-contents)
-  - [Usage](#usage)
-  - [Commands](#commands)
-    - [new](#new)
-    - [list](#list)
-    - [attach](#attach)
-    - [detach](#detach)
-    - [rename](#rename)
-    - [kill](#kill)
-    - [switch](#switch)
-    - [new-window](#new-window)
-    - [rename-window](#rename-window)
-    - [close-window](#close-window)
-    - [switch-window](#switch-window)
-    - [vsplit](#vsplit)
-    - [hsplit](#hsplit)
-    - [navigate](#navigate)
-    - [resize](#resize)
-    - [close-pane](#close-pane)
-    - [zoom](#zoom)
-    - [run](#run)
-    - [save-layout](#save-layout)
-    - [restore-layout](#restore-layout)
-    - [set-option](#set-option)
-    - [execute-script](#execute-script)
-    - [broadcast](#broadcast)
-    - [help](#help)
+- [Command Line Options](#command-line-options)
+- [Basic Commands](#basic-commands)
+- [Window Management](#window-management)
+- [Pane Operations](#pane-operations)
+- [Advanced Operations](#advanced-operations)
+- [Verbose Mode](#verbose-mode)
 
+## Command Line Options
 
-## Usage
-
-To use `txm`, open a terminal and run the `txm` command followed by the desired subcommand and options. The general syntax is:
-
-```bash
-$ txm [COMMAND] [OPTIONS]
+```
+txm [command] [arguments] [-v|--verbose]
 ```
 
-For example, to create a new tmux session named "mysession", you can run:
+The `-v` or `--verbose` flag enables detailed logging, useful for debugging or learning how commands work.
 
+## Basic Commands
+
+### create
+Create a new session
 ```bash
-$ txm new mysession
-```
-
-## Commands
-
-### new
-
-Create a new tmux session.
-
-```bash
-$ txm new [SESSION_NAME]
-```
-
-- `SESSION_NAME`: The name of the session to create (default: "my_session").
-
-Example:
-```bash
-$ txm new mysession
+txm create [session_name]
 ```
 
 ### list
-
-List all tmux sessions.
-
+List all active sessions
 ```bash
-$ txm list
+txm list
 ```
 
 ### attach
-
-Attach to a tmux session.
-
+Attach to an existing session
 ```bash
-$ txm attach [SESSION_NAME]
-```
-
-- `SESSION_NAME`: The name of the session to attach to.
-
-Example:
-```bash
-$ txm attach mysession
+txm attach [session_name]
 ```
 
 ### detach
-
-Detach from the current tmux session.
-
+Detach from current session
 ```bash
-$ txm detach
+txm detach
+```
+Note: For GNU Screen, use Ctrl-a d instead.
+
+### delete
+Delete a session
+```bash
+txm delete [session_name]
 ```
 
-### rename
-
-Rename a tmux session.
-
+### nuke
+Remove all sessions
 ```bash
-$ txm rename [OLD_NAME] [NEW_NAME]
+txm nuke
 ```
 
-- `OLD_NAME`: The current name of the session.
-- `NEW_NAME`: The new name for the session.
+## Window Management
 
-Example:
-```bash
-$ txm rename mysession newsession
-```
-
-### kill
-
-Kill a tmux session.
-
-```bash
-$ txm kill [SESSION_NAME]
-```
-
-- `SESSION_NAME`: The name of the session to kill.
-
-Example:
-```bash
-$ txm kill mysession
-```
-
-### switch
-
-Switch to a different tmux session.
-
-```bash
-$ txm switch [SESSION_NAME]
-```
-
-- `SESSION_NAME`: The name of the session to switch to.
-
-Example:
-```bash
-$ txm switch mysession
-```
+Note: These commands are only available when using tmux.
 
 ### new-window
-
-Create a new window in the current tmux session.
-
+Create a new window
 ```bash
-$ txm new-window [WINDOW_NAME]
+txm new-window [session_name] [window_name]
 ```
 
-- `WINDOW_NAME`: The name of the window to create.
-
-Example:
+### list-windows
+List windows in a session
 ```bash
-$ txm new-window mywindow
+txm list-windows [session_name]
+```
+
+### kill-window
+Remove a window
+```bash
+txm kill-window [session_name] [window_name]
+```
+
+### rename-session
+Rename an existing session
+```bash
+txm rename-session [old_name] [new_name]
 ```
 
 ### rename-window
-
-Rename a window in the current tmux session.
-
+Rename a window
 ```bash
-$ txm rename-window [OLD_NAME] [NEW_NAME]
+txm rename-window [session_name] [window_index] [new_name]
 ```
 
-- `OLD_NAME`: The current name of the window.
-- `NEW_NAME`: The new name for the window.
-
-Example:
+### move-window
+Move window between sessions
 ```bash
-$ txm rename-window mywindow newwindow
+txm move-window [source_session] [window_index] [target_session]
 ```
 
-### close-window
-
-Close a window in the current tmux session.
-
+### swap-window
+Swap window positions
 ```bash
-$ txm close-window [WINDOW_NAME]
+txm swap-window [session_name] [index1] [index2]
 ```
 
-- `WINDOW_NAME`: The name of the window to close.
+## Pane Operations
 
-Example:
+Note: These commands are only available when using tmux.
+
+### split-window
+Split a window into panes
 ```bash
-$ txm close-window mywindow
+txm split-window [session_name] [window_index] [v|h]
+```
+- `v`: vertical split
+- `h`: horizontal split
+
+### list-panes
+List panes in a window
+```bash
+txm list-panes [session_name] [window_index]
 ```
 
-### switch-window
-
-Switch to a different window in the current tmux session.
-
+### kill-pane
+Remove a pane
 ```bash
-$ txm switch-window [WINDOW_NAME]
+txm kill-pane [session_name] [window_index] [pane_index]
 ```
 
-- `WINDOW_NAME`: The name of the window to switch to.
-
-Example:
+### resize-pane
+Resize a pane
 ```bash
-$ txm switch-window mywindow
+txm resize-pane [session_name] [window_index] [pane_index] [option]
+```
+Options:
+- `-U [n]`: Resize up by n cells
+- `-D [n]`: Resize down by n cells
+- `-L [n]`: Resize left by n cells
+- `-R [n]`: Resize right by n cells
+
+### send-keys
+Send keystrokes to a pane
+```bash
+txm send-keys [session_name] [window_index] [pane_index] [keys]
 ```
 
-### vsplit
+## Environment Variables
 
-Split the current pane vertically.
-
+### NO_COLOR
+Disable colored output:
 ```bash
-$ txm vsplit
+export NO_COLOR=1
 ```
 
-### hsplit
+### TERM
+Terminal type for capability detection. Common values:
+- xterm
+- xterm-256color
+- screen
+- screen-256color
+- tmux
+- tmux-256color
+- linux
 
-Split the current pane horizontally.
+## Examples
 
+1. Create and attach to a new session:
 ```bash
-$ txm hsplit
-```
-### navigate
-
-Navigate between panes in the current window.
-
-```bash
-$ txm navigate [DIRECTION]
-```
-
-- `DIRECTION`: The direction to navigate (U: Up, D: Down, L: Left, R: Right).
-
-Example:
-```bash
-$ txm navigate U
+txm create mysession
+txm attach mysession
 ```
 
-### resize
-
-Resize the current pane.
-
+2. Create a new window and split it:
 ```bash
-$ txm resize [DIRECTION] [AMOUNT]
+txm new-window mysession mywindow
+txm split-window mysession 0 v
 ```
 
-- `DIRECTION`: The direction to resize (U: Up, D: Down, L: Left, R: Right).
-- `AMOUNT`: The amount to resize the pane by.
-
-Example:
+3. Send commands to a pane:
 ```bash
-$ txm resize D 5
+txm send-keys mysession 0 1 "ls -la"
 ```
 
-### close-pane
-
-Close the current pane.
-
+4. Complex window management:
 ```bash
-$ txm close-pane
+# Create two sessions
+txm create session1
+txm create session2
+
+# Create windows in session1
+txm new-window session1 window1
+txm new-window session1 window2
+
+# Move window2 to session2
+txm move-window session1 2 session2
 ```
 
-### zoom
+## Troubleshooting
 
-Zoom in/out of the current pane.
-
+1. Enable verbose mode to see detailed logs:
 ```bash
-$ txm zoom
+txm -v list
 ```
 
-### run
-
-Execute a command in the current pane.
-
+2. Check terminal capabilities:
 ```bash
-$ txm run [COMMAND]
+echo $TERM
 ```
 
-- `COMMAND`: The command to execute.
-
-Example:
+3. Verify tmux/screen installation:
 ```bash
-$ txm run "ls -l"
+which tmux
+which screen
 ```
 
-### save-layout
+4. Color support issues:
+- Check if NO_COLOR is set
+- Verify TERM setting
+- Ensure terminal supports colors
 
-Save the current session layout.
+## Notes
 
-```bash
-$ txm save-layout [LAYOUT_NAME]
-```
-
-- `LAYOUT_NAME`: The name to save the layout as.
-
-Example:
-```bash
-$ txm save-layout mylayout
-```
-
-### restore-layout
-
-Restore a previously saved session layout.
-
-```bash
-$ txm restore-layout [LAYOUT_NAME]
-```
-
-- `LAYOUT_NAME`: The name of the layout to restore.
-
-Example:
-```bash
-$ txm restore-layout mylayout
-```
-
-### set-option
-
-Set a tmux option.
-
-```bash
-$ txm set-option [OPTION] [VALUE]
-```
-
-- `OPTION`: The tmux option to set.
-- `VALUE`: The value to set the option to.
-
-Example:
-```bash
-$ txm set-option status-bg red
-```
-
-### execute-script
-
-Execute a script in a specific pane.
-
-```bash
-$ txm execute-script [PANE_ID] [SCRIPT_FILE]
-```
-
-- `PANE_ID`: The ID of the pane to execute the script in.
-- `SCRIPT_FILE`: The path to the script file to execute.
-
-Example:
-```bash
-$ txm execute-script 1 myscript.sh
-```
-
-### broadcast
-
-Broadcast input to all panes.
-
-```bash
-$ txm broadcast [INPUT]
-```
-
-- `INPUT`: The input to broadcast to all panes.
-
-Example:
-```bash
-$ txm broadcast "echo Hello, World!"
-```
-
-### help
-
-Display the help information.
-
-```bash
-$ txm help
-```
+- When tmux is not available, txm automatically falls back to GNU Screen with reduced functionality
+- Window and pane operations are only available in tmux
+- Color support is automatically detected based on terminal capabilities
+- Use verbose mode (-v) for debugging and learning

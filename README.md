@@ -1,169 +1,159 @@
-# txm - A tmux Helper Tool
+# txm - A Terminal Session Manager
 
-`txm` is a command-line utility designed to make working with tmux more efficient and user-friendly. It provides a set of commands to manage tmux sessions, windows, panes, and perform various actions. This project started as Go port (and extension) of the original [txm](https://github.com/MohamedElashri/txm-python) written in Python. Another bash version can be found [here](https://github.com/MohamedElashri/txm-bash). But now this is where txm is being developed and the other versions are archived. 
+`txm` is a command-line utility designed to manage terminal multiplexer sessions efficiently. It primarily works with tmux, with GNU Screen support as a fallback option. This makes it versatile across different environments and setups.
 
 ## Features
 
-- Create, list, attach to, detach from, rename, and kill tmux sessions
-- Create, rename, close, and switch between windows
-- Split panes vertically and horizontally
-- Navigate between panes using arrow keys
-- Resize panes
-- Close panes
-- Zoom in/out of panes
-- Execute commands in panes
-- Save and restore session layouts
-- Set tmux options
-- Execute scripts in specific panes
-- Broadcast input to all panes
+- Primary support for tmux with automatic fallback to GNU Screen
+- Colored output support with automatic terminal capability detection
+- Comprehensive session management (create, list, attach, delete)
+- Window management (create, rename, kill, swap)
+- Advanced tmux-specific features (pane splitting, resizing, key sending)
+- Verbose mode for debugging and learning
+- Cross-platform compatibility
 
 ## Installation
 
 ### Using Pre-built Binaries
 
-You can download pre-built binaries for your operating system from the [releases page](https://github.com/MohamedElashri/txm-go/releases). Look for the latest release and download the appropriate ZIP file for your platform:
+Download pre-built binaries from the [releases page](https://github.com/MohamedElashri/txm-go/releases):
 
 - `txm-ubuntu.zip`: Ubuntu (Linux)
 - `txm-macOS.zip`: macOS
 
-Once downloaded, extract the ZIP file to obtain the `txm` binary. You can then move the binary to a directory in your system's `PATH` for easy access from the command line.
+Installation steps:
 
-For example, on Unix-based systems (Linux and macOS), you can follow these steps:
-
-1. Download the appropriate ZIP file for your platform.
-2. Extract the ZIP file:
-
+1. Download the appropriate ZIP file
+2. Extract it:
    ```bash
    unzip txm-<platform>.zip
    ```
-3. Move the `txm` binary to a directory in your `PATH`, such as `/usr/local/bin`:
-
+3. Move to PATH:
    ```bash
-   sudo mv txm-<platform> /usr/local/bin/txm
+   sudo mv txm /usr/local/bin/
    ```
-   Replace `<platform>` with the appropriate platform name (`ubuntu-latest`, or `macOS-latest`).
 
+Quick install using the installation script:
 
-You can use the install script to automate the installation process:
+For user-local installation (default)
 
 ```bash
 curl -s https://raw.githubusercontent.com/MohamedElashri/txm-go/main/utils/install.sh | bash
 ```
+ 
 
-or if you want to install it for your non-root account user only. 
+For system-wide installation
 
 ```bash
-curl -s https://raw.githubusercontent.com/MohamedElashri/txm-go/main/utils/install_no_root.sh | bash
+curl -s https://raw.githubusercontent.com/MohamedElashri/txm-go/main/utils/install.sh | sudo bash -s -- --system
 ```
-
-
-
-This script will download the appropriate binary for your platform and install it in `/usr/local/bin`.
 
 ### Building from Source
 
-If you prefer to build `txm` from the source code, follow these steps:
+Requirements:
+- Go 1.17 or later
+- Either tmux or GNU Screen installed
 
-1. Ensure you have [Go](https://golang.org/) installed on your system (version 1.17 or later).
+Steps:
 
-2. Clone the `txm-go` repository:
-
+1. Clone the repository:
    ```bash
    git clone https://github.com/MohamedElashri/txm-go
    ```
 
-3. Navigate to the project directory:
-
+2. Navigate to project:
    ```bash
    cd txm-go
    ```
 
-4. Initialize the Go module:
-
+3. Initialize module:
    ```bash
    go mod init github.com/MohamedElashri/txm-go
    ```
 
-5. Build the `txm` binary:
-   
+4. Build:
    ```bash
    go build -o txm
    ```
 
-   This will create a binary named `txm` in the current directory.
-
-6. (Optional) Move the `txm` binary to a directory in your system's `PATH` for easy access from the command line.
-
-   For example, on Unix-based systems (Linux and macOS):
-   ```
+5. Install (optional):
+   ```bash
    sudo mv txm /usr/local/bin/
    ```
 
-After completing the installation steps, you can run `txm` from the command line to start using the tmux manager.
+## Basic Usage
 
-
-## Usage
-
-`txm` provides a wide range of commands to interact with tmux. Here are a few examples:
-
-- Create a new session:
+- Create session:
   ```bash
-  txm new my-session
+  txm create mysession
   ```
 
-- List all sessions:
+- List sessions:
   ```bash
   txm list
   ```
 
-- Attach to a session:
+- Attach to session:
   ```bash
-  txm attach my-session
+  txm attach mysession
   ```
 
-- Split pane vertically:
+- Delete session:
   ```bash
-  txm vsplit
+  txm delete mysession
   ```
 
-- Resize pane up by 5 units:
+- Create window (tmux only):
   ```bash
-  txm resize U 5
+  txm new-window mysession windowname
   ```
 
-- Execute a script in a specific pane:
+## Advanced Features (tmux only)
+
+- Split window:
   ```bash
-  txm execute-script 0.1 script.sh
+  txm split-window mysession 0 v  # vertical split
+  txm split-window mysession 0 h  # horizontal split
   ```
 
-For a complete list of available commands and their usage, refer to the man page:
+- Move window:
+  ```bash
+  txm move-window source-session 1 target-session
+  ```
 
+- Resize pane:
+  ```bash
+  txm resize-pane mysession 0 1 "-D 10"  # resize down 10 units
+  ```
+
+For complete documentation, see [docs.md](docs.md).
+
+## Environment Variables
+
+- `NO_COLOR`: Disable colored output
+- `TERM`: Used for terminal capability detection
+
+## Uninstallation
+
+Remove txm and its configurations:
+
+
+For user-local uninstallation
 ```bash
-man txm
+curl -s https://raw.githubusercontent.com/MohamedElashri/txm-go/main/utils/uninstall.sh | bash
 ```
 
-Or you can consult the [documentation](docs.md)
-
-
-## Uninstall
-
-You can use the `uninstall.sh` script to nuke the installation of txm including any config files and logs. 
-
-You can also directly execute the script from the shell (not recommended though)
+For system-wide uninstallation
 
 ```bash
-curl -s https://raw.githubusercontent.com/MohamedElashri/txm-go/main/uninstall.sh | bash
+curl -s https://raw.githubusercontent.com/MohamedElashri/txm-go/main/utils/uninstall.sh | sudo bash
 ```
 
-## Configuration
-
-`txm` can be configured using a configuration file located at `$HOME/.txm/config`. The configuration file allows you to set default options and customize the behavior of `txm`.
 
 ## Contributing
 
-Contributions are welcome! If you find any issues or have suggestions for improvements, please open an issue or submit a pull request on the GitHub repository.
+Contributions welcome! Please submit issues and pull requests on GitHub.
 
 ## License
 
-This project is licensed under the [GNU 3.0 License](LICENSE).
-
+GNU General Public License v3.0 - see [LICENSE](LICENSE)
