@@ -652,21 +652,28 @@ func main() {
 	case "nuke":
 		sm.nukeAllSessions()
 
-	case "version":
-		fmt.Printf("txm version %s\n", Version)
-		if len(os.Args) > 2 && os.Args[2] == "--check-update" {
-			if err := CheckForUpdates(sm); err != nil {
-				sm.logError(err.Error())
-				os.Exit(1)
-			}
-		}
+    case "version":
+        fmt.Printf("txm version %s\n", Version)
+        if len(os.Args) > 2 && os.Args[2] == "--check-update" {
+            if err := CheckForUpdates(sm); err != nil {
+                sm.logError(err.Error())
+                os.Exit(1)
+            }
+        }
 
-	case "update":
-		if err := UpdateBinary(sm); err != nil {
-			sm.logError(err.Error())
-			os.Exit(1)
-		}
-
+    case "update":
+        if len(os.Args) > 2 && os.Args[2] == "--check-update" {
+            if err := CheckForUpdates(sm); err != nil {
+                sm.logError(err.Error())
+                os.Exit(1)
+            }
+        } else {
+            if err := UpdateBinary(sm); err != nil {
+                sm.logError(err.Error())
+                os.Exit(1)
+            }
+        }
+		
 	case "uninstall":
 		if err := UninstallTxm(sm); err != nil {
 			sm.logError(err.Error())
