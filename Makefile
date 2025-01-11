@@ -28,7 +28,7 @@ init:
 build: check-deps
 	@echo "Building txm..."
 	@mkdir -p bin
-	@go build -o bin/txm src/txm.go
+	@go build -o bin/txm src/*.go
 
 clean:
 	@echo "Cleaning..."
@@ -37,7 +37,7 @@ clean:
 
 install: build
 	@echo "Installing to /usr/local/bin..."
-	@cp bin/txm /usr/local/bin/
+	@sudo cp bin/txm /usr/local/bin/
 
 install-user: build
 	@echo "Installing to ~/.local/bin..."
