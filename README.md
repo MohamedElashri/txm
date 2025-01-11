@@ -126,7 +126,7 @@ Steps:
   txm resize-pane mysession 0 1 "-D 10"  # resize down 10 units
   ```
 
-For complete documentation, see [docs.md](docs.md).
+For complete documentation, see [docs.md](docs.md). Or you can run `txm help` to see the available commands. There is an old fashioned `man` page available as well, run `man txm` to see
 
 ## Environment Variables
 
