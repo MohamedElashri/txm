@@ -152,7 +152,7 @@ sudo txm update
 
 Remove txm and its configurations:
 
-There are `unistall` option to uninstall txm that you can use it to uninstall txm from your system.
+There is `uninstall` option to uninstall txm that can be used to uninstall txm .
 
 If something went wrong during the this process, you can uninstall txm using the following script:
 
