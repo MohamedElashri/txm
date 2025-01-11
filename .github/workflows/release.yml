@@ -21,7 +21,7 @@ jobs:
       - name: Set up Go module
         run: |
           cd src
-          go mod init github.com/MohamedElashri/txm-go
+          go mod init github.com/MohamedElashri/txm
           go get golang.org/x/crypto/ssh/terminal
           go mod tidy
       - name: Build

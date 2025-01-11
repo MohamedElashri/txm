@@ -16,7 +16,7 @@
 
 ### Using Pre-built Binaries
 
-Download pre-built binaries from the [releases page](https://github.com/MohamedElashri/txm-go/releases):
+Download pre-built binaries from the [releases page](https://github.com/MohamedElashri/txm/releases):
 
 - `txm-ubuntu.zip`: Ubuntu (Linux)
 - `txm-macOS.zip`: macOS
@@ -38,14 +38,14 @@ Quick install using the installation script:
 For user-local installation (default)
 
 ```bash
-curl -s https://raw.githubusercontent.com/MohamedElashri/txm-go/main/utils/install.sh | bash
+curl -s https://raw.githubusercontent.com/MohamedElashri/txm/main/utils/install.sh | bash
 ```
  
 
 For system-wide installation
 
 ```bash
-curl -s https://raw.githubusercontent.com/MohamedElashri/txm-go/main/utils/install.sh | sudo bash -s -- --system
+curl -s https://raw.githubusercontent.com/MohamedElashri/txm/main/utils/install.sh | sudo bash -s -- --system
 ```
 
 ### Building from Source
@@ -58,17 +58,17 @@ Steps:
 
 1. Clone the repository:
    ```bash
-   git clone https://github.com/MohamedElashri/txm-go
+   git clone https://github.com/MohamedElashri/txm
    ```
 
 2. Navigate to project:
    ```bash
-   cd txm-go
+   cd txm
    ```
 
 3. Initialize module:
    ```bash
-   go mod init github.com/MohamedElashri/txm-go
+   go mod init github.com/MohamedElashri/txm
    ```
 
 4. Build:
@@ -140,13 +140,13 @@ Remove txm and its configurations:
 
 For user-local uninstallation
 ```bash
-curl -s https://raw.githubusercontent.com/MohamedElashri/txm-go/main/utils/uninstall.sh | bash
+curl -s https://raw.githubusercontent.com/MohamedElashri/txm/main/utils/uninstall.sh | bash
 ```
 
 For system-wide uninstallation
 
 ```bash
-curl -s https://raw.githubusercontent.com/MohamedElashri/txm-go/main/utils/uninstall.sh | sudo bash
+curl -s https://raw.githubusercontent.com/MohamedElashri/txm/main/utils/uninstall.sh | sudo bash
 ```
 
 

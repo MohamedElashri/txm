@@ -9,7 +9,7 @@ NC='\033[0m' # No Color
 
 # GitHub repository information
 REPO_OWNER="MohamedElashri"
-REPO_NAME="txm-go"
+REPO_NAME="txm"
 LATEST_RELEASE_URL="https://api.github.com/repos/$REPO_OWNER/$REPO_NAME/releases/latest"
 
 # Detect the operating system
