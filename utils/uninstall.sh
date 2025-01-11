@@ -10,83 +10,154 @@ NC='\033[0m' # No Color
 # Detect the operating system
 OS=""
 case "$(uname -s)" in
-  Darwin*)
-    OS="macOS"
-    MAN_DIR="/usr/local/share/man/man1"
-    ;;
-  Linux*)
-    OS="Linux"
-    MAN_DIR="/usr/local/share/man/man1"
-    ;;
-  *)
-    echo -e "${RED}Unsupported operating system. This script only supports macOS and Linux.${NC}"
-    exit 1
-    ;;
+    Darwin*)
+        OS="macOS"
+        SYS_MAN_DIR="/usr/local/share/man/man1"
+        ;;
+    Linux*)
+        OS="Linux"
+        SYS_MAN_DIR="/usr/local/share/man/man1"
+        ;;
+    *)
+        echo -e "${RED}Unsupported operating system. This script only supports macOS and Linux.${NC}"
+        exit 1
+        ;;
 esac
+
+# Set up directories
+USER_BIN_DIR="$HOME/.local/bin"
+USER_MAN_DIR="$HOME/.local/share/man/man1"
+SYSTEM_BIN_DIR="/usr/local/bin"
 
 # Function to print error messages and exit
 error_exit() {
-  echo -e "${RED}Error: $1${NC}"
-  exit 1
+    echo -e "${RED}Error: $1${NC}"
+    exit 1
+}
+
+# Function to remove a file with appropriate privileges
+remove_file() {
+    local file="$1"
+    local is_system="$2"
+
+    if [ -f "$file" ]; then
+        if [ "$is_system" = true ]; then
+            sudo rm -f "$file" || error_exit "Failed to remove $file"
+        else
+            rm -f "$file" || error_exit "Failed to remove $file"
+        fi
+    fi
+}
+
+# Function to update man database
+update_man_db() {
+    local is_system="$1"
+    echo -e "${BLUE}Updating the man page index...${NC}"
+    
+    if [ "$OS" == "macOS" ]; then
+        if [ "$is_system" = true ]; then
+            sudo /usr/libexec/makewhatis "$SYS_MAN_DIR"
+        else
+            /usr/libexec/makewhatis "$USER_MAN_DIR" 2>/dev/null || true
+        fi
+    else
+        if [ "$is_system" = true ]; then
+            sudo mandb
+        else
+            mandb --user-db "$HOME/.local/share/man" 2>/dev/null || true
+        fi
+    fi
+}
+
+# Function to remove shell configuration
+remove_shell_config() {
+    local config_files=(".bashrc" ".zshrc")
+    for config in "${config_files[@]}"; do
+        if [ -f "$HOME/$config" ]; then
+            echo -e "${BLUE}Removing txm PATH from $config...${NC}"
+            sed -i.bak '/export PATH="\$HOME\/.local\/bin:\$PATH"/d' "$HOME/$config"
+            rm -f "$HOME/$config.bak"
+        fi
+    done
 }
 
 # Check if txm is installed
-if ! command -v txm &> /dev/null; then
-  echo -e "${YELLOW}txm is not installed on this system.${NC}"
-  exit 0
+TXM_PATH=$(which txm 2>/dev/null)
+if [ -z "$TXM_PATH" ]; then
+    echo -e "${YELLOW}txm is not installed on this system.${NC}"
+    exit 0
+fi
+
+# Determine installation type
+IS_SYSTEM_INSTALL=false
+if [[ "$TXM_PATH" == "/usr/local/bin/"* ]]; then
+    IS_SYSTEM_INSTALL=true
+    if [ "$EUID" -ne 0 ]; then
+        error_exit "System-wide uninstallation requires root privileges. Please run with sudo."
+    fi
 fi
 
 # Check if running in non-interactive mode
 if [ -t 0 ]; then
-  # Running interactively
-  read -p "Are you sure you want to uninstall txm? (y/n): " CONFIRM
-  if [ "$CONFIRM" != "y" ]; then
-    echo -e "${BLUE}Uninstall aborted. Exiting.${NC}"
-    exit 0
-  fi
+    # Running interactively
+    read -p "Are you sure you want to uninstall txm? (y/n): " CONFIRM
+    if [ "$CONFIRM" != "y" ]; then
+        echo -e "${BLUE}Uninstall aborted. Exiting.${NC}"
+        exit 0
+    fi
 else
-  # Running non-interactively (e.g., piped from curl)
-  echo -e "${YELLOW}Running in non-interactive mode. Proceeding with uninstallation.${NC}"
+    # Running non-interactively (e.g., piped from curl)
+    echo -e "${YELLOW}Running in non-interactive mode. Proceeding with uninstallation.${NC}"
 fi
 
-# Remove the txm binary
+# Remove binary
 echo -e "${BLUE}Removing txm binary...${NC}"
-sudo rm -f /usr/local/bin/txm || error_exit "Failed to remove txm binary."
-
-# Remove the txm man page
-echo -e "${BLUE}Removing txm man page...${NC}"
-sudo rm -f "$MAN_DIR/txm.1" || error_exit "Failed to remove txm man page."
-
-# Update the man page index
-echo -e "${BLUE}Updating the man page index...${NC}"
-if [ "$OS" == "macOS" ]; then
-  sudo /usr/libexec/makewhatis "$MAN_DIR"
+if [ "$IS_SYSTEM_INSTALL" = true ]; then
+    remove_file "$SYSTEM_BIN_DIR/txm" true
 else
-  sudo mandb
+    remove_file "$USER_BIN_DIR/txm" false
 fi
 
-# Remove any configuration files or directories (if applicable)
+# Remove man page
+echo -e "${BLUE}Removing txm man page...${NC}"
+if [ "$IS_SYSTEM_INSTALL" = true ]; then
+    remove_file "$SYS_MAN_DIR/txm.1" true
+else
+    remove_file "$USER_MAN_DIR/txm.1" false
+fi
+
+# Update man database
+update_man_db "$IS_SYSTEM_INSTALL"
+
+# Remove configuration files
 echo -e "${BLUE}Removing txm configuration files...${NC}"
 rm -rf ~/.txm 2>/dev/null
 rm -f ~/.txmrc 2>/dev/null
 
-# Remove any cache files or directories (if applicable)
+# Remove cache files
 echo -e "${BLUE}Removing txm cache files...${NC}"
 rm -rf ~/.cache/txm 2>/dev/null
 
-# Remove any logs (if applicable)
+# Remove logs
 echo -e "${BLUE}Removing txm log files...${NC}"
-rm -rf ~/.local/share/txm/logs 2>/dev/null
+rm -rf ~/.local/share/txm 2>/dev/null
 
-# Check if uninstallation was successful
-if ! command -v txm &> /dev/null && [ ! -f "$MAN_DIR/txm.1" ]; then
-  echo -e "${GREEN}txm has been successfully uninstalled from your system.${NC}"
-else
-  echo -e "${RED}Uninstallation may have been incomplete. Please check manually.${NC}"
+# Remove PATH from shell configuration if it's a user installation
+if [ "$IS_SYSTEM_INSTALL" = false ]; then
+    remove_shell_config
 fi
 
-# Remind user about possible system-wide configurations
-echo -e "${YELLOW}Note: If you have made any system-wide configurations related to txm, you may need to remove them manually.${NC}"
+# Verify uninstallation
+if ! command -v txm &> /dev/null; then
+    echo -e "${GREEN}txm has been successfully uninstalled from your system.${NC}"
+    if [ "$IS_SYSTEM_INSTALL" = true ]; then
+        echo -e "${YELLOW}System-wide installation was removed.${NC}"
+    else
+        echo -e "${YELLOW}User-local installation was removed.${NC}"
+    fi
+else
+    echo -e "${RED}Uninstallation may have been incomplete. Please check manually.${NC}"
+fi
 
-# Suggest shell configuration cleanup
-echo -e "${YELLOW}Don't forget to remove any txm-related lines from your shell configuration files (e.g., .bashrc, .zshrc) if you added any.${NC}"
+# Additional cleanup suggestions
+echo -e "${YELLOW}Note: If you have made any additional customizations or configurations, you may need to remove them manually.${NC}"
