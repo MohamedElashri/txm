@@ -4,11 +4,12 @@
 
 ## Features
 
-- Primary support for tmux with automatic fallback to GNU Screen
+- Primary support for tmux with enhanced GNU Screen support
 - Colored output support with automatic terminal capability detection
-- Comprehensive session management (create, list, attach, delete)
-- Window management (create, rename, kill, swap)
-- Advanced tmux-specific features (pane splitting, resizing, key sending)
+- Comprehensive session management (`create`, `list`, `attach`, `delete`)
+- Window management for both tmux and GNU Screen
+- Advanced tmux-specific features (`pane splitting`, `resizing`, `key sending`)
+- Cross-compatible window navigation between tmux and screen
 
 
 ## Available Commands
@@ -21,21 +22,25 @@
 | `detach` | Detach from current session | ✓ | ✓ |
 | `delete` | Delete a session | ✓ | ✓ |
 | `nuke` | Remove all sessions | ✓ | ✓ |
-| `new-window` | Create a new window | ✓ | ✗ |
-| `list-windows` | List windows in a session | ✓ | ✗ |
-| `kill-window` | Remove a window | ✓ | ✗ |
+| `new-window` | Create a new window | ✓ | ✓ |
+| `list-windows` | List windows in a session | ✓ | ✓ |
+| `kill-window` | Remove a window | ✓ | ✓ |
+| `next-window` | Switch to next window | ✓ | ✓ |
+| `prev-window` | Switch to previous window | ✓ | ✓ |
 | `rename-session` | Rename an existing session | ✓ | ✗ |
-| `rename-window` | Rename a window | ✓ | ✗ |
+| `rename-window` | Rename a window | ✓ | ✓ |
 | `move-window` | Move window between sessions | ✓ | ✗ |
 | `swap-window` | Swap window positions | ✓ | ✗ |
-| `split-window` | Split a window into panes | ✓ | ✗ |
+| `split-window` | Split a window into panes | ✓ | ✓* |
 | `list-panes` | List panes in a window | ✓ | ✗ |
 | `kill-pane` | Remove a pane | ✓ | ✗ |
 | `resize-pane` | Resize a pane | ✓ | ✗ |
 | `send-keys` | Send keystrokes to a pane | ✓ | ✗ |
 
-**Note**: All window and pane operations are exclusively available in tmux, while basic session management commands are supported in both backends.
-
+**Note**: 
+- Basic session and window management commands are supported in both backends
+- * GNU Screen only supports vertical splitting
+- Some advanced window and all pane operations are exclusively available in tmux
 
 ## Installation
 

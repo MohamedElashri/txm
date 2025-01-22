@@ -8,13 +8,13 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
-	"strconv"
 	"runtime"
+	"strconv"
 	"strings"
 )
 
 const (
-	Version   = "0.2.3"
+	Version   = "0.2.4"
 	githubAPI = "https://api.github.com/repos/MohamedElashri/txm/releases/latest"
 )
 
@@ -80,94 +80,91 @@ func GetInstallationType() (*InstallationType, error) {
 // Utility functions for version checking and updates
 
 func compareVersions(current, latest string) (bool, error) {
-    // Strip 'v' prefix if present
-    current = strings.TrimPrefix(current, "v")
-    latest = strings.TrimPrefix(latest, "v")
-    
-    // Split versions into components
-    currentParts := strings.Split(current, ".")
-    latestParts := strings.Split(latest, ".")
-    
-    // Ensure both have 3 components
-    if len(currentParts) != 3 || len(latestParts) != 3 {
-        return false, fmt.Errorf("invalid version format")
-    }
-    
-    // Compare major.minor.patch
-    for i := 0; i < 3; i++ {
-        curr, err1 := strconv.Atoi(currentParts[i])
-        latest, err2 := strconv.Atoi(latestParts[i])
-        if err1 != nil || err2 != nil {
-            return false, fmt.Errorf("invalid version number")
-        }
-        
-        if latest > curr {
-            return true, nil // Update needed
-        } else if curr > latest {
-            return false, nil // Current version is newer
-        }
-    }
-    
-    return false, nil // Versions are equal
-}
+	// Strip 'v' prefix if present
+	current = strings.TrimPrefix(current, "v")
+	latest = strings.TrimPrefix(latest, "v")
 
+	// Split versions into components
+	currentParts := strings.Split(current, ".")
+	latestParts := strings.Split(latest, ".")
+
+	// Ensure both have 3 components
+	if len(currentParts) != 3 || len(latestParts) != 3 {
+		return false, fmt.Errorf("invalid version format")
+	}
+
+	// Compare major.minor.patch
+	for i := 0; i < 3; i++ {
+		curr, err1 := strconv.Atoi(currentParts[i])
+		latest, err2 := strconv.Atoi(latestParts[i])
+		if err1 != nil || err2 != nil {
+			return false, fmt.Errorf("invalid version number")
+		}
+
+		if latest > curr {
+			return true, nil // Update needed
+		} else if curr > latest {
+			return false, nil // Current version is newer
+		}
+	}
+
+	return false, nil // Versions are equal
+}
 
 func CheckForUpdates(sm *SessionManager) error {
-    release, err := getLatestRelease()
-    if err != nil {
-        return fmt.Errorf("failed to check for updates: %v", err)
-    }
+	release, err := getLatestRelease()
+	if err != nil {
+		return fmt.Errorf("failed to check for updates: %v", err)
+	}
 
-    needsUpdate, err := compareVersions(Version, release.TagName)
-    if err != nil {
-        return fmt.Errorf("error comparing versions: %v", err)
-    }
+	needsUpdate, err := compareVersions(Version, release.TagName)
+	if err != nil {
+		return fmt.Errorf("error comparing versions: %v", err)
+	}
 
-    if needsUpdate {
-        sm.logInfo(fmt.Sprintf("New version %s is available (current: %s)", release.TagName, Version))
-        return nil
-    }
+	if needsUpdate {
+		sm.logInfo(fmt.Sprintf("New version %s is available (current: %s)", release.TagName, Version))
+		return nil
+	}
 
-    sm.logInfo(fmt.Sprintf("You are running the latest version (%s)", Version))
-    return nil
+	sm.logInfo(fmt.Sprintf("You are running the latest version (%s)", Version))
+	return nil
 }
 
-
-
 func UpdateBinary(sm *SessionManager) error {
-    inst, err := GetInstallationType()
-    if err != nil {
-        return err
-    }
+	inst, err := GetInstallationType()
+	if err != nil {
+		return err
+	}
 
-    if inst.IsSystem && os.Getuid() != 0 {
-        return fmt.Errorf("system-wide update requires root privileges")
-    }
+	if inst.IsSystem && os.Getuid() != 0 {
+		return fmt.Errorf("system-wide update requires root privileges")
+	}
 
-    // Get latest release info
-    release, err := getLatestRelease()
-    if err != nil {
-        return err
-    }
+	// Get latest release info
+	release, err := getLatestRelease()
+	if err != nil {
+		return err
+	}
 
-    // Compare versions
-    needsUpdate, err := compareVersions(Version, release.TagName)
-    if err != nil {
-        return fmt.Errorf("error comparing versions: %v", err)
-    }
+	// Compare versions
+	needsUpdate, err := compareVersions(Version, release.TagName)
+	if err != nil {
+		return fmt.Errorf("error comparing versions: %v", err)
+	}
 
-    if !needsUpdate {
-        sm.logInfo(fmt.Sprintf("Already running the latest version (%s)", Version))
-        return nil
-    }
+	if !needsUpdate {
+		sm.logInfo(fmt.Sprintf("Already running the latest version (%s)", Version))
+		return nil
+	}
 
-    // Download and install update
-    if err := downloadAndInstallUpdate(release, inst); err != nil {
-        return err
-    }
+	// Download and install update
+	if err := downloadAndInstallUpdate(release, inst); err != nil {
+		return err
+	}
 
-    sm.logInfo(fmt.Sprintf("Successfully updated to version %s", release.TagName))
-    return nil
+	sm.logInfo(fmt.Sprintf("Successfully updated to version %s", release.TagName))
+	return nil
 }
 
 func UninstallTxm(sm *SessionManager) error {

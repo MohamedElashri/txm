@@ -44,7 +44,6 @@ Detach from current session
 ```bash
 txm detach
 ```
-Note: For GNU Screen, use Ctrl-a d instead.
 
 ### delete
 Delete a session
@@ -60,76 +59,86 @@ txm nuke
 
 ## Window Management
 
-Note: These commands are only available when using tmux.
-
 ### new-window
-Create a new window
+Create a new window (supported in both tmux and screen)
 ```bash
 txm new-window [session_name] [window_name]
 ```
 
 ### list-windows
-List windows in a session
+List windows in a session (supported in both tmux and screen)
 ```bash
 txm list-windows [session_name]
 ```
 
 ### kill-window
-Remove a window
+Remove a window (supported in both tmux and screen)
 ```bash
 txm kill-window [session_name] [window_name]
 ```
 
+### next-window
+Switch to next window in session (supported in both tmux and screen)
+```bash
+txm next-window [session_name]
+```
+
+### prev-window
+Switch to previous window in session (supported in both tmux and screen)
+```bash
+txm prev-window [session_name]
+```
+
 ### rename-session
-Rename an existing session
+Rename an existing session (tmux only)
 ```bash
 txm rename-session [old_name] [new_name]
 ```
 
 ### rename-window
-Rename a window
+Rename a window (supported in both tmux and screen)
 ```bash
 txm rename-window [session_name] [window_index] [new_name]
 ```
 
 ### move-window
-Move window between sessions
+Move window between sessions (tmux only)
 ```bash
 txm move-window [source_session] [window_index] [target_session]
 ```
 
 ### swap-window
-Swap window positions
+Swap window positions (tmux only)
 ```bash
 txm swap-window [session_name] [index1] [index2]
 ```
 
 ## Pane Operations
 
-Note: These commands are only available when using tmux.
+Note: These commands are only available when using tmux, except for split-window which has limited support in screen.
 
 ### split-window
 Split a window into panes
 ```bash
 txm split-window [session_name] [window_index] [v|h]
 ```
-- `v`: vertical split
-- `h`: horizontal split
+- `v`: vertical split (supported in both tmux and screen)
+- `h`: horizontal split (tmux only)
 
 ### list-panes
-List panes in a window
+List panes in a window (tmux only)
 ```bash
 txm list-panes [session_name] [window_index]
 ```
 
 ### kill-pane
-Remove a pane
+Remove a pane (tmux only)
 ```bash
 txm kill-pane [session_name] [window_index] [pane_index]
 ```
 
 ### resize-pane
-Resize a pane
+Resize a pane (tmux only)
 ```bash
 txm resize-pane [session_name] [window_index] [pane_index] [option]
 ```
@@ -140,7 +149,7 @@ Options:
 - `-R [n]`: Resize right by n cells
 
 ### send-keys
-Send keystrokes to a pane
+Send keystrokes to a pane (tmux only)
 ```bash
 txm send-keys [session_name] [window_index] [pane_index] [keys]
 ```
@@ -171,18 +180,20 @@ txm create mysession
 txm attach mysession
 ```
 
-2. Create a new window and split it:
+2. Create and navigate windows (works in both tmux and screen):
 ```bash
 txm new-window mysession mywindow
-txm split-window mysession 0 v
+txm next-window mysession
+txm prev-window mysession
 ```
 
-3. Send commands to a pane:
+3. Split window (vertical split works in both, horizontal in tmux only):
 ```bash
-txm send-keys mysession 0 1 "ls -la"
+txm split-window mysession 0 v  # works in both
+txm split-window mysession 0 h  # tmux only
 ```
 
-4. Complex window management:
+4. Complex window management (tmux only):
 ```bash
 # Create two sessions
 txm create session1
@@ -219,9 +230,25 @@ which screen
 - Verify TERM setting
 - Ensure terminal supports colors
 
-## Notes
+## Backend-Specific Notes
 
-- When tmux is not available, txm automatically falls back to GNU Screen with reduced functionality
-- Window and pane operations are only available in tmux
+### tmux
+- Full support for all window and pane operations
+- Advanced window management (`move`, `swap`)
+- Flexible pane splitting (both vertical and horizontal)
+
+### GNU Screen
+- Basic window management support
+- Window navigation (`next`, `previous`)
+- Window creation and renaming
+- Only vertical splitting supported
+- No pane management beyond basic splitting
+- Some commands may behave differently than in tmux
+
+## General Notes
+
+- When tmux is not available, `txm` automatically falls back to GNU Screen
 - Color support is automatically detected based on terminal capabilities
 - Use verbose mode (-v) for debugging and learning
+- Window management commands try to provide consistent behavior across both backends where possible
+

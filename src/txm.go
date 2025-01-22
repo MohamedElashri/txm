@@ -49,7 +49,6 @@ func NewSessionManager(verbose bool) *SessionManager {
 }
 
 func checkColorSupport(verbose bool) bool {
-	// Check if NO_COLOR environment variable is set
 	if os.Getenv("NO_COLOR") != "" {
 		if verbose {
 			fmt.Fprintf(os.Stderr, "Colors disabled due to NO_COLOR environment variable\n")
@@ -57,7 +56,6 @@ func checkColorSupport(verbose bool) bool {
 		return false
 	}
 
-	// Check if TERM is set
 	termEnv := os.Getenv("TERM")
 	if termEnv == "" {
 		if verbose {
@@ -66,7 +64,6 @@ func checkColorSupport(verbose bool) bool {
 		return false
 	}
 
-	// Check if output is going to a terminal
 	if !term.IsTerminal(int(os.Stdout.Fd())) {
 		if verbose {
 			fmt.Fprintf(os.Stderr, "Output is not going to a terminal\n")
@@ -74,7 +71,6 @@ func checkColorSupport(verbose bool) bool {
 		return false
 	}
 
-	// Check if TERM supports colors
 	colorTerms := []string{"xterm", "xterm-256color", "screen", "screen-256color", "tmux", "tmux-256color", "linux"}
 	for _, colorTerm := range colorTerms {
 		if strings.HasPrefix(termEnv, colorTerm) {
@@ -122,12 +118,10 @@ func (sm *SessionManager) logError(msg string) {
 }
 
 func checkTmuxAvailable() bool {
-	// First try the regular PATH-based lookup
 	if _, err := exec.LookPath("tmux"); err == nil {
 		return true
 	}
 
-	// Then check common installation locations
 	for _, path := range commonTmuxPaths {
 		if _, err := os.Stat(path); err == nil {
 			return true
@@ -138,16 +132,14 @@ func checkTmuxAvailable() bool {
 }
 
 func preserveEnvironment(cmd *exec.Cmd) {
-	if os.Getuid() == 0 { // If running as root/sudo
+	if os.Getuid() == 0 {
 		userPath := os.Getenv("SUDO_USER")
 		if userPath != "" {
-			// Get the original user's home directory
 			output, err := exec.Command("getent", "passwd", userPath).Output()
 			if err == nil {
 				fields := strings.Split(string(output), ":")
 				if len(fields) > 5 {
 					homeDir := fields[5]
-					// Construct a comprehensive PATH
 					paths := []string{
 						"/usr/local/bin",
 						"/usr/bin",
@@ -161,6 +153,29 @@ func preserveEnvironment(cmd *exec.Cmd) {
 			}
 		}
 	}
+}
+
+func (sm *SessionManager) newScreenWindow(session string) error {
+	return sm.runScreenCommand("-S", session, "-X", "screen")
+}
+
+func (sm *SessionManager) listScreenWindows(session string) error {
+	return sm.runScreenCommand("-S", session, "-Q", "windows")
+}
+
+func (sm *SessionManager) killScreenWindow(session string) error {
+	return sm.runScreenCommand("-S", session, "-X", "kill")
+}
+
+func (sm *SessionManager) renameScreenWindow(session, newName string) error {
+	return sm.runScreenCommand("-S", session, "-X", "title", newName)
+}
+
+func (sm *SessionManager) splitScreenWindow(session, direction string) error {
+	if direction == "v" {
+		return sm.runScreenCommand("-S", session, "-X", "split")
+	}
+	return fmt.Errorf("horizontal splitting not supported in screen")
 }
 
 func (sm *SessionManager) sessionExists(name string) bool {
@@ -225,238 +240,151 @@ func (sm *SessionManager) listSessions() {
 }
 
 func (sm *SessionManager) newWindow(session, name string) {
-	if !sm.tmuxAvailable {
-		sm.logWarning("Window operations are only supported in tmux")
+	if sm.tmuxAvailable {
+		if err := sm.runTmuxCommand("new-window", "-t", session, "-n", name); err != nil {
+			sm.logError(fmt.Sprintf("Failed to create window '%s' in tmux session '%s'", name, session))
+			return
+		}
+		sm.logInfo(fmt.Sprintf("Window '%s' created in tmux session '%s'", name, session))
 		return
 	}
-	if err := sm.runTmuxCommand("new-window", "-t", session, "-n", name); err != nil {
-		sm.logError(fmt.Sprintf("Failed to create window '%s' in session '%s'", name, session))
+
+	if err := sm.newScreenWindow(session); err != nil {
+		sm.logError(fmt.Sprintf("Failed to create window in screen session '%s'", session))
 		return
 	}
-	sm.logInfo(fmt.Sprintf("Window '%s' created in session '%s'", name, session))
+	if err := sm.renameScreenWindow(session, name); err != nil {
+		sm.logWarning(fmt.Sprintf("Created window but failed to rename it in screen session '%s'", session))
+		return
+	}
+	sm.logInfo(fmt.Sprintf("Window '%s' created in screen session '%s'", name, session))
 }
 
 func (sm *SessionManager) listWindows(session string) {
-	if !sm.tmuxAvailable {
-		sm.logWarning("Window operations are only supported in tmux")
+	if sm.tmuxAvailable {
+		if err := sm.runTmuxCommand("list-windows", "-t", session); err != nil {
+			sm.logError(fmt.Sprintf("Failed to list windows in tmux session '%s'", session))
+		}
 		return
 	}
-	if err := sm.runTmuxCommand("list-windows", "-t", session); err != nil {
-		sm.logError(fmt.Sprintf("Failed to list windows in session '%s'", session))
+
+	if err := sm.listScreenWindows(session); err != nil {
+		sm.logError(fmt.Sprintf("Failed to list windows in screen session '%s'", session))
 	}
 }
 
 func (sm *SessionManager) killWindow(session, window string) {
-	if !sm.tmuxAvailable {
-		sm.logWarning("Window operations are only supported in tmux")
+	if sm.tmuxAvailable {
+		if err := sm.runTmuxCommand("kill-window", "-t", fmt.Sprintf("%s:%s", session, window)); err != nil {
+			sm.logError(fmt.Sprintf("Failed to kill window '%s' in tmux session '%s'", window, session))
+			return
+		}
+		sm.logInfo(fmt.Sprintf("Window '%s' killed in tmux session '%s'", window, session))
 		return
 	}
-	if err := sm.runTmuxCommand("kill-window", "-t", fmt.Sprintf("%s:%s", session, window)); err != nil {
-		sm.logError(fmt.Sprintf("Failed to kill window '%s' in session '%s'", window, session))
+
+	if err := sm.killScreenWindow(session); err != nil {
+		sm.logError(fmt.Sprintf("Failed to kill window in screen session '%s'", session))
 		return
 	}
-	sm.logInfo(fmt.Sprintf("Window '%s' killed in session '%s'", window, session))
+	sm.logInfo(fmt.Sprintf("Window killed in screen session '%s'", session))
 }
 
-func (sm *SessionManager) renameSession(session, newName string) {
-	if !sm.tmuxAvailable {
-		sm.logWarning("Session rename is only supported in tmux")
-		return
+func (sm *SessionManager) nextWindow(session string) {
+	if sm.tmuxAvailable {
+		if err := sm.runTmuxCommand("next-window", "-t", session); err != nil {
+			sm.logError(fmt.Sprintf("Failed to switch to next window in tmux session '%s'", session))
+			return
+		}
+	} else {
+		if err := sm.runScreenCommand("-S", session, "-X", "next"); err != nil {
+			sm.logError(fmt.Sprintf("Failed to switch to next window in screen session '%s'", session))
+			return
+		}
 	}
-	if err := sm.runTmuxCommand("rename-session", "-t", session, newName); err != nil {
-		sm.logError(fmt.Sprintf("Failed to rename session '%s' to '%s'", session, newName))
-		return
-	}
-	sm.logInfo(fmt.Sprintf("Session renamed from '%s' to '%s'", session, newName))
+	sm.logInfo("Switched to next window")
 }
 
-func (sm *SessionManager) renameWindow(session, windowIndex, newName string) {
-	if !sm.tmuxAvailable {
-		sm.logWarning("Window operations are only supported in tmux")
-		return
+func (sm *SessionManager) previousWindow(session string) {
+	if sm.tmuxAvailable {
+		if err := sm.runTmuxCommand("previous-window", "-t", session); err != nil {
+			sm.logError(fmt.Sprintf("Failed to switch to previous window in tmux session '%s'", session))
+			return
+		}
+	} else {
+		if err := sm.runScreenCommand("-S", session, "-X", "prev"); err != nil {
+			sm.logError(fmt.Sprintf("Failed to switch to previous window in screen session '%s'", session))
+			return
+		}
 	}
-	if err := sm.runTmuxCommand("rename-window", "-t", fmt.Sprintf("%s:%s", session, windowIndex), newName); err != nil {
-		sm.logError(fmt.Sprintf("Failed to rename window %s in session '%s'", windowIndex, session))
-		return
-	}
-	sm.logInfo(fmt.Sprintf("Window renamed to '%s' in session '%s'", newName, session))
-}
-
-func (sm *SessionManager) splitWindow(session, windowIndex, direction string) {
-	if !sm.tmuxAvailable {
-		sm.logWarning("Window operations are only supported in tmux")
-		return
-	}
-	flag := "-h"
-	if direction == "v" {
-		flag = "-v"
-	}
-	if err := sm.runTmuxCommand("split-window", "-t", fmt.Sprintf("%s:%s", session, windowIndex), flag); err != nil {
-		sm.logError(fmt.Sprintf("Failed to split window %s in session '%s'", windowIndex, session))
-		return
-	}
-	sm.logInfo("Window split successfully")
-}
-
-func (sm *SessionManager) listPanes(session, windowIndex string) {
-	if !sm.tmuxAvailable {
-		sm.logWarning("Pane operations are only supported in tmux")
-		return
-	}
-	if err := sm.runTmuxCommand("list-panes", "-t", fmt.Sprintf("%s:%s", session, windowIndex)); err != nil {
-		sm.logError(fmt.Sprintf("Failed to list panes in window %s of session '%s'", windowIndex, session))
-	}
-}
-
-func (sm *SessionManager) killPane(session, windowIndex, paneIndex string) {
-	if !sm.tmuxAvailable {
-		sm.logWarning("Pane operations are only supported in tmux")
-		return
-	}
-	target := fmt.Sprintf("%s:%s.%s", session, windowIndex, paneIndex)
-	if err := sm.runTmuxCommand("kill-pane", "-t", target); err != nil {
-		sm.logError(fmt.Sprintf("Failed to kill pane %s", target))
-		return
-	}
-	sm.logInfo(fmt.Sprintf("Pane killed in session '%s', window %s", session, windowIndex))
-}
-
-func (sm *SessionManager) moveWindow(session, windowIndex, newSession string) {
-	if !sm.tmuxAvailable {
-		sm.logWarning("Window operations are only supported in tmux")
-		return
-	}
-	if err := sm.runTmuxCommand("move-window", "-s", fmt.Sprintf("%s:%s", session, windowIndex),
-		"-t", fmt.Sprintf("%s:", newSession)); err != nil {
-		sm.logError(fmt.Sprintf("Failed to move window %s to session '%s'", windowIndex, newSession))
-		return
-	}
-	sm.logInfo(fmt.Sprintf("Window moved from session '%s' to '%s'", session, newSession))
-}
-
-func (sm *SessionManager) swapWindows(session, index1, index2 string) {
-	if !sm.tmuxAvailable {
-		sm.logWarning("Window operations are only supported in tmux")
-		return
-	}
-	if err := sm.runTmuxCommand("swap-window", "-s", fmt.Sprintf("%s:%s", session, index1),
-		"-t", fmt.Sprintf("%s:%s", session, index2)); err != nil {
-		sm.logError(fmt.Sprintf("Failed to swap windows %s and %s in session '%s'", index1, index2, session))
-		return
-	}
-	sm.logInfo(fmt.Sprintf("Windows %s and %s swapped in session '%s'", index1, index2, session))
-}
-
-func (sm *SessionManager) resizePane(session, windowIndex, paneIndex, resizeOption string) {
-	if !sm.tmuxAvailable {
-		sm.logWarning("Pane operations are only supported in tmux")
-		return
-	}
-	target := fmt.Sprintf("%s:%s.%s", session, windowIndex, paneIndex)
-	if err := sm.runTmuxCommand("resize-pane", "-t", target, resizeOption); err != nil {
-		sm.logError(fmt.Sprintf("Failed to resize pane %s", target))
-		return
-	}
-	sm.logInfo("Pane resized successfully")
-}
-
-func (sm *SessionManager) sendKeys(session, windowIndex, paneIndex, keys string) {
-	if !sm.tmuxAvailable {
-		sm.logWarning("Key sending is only supported in tmux")
-		return
-	}
-	target := fmt.Sprintf("%s:%s.%s", session, windowIndex, paneIndex)
-	if err := sm.runTmuxCommand("send-keys", "-t", target, keys); err != nil {
-		sm.logError(fmt.Sprintf("Failed to send keys to pane %s", target))
-		return
-	}
-	sm.logInfo("Keys sent successfully")
+	sm.logInfo("Switched to previous window")
 }
 
 func (sm *SessionManager) attachSession(name string) {
 	if !sm.sessionExists(name) {
-		sm.logWarning(fmt.Sprintf("Session '%s' does not exist", name))
+		sm.logError(fmt.Sprintf("Session '%s' does not exist", name))
 		return
 	}
 
 	if sm.tmuxAvailable {
 		if err := sm.runTmuxCommand("attach-session", "-t", name); err != nil {
 			sm.logError(fmt.Sprintf("Failed to attach to tmux session '%s'", name))
+			return
 		}
 		return
 	}
 
 	if err := sm.runScreenCommand("-r", name); err != nil {
 		sm.logError(fmt.Sprintf("Failed to attach to screen session '%s'", name))
+		return
 	}
 }
 
 func (sm *SessionManager) detachSession() {
 	if sm.tmuxAvailable {
 		if err := sm.runTmuxCommand("detach-client"); err != nil {
-			sm.logError("Failed to detach. Are you in a tmux session?")
+			sm.logError("Failed to detach from tmux session")
+			return
 		}
+		sm.logInfo("Detached from tmux session")
 		return
 	}
-	sm.logWarning("Detach is not supported for screen sessions from this tool. Use Ctrl-a d to detach.")
+
+	if err := sm.runScreenCommand("-d"); err != nil {
+		sm.logError("Failed to detach from screen session")
+		return
+	}
+	sm.logInfo("Detached from screen session")
 }
 
 func (sm *SessionManager) killSession(name string) {
 	if !sm.sessionExists(name) {
-		sm.logWarning(fmt.Sprintf("Session '%s' does not exist", name))
+		sm.logError(fmt.Sprintf("Session '%s' does not exist", name))
 		return
 	}
 
 	if sm.tmuxAvailable {
 		if err := sm.runTmuxCommand("kill-session", "-t", name); err != nil {
 			sm.logError(fmt.Sprintf("Failed to kill tmux session '%s'", name))
-		}
-		return
-	}
-
-	if err := sm.runScreenCommand("-S", name, "-X", "quit"); err != nil {
-		sm.logError(fmt.Sprintf("Failed to kill screen session '%s'", name))
-	}
-}
-
-func (sm *SessionManager) nukeAllSessions() {
-	if sm.tmuxAvailable {
-		output, err := exec.Command("tmux", "list-sessions", "-F", "#S").Output()
-		if err == nil {
-			sessions := strings.Split(strings.TrimSpace(string(output)), "\n")
-			for _, session := range sessions {
-				sm.runTmuxCommand("kill-session", "-t", session)
-			}
-			sm.logInfo("All tmux sessions have been nuked")
 			return
 		}
-		sm.logWarning("No tmux sessions found to nuke")
+		sm.logInfo(fmt.Sprintf("Killed tmux session '%s'", name))
 		return
 	}
 
-	output, err := exec.Command("screen", "-ls").Output()
-	if err == nil {
-		lines := strings.Split(string(output), "\n")
-		for _, line := range lines {
-			if strings.Contains(line, ".") {
-				session := strings.Fields(line)[0]
-				sm.runScreenCommand("-S", session, "-X", "quit")
-			}
-		}
-		sm.logInfo("All screen sessions have been nuked")
+	if err := sm.runScreenCommand("-X", "-S", name, "quit"); err != nil {
+		sm.logError(fmt.Sprintf("Failed to kill screen session '%s'", name))
 		return
 	}
-	sm.logWarning("No screen sessions found to nuke")
+	sm.logInfo(fmt.Sprintf("Killed screen session '%s'", name))
 }
 
 func main() {
 	var verbose bool
 
-	// Check for verbose flag before processing other arguments
 	for _, arg := range os.Args {
 		if arg == "-v" || arg == "--verbose" {
 			verbose = true
-			// Remove the verbose flag from args
 			newArgs := make([]string, 0)
 			for _, a := range os.Args {
 				if a != "-v" && a != "--verbose" {
@@ -546,134 +474,46 @@ func main() {
 		}
 		sm.killWindow(session, window)
 
-	case "rename-session":
+	case "next-window":
 		session := getArg(2, "")
-		newName := getArg(3, "")
-		if session == "" || newName == "" {
-			sm.logError("Please specify both current and new session names")
+		if session == "" {
+			sm.logError("Please specify a session name")
 			displayHelp()
 			os.Exit(1)
 		}
-		sm.renameSession(session, newName)
+		sm.nextWindow(session)
 
-	case "rename-window":
+	case "prev-window":
 		session := getArg(2, "")
-		windowIndex := getArg(3, "")
-		newName := getArg(4, "")
-		if session == "" || windowIndex == "" || newName == "" {
-			sm.logError("Please specify session name, window index, and new name")
+		if session == "" {
+			sm.logError("Please specify a session name")
 			displayHelp()
 			os.Exit(1)
 		}
-		sm.renameWindow(session, windowIndex, newName)
+		sm.previousWindow(session)
 
-	case "split-window":
-		session := getArg(2, "")
-		windowIndex := getArg(3, "")
-		direction := getArg(4, "")
-		if session == "" || windowIndex == "" || direction == "" {
-			sm.logError("Please specify session name, window index, and direction (v/h)")
-			displayHelp()
-			os.Exit(1)
+	case "version":
+		fmt.Printf("txm version %s\n", Version)
+		if len(os.Args) > 2 && os.Args[2] == "--check-update" {
+			if err := CheckForUpdates(sm); err != nil {
+				sm.logError(err.Error())
+				os.Exit(1)
+			}
 		}
-		if direction != "v" && direction != "h" {
-			sm.logError("Direction must be 'v' for vertical or 'h' for horizontal")
-			os.Exit(1)
+
+	case "update":
+		if len(os.Args) > 2 && os.Args[2] == "--check-update" {
+			if err := CheckForUpdates(sm); err != nil {
+				sm.logError(err.Error())
+				os.Exit(1)
+			}
+		} else {
+			if err := UpdateBinary(sm); err != nil {
+				sm.logError(err.Error())
+				os.Exit(1)
+			}
 		}
-		sm.splitWindow(session, windowIndex, direction)
 
-	case "list-panes":
-		session := getArg(2, "")
-		windowIndex := getArg(3, "")
-		if session == "" || windowIndex == "" {
-			sm.logError("Please specify session name and window index")
-			displayHelp()
-			os.Exit(1)
-		}
-		sm.listPanes(session, windowIndex)
-
-	case "kill-pane":
-		session := getArg(2, "")
-		windowIndex := getArg(3, "")
-		paneIndex := getArg(4, "")
-		if session == "" || windowIndex == "" || paneIndex == "" {
-			sm.logError("Please specify session name, window index, and pane index")
-			displayHelp()
-			os.Exit(1)
-		}
-		sm.killPane(session, windowIndex, paneIndex)
-
-	case "move-window":
-		session := getArg(2, "")
-		windowIndex := getArg(3, "")
-		newSession := getArg(4, "")
-		if session == "" || windowIndex == "" || newSession == "" {
-			sm.logError("Please specify source session, window index, and target session")
-			displayHelp()
-			os.Exit(1)
-		}
-		sm.moveWindow(session, windowIndex, newSession)
-
-	case "swap-window":
-		session := getArg(2, "")
-		index1 := getArg(3, "")
-		index2 := getArg(4, "")
-		if session == "" || index1 == "" || index2 == "" {
-			sm.logError("Please specify session name and both window indices")
-			displayHelp()
-			os.Exit(1)
-		}
-		sm.swapWindows(session, index1, index2)
-
-	case "resize-pane":
-		session := getArg(2, "")
-		windowIndex := getArg(3, "")
-		paneIndex := getArg(4, "")
-		resizeOption := getArg(5, "")
-		if session == "" || windowIndex == "" || paneIndex == "" || resizeOption == "" {
-			sm.logError("Please specify session, window index, pane index, and resize option")
-			displayHelp()
-			os.Exit(1)
-		}
-		sm.resizePane(session, windowIndex, paneIndex, resizeOption)
-
-	case "send-keys":
-		session := getArg(2, "")
-		windowIndex := getArg(3, "")
-		paneIndex := getArg(4, "")
-		keys := getArg(5, "")
-		if session == "" || windowIndex == "" || paneIndex == "" || keys == "" {
-			sm.logError("Please specify session, window index, pane index, and keys")
-			displayHelp()
-			os.Exit(1)
-		}
-		sm.sendKeys(session, windowIndex, paneIndex, keys)
-
-	case "nuke":
-		sm.nukeAllSessions()
-
-    case "version":
-        fmt.Printf("txm version %s\n", Version)
-        if len(os.Args) > 2 && os.Args[2] == "--check-update" {
-            if err := CheckForUpdates(sm); err != nil {
-                sm.logError(err.Error())
-                os.Exit(1)
-            }
-        }
-
-    case "update":
-        if len(os.Args) > 2 && os.Args[2] == "--check-update" {
-            if err := CheckForUpdates(sm); err != nil {
-                sm.logError(err.Error())
-                os.Exit(1)
-            }
-        } else {
-            if err := UpdateBinary(sm); err != nil {
-                sm.logError(err.Error())
-                os.Exit(1)
-            }
-        }
-		
 	case "uninstall":
 		if err := UninstallTxm(sm); err != nil {
 			sm.logError(err.Error())
@@ -707,21 +547,13 @@ Commands:
 │ create         │ [session_name]                              │ Create a new tmux or screen session      │
 │ list          │                                             │ List all tmux or screen sessions         │
 │ attach        │ [session_name]                              │ Attach to a tmux or screen session       │
-│ detach        │                                             │ Detach from current tmux session         │
+│ detach        │                                             │ Detach from current session              │
 │ delete        │ [session_name]                              │ Delete a tmux or screen session          │
-│ new-window    │ [session_name] [name]                       │ Create a new window in tmux session      │
-│ list-windows  │ [session_name]                              │ List windows in a tmux session           │
-│ kill-window   │ [session_name] [name]                       │ Kill a window in a tmux session          │
-│ rename-session│ [session_name] [new_name]                   │ Rename an existing tmux session          │
-│ rename-window │ [session_name] [window_index] [new_name]    │ Rename a window in tmux session          │
-│ split-window  │ [session_name] [window_index] [v|h]        │ Split a pane in tmux window              │
-│ list-panes    │ [session_name] [window_index]              │ List all panes in tmux window            │
-│ kill-pane     │ [session_name] [window_index] [pane_index] │ Kill a specific pane in tmux window      │
-│ move-window   │ [session_name] [window_index] [new_session]│ Move window to another tmux session      │
-│ swap-window   │ [session_name] [index1] [index2]          │ Swap two windows in tmux session         │
-│ resize-pane   │ [session_name] [window] [pane] [option]   │ Resize a pane in tmux window            │
-│ send-keys     │ [session_name] [window] [pane] [keys]     │ Send keys to a pane in tmux window       │
-│ nuke          │                                             │ Remove all tmux or screen sessions       │
+│ new-window    │ [session_name] [name]                       │ Create a new window in session           │
+│ list-windows  │ [session_name]                              │ List windows in a session                │
+│ kill-window   │ [session_name] [name]                       │ Kill a window in session                 │
+│ next-window   │ [session_name]                              │ Switch to next window in session         │
+│ prev-window   │ [session_name]                              │ Switch to previous window in session     │
 │ version       │ [--check-update]                           │ Show version and check for updates       │
 │ update        │                                             │ Update txm to the latest version         │
 │ uninstall     │                                             │ Uninstall txm                           │
@@ -729,6 +561,9 @@ Commands:
 
 Options:
   -v, --verbose    Enable verbose output
+
+Note: Screen has limited window management capabilities compared to tmux.
+      Some commands may behave differently when using screen as the backend.
 `
 	fmt.Println(helpText)
 }
