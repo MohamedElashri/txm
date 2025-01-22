@@ -9,8 +9,33 @@
 - Comprehensive session management (create, list, attach, delete)
 - Window management (create, rename, kill, swap)
 - Advanced tmux-specific features (pane splitting, resizing, key sending)
-- Verbose mode for debugging and learning
-- Cross-platform compatibility
+
+
+## Available Commands
+
+| Command | Description | tmux | GNU Screen |
+|---------|-------------|------|------------|
+| `create` | Create a new session | ✓ | ✓ |
+| `list` | List all active sessions | ✓ | ✓ |
+| `attach` | Attach to an existing session | ✓ | ✓ |
+| `detach` | Detach from current session | ✓ | ✓ |
+| `delete` | Delete a session | ✓ | ✓ |
+| `nuke` | Remove all sessions | ✓ | ✓ |
+| `new-window` | Create a new window | ✓ | ✗ |
+| `list-windows` | List windows in a session | ✓ | ✗ |
+| `kill-window` | Remove a window | ✓ | ✗ |
+| `rename-session` | Rename an existing session | ✓ | ✗ |
+| `rename-window` | Rename a window | ✓ | ✗ |
+| `move-window` | Move window between sessions | ✓ | ✗ |
+| `swap-window` | Swap window positions | ✓ | ✗ |
+| `split-window` | Split a window into panes | ✓ | ✗ |
+| `list-panes` | List panes in a window | ✓ | ✗ |
+| `kill-pane` | Remove a pane | ✓ | ✗ |
+| `resize-pane` | Resize a pane | ✓ | ✗ |
+| `send-keys` | Send keystrokes to a pane | ✓ | ✗ |
+
+**Note**: All window and pane operations are exclusively available in tmux, while basic session management commands are supported in both backends.
+
 
 ## Installation
 
