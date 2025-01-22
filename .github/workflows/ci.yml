@@ -21,6 +21,10 @@ jobs:
           go mod init github.com/MohamedElashri/txm
           go get golang.org/x/crypto/ssh/terminal
           go mod tidy
+      - name: Run Tests
+        run: |
+          cd src
+          go test -v ./...
       - name: Build
         run: |
           go build -o txm-${{ matrix.os }}
