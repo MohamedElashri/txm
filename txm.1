@@ -1,4 +1,4 @@
-.TH TXM 1 "January 2025" "txm 0.2.0" "User Commands"
+.TH TXM 1 "March 2025" "txm 0.2.5" "User Commands"
 .SH NAME
 txm \- A terminal session manager for tmux and screen
 .SH SYNOPSIS
@@ -24,39 +24,45 @@ Detach from the current session (tmux only).
 Delete a session.
 .TP
 \fBnew-window\fR [\fISESSION_NAME\fR] [\fINAME\fR]
-Create a new window in a session (tmux only).
+Create a new window in a session.
 .TP
 \fBlist-windows\fR [\fISESSION_NAME\fR]
-List windows in a session (tmux only).
+List windows in a session.
 .TP
 \fBkill-window\fR [\fISESSION_NAME\fR] [\fINAME\fR]
-Kill a window in a session (tmux only).
+Kill a window in a session.
 .TP
-\fBrename-session\fR [\fISESSION_NAME\fR] [\fINEW_NAME\fR]
+\fBnext-window\fR [\fISESSION_NAME\fR]
+Switch to the next window in a session.
+.TP
+\fBprev-window\fR [\fISESSION_NAME\fR]
+Switch to the previous window in a session.
+.TP
+\fBrename-session\fR [\fIOLD_SESSION_NAME\fR] [\fINEW_SESSION_NAME\fR]
 Rename a session (tmux only).
 .TP
-\fBrename-window\fR [\fISESSION_NAME\fR] [\fIWINDOW_INDEX\fR] [\fINEW_NAME\fR]
-Rename a window (tmux only).
+\fBrename-window\fR [\fISESSION_NAME\fR] [\fIOLD_WINDOW_NAME\fR] [\fINEW_WINDOW_NAME\fR]
+Rename a window.
 .TP
-\fBsplit-window\fR [\fISESSION_NAME\fR] [\fIWINDOW_INDEX\fR] [\fIv|h\fR]
-Split a window vertically or horizontally (tmux only).
-.TP
-\fBlist-panes\fR [\fISESSION_NAME\fR] [\fIWINDOW_INDEX\fR]
-List panes in a window (tmux only).
-.TP
-\fBkill-pane\fR [\fISESSION_NAME\fR] [\fIWINDOW_INDEX\fR] [\fIPANE_INDEX\fR]
-Kill a specific pane (tmux only).
-.TP
-\fBmove-window\fR [\fISESSION_NAME\fR] [\fIWINDOW_INDEX\fR] [\fINEW_SESSION\fR]
+\fBmove-window\fR [\fISOURCE_SESSION\fR] [\fIWINDOW_NAME\fR] [\fIDESTINATION_SESSION\fR]
 Move window to another session (tmux only).
 .TP
-\fBswap-window\fR [\fISESSION_NAME\fR] [\fIINDEX1\fR] [\fIINDEX2\fR]
+\fBswap-window\fR [\fISESSION_NAME\fR] [\fIWINDOW1_NAME\fR] [\fIWINDOW2_NAME\fR]
 Swap two windows in a session (tmux only).
 .TP
-\fBresize-pane\fR [\fISESSION_NAME\fR] [\fIWINDOW_INDEX\fR] [\fIPANE_INDEX\fR] [\fIOPTION\fR]
-Resize a pane (tmux only).
+\fBsplit-window\fR [\fISESSION_NAME\fR] [\fIWINDOW_NAME\fR] [\fIv|h\fR]
+Split a window vertically or horizontally (v supported in both tmux and screen, h only in tmux).
 .TP
-\fBsend-keys\fR [\fISESSION_NAME\fR] [\fIWINDOW_INDEX\fR] [\fIPANE_INDEX\fR] [\fIKEYS\fR]
+\fBlist-panes\fR [\fISESSION_NAME\fR] [\fIWINDOW_NAME\fR]
+List panes in a window (tmux only).
+.TP
+\fBkill-pane\fR [\fISESSION_NAME\fR] [\fIWINDOW_NAME\fR] [\fIPANE_NUMBER\fR]
+Kill a specific pane (tmux only).
+.TP
+\fBresize-pane\fR [\fISESSION_NAME\fR] [\fIWINDOW_NAME\fR] [\fIPANE_NUMBER\fR] [\fIDIRECTION\fR] [\fISIZE\fR]
+Resize a pane (tmux only). Direction can be U (up), D (down), L (left), or R (right). Size is optional and defaults to 5.
+.TP
+\fBsend-keys\fR [\fISESSION_NAME\fR] [\fIWINDOW_NAME\fR] [\fIPANE_NUMBER\fR] [\fIKEYS\fR]
 Send keystrokes to a pane (tmux only).
 .TP
 \fBnuke\fR
@@ -64,6 +70,15 @@ Remove all sessions.
 .TP
 \fBhelp\fR
 Display help information.
+.TP
+\fBupdate\fR
+Update txm to the latest version.
+.TP
+\fBuninstall\fR
+Uninstall txm from your system.
+.TP
+\fBversion\fR [\fI--check-update\fR]
+Show version information and optionally check for updates.
 .SH OPTIONS
 .TP
 \fB\-v\fR, \fB\-\-verbose\fR
@@ -85,10 +100,16 @@ List all sessions:
 .TP
 Create and split a window:
 .B txm new-window mysession mywindow
-.B txm split-window mysession 0 v
+.B txm split-window mysession mywindow v
 .TP
 Send commands to a pane:
-.B txm send-keys mysession 0 1 "ls -la"
+.B txm send-keys mysession mywindow 0 "ls -la"
+.TP
+Rename a window:
+.B txm rename-window mysession mywindow newname
+.TP
+Move a window to another session:
+.B txm move-window mysession mywindow othersession
 .TP
 Enable verbose output:
 .B txm -v list

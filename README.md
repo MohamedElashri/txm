@@ -36,6 +36,9 @@
 | `kill-pane` | Remove a pane | ✓ | ✗ |
 | `resize-pane` | Resize a pane | ✓ | ✗ |
 | `send-keys` | Send keystrokes to a pane | ✓ | ✗ |
+| `update` | Update txm to the latest version | ✓ | ✓ |
+| `uninstall` | Uninstall txm | ✓ | ✓ |
+| `version` | Show version and check for updates | ✓ | ✓ |
 
 **Note**: 
 - Basic session and window management commands are supported in both backends

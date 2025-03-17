@@ -165,12 +165,12 @@ func TestColorSupport(t *testing.T) {
 		{
 			name:    "Verbose color support check",
 			verbose: true,
-			want:    true, // Assuming terminal supports colors
+			want:    false, // In test environment, we expect no color support
 		},
 		{
 			name:    "Non-verbose color support check",
 			verbose: false,
-			want:    true, // Assuming terminal supports colors
+			want:    false, // In test environment, we expect no color support
 		},
 	}
 

@@ -57,6 +57,24 @@ Remove all sessions
 txm nuke
 ```
 
+### update
+Update txm to the latest version
+```bash
+txm update
+```
+
+### uninstall
+Uninstall txm from your system
+```bash
+txm uninstall
+```
+
+### version
+Show version and check for updates
+```bash
+txm version [--check-update]
+```
+
 ## Window Management
 
 ### new-window
@@ -98,19 +116,19 @@ txm rename-session [old_name] [new_name]
 ### rename-window
 Rename a window (supported in both tmux and screen)
 ```bash
-txm rename-window [session_name] [window_index] [new_name]
+txm rename-window [session_name] [old_window_name] [new_window_name]
 ```
 
 ### move-window
 Move window between sessions (tmux only)
 ```bash
-txm move-window [source_session] [window_index] [target_session]
+txm move-window [source_session] [window_name] [target_session]
 ```
 
 ### swap-window
 Swap window positions (tmux only)
 ```bash
-txm swap-window [session_name] [index1] [index2]
+txm swap-window [session_name] [window1_name] [window2_name]
 ```
 
 ## Pane Operations
@@ -120,7 +138,7 @@ Note: These commands are only available when using tmux, except for split-window
 ### split-window
 Split a window into panes
 ```bash
-txm split-window [session_name] [window_index] [v|h]
+txm split-window [session_name] [window_name] [v|h]
 ```
 - `v`: vertical split (supported in both tmux and screen)
 - `h`: horizontal split (tmux only)
@@ -128,30 +146,32 @@ txm split-window [session_name] [window_index] [v|h]
 ### list-panes
 List panes in a window (tmux only)
 ```bash
-txm list-panes [session_name] [window_index]
+txm list-panes [session_name] [window_name]
 ```
 
 ### kill-pane
 Remove a pane (tmux only)
 ```bash
-txm kill-pane [session_name] [window_index] [pane_index]
+txm kill-pane [session_name] [window_name] [pane_number]
 ```
 
 ### resize-pane
 Resize a pane (tmux only)
 ```bash
-txm resize-pane [session_name] [window_index] [pane_index] [option]
+txm resize-pane [session_name] [window_name] [pane_number] [direction] [size]
 ```
-Options:
-- `-U [n]`: Resize up by n cells
-- `-D [n]`: Resize down by n cells
-- `-L [n]`: Resize left by n cells
-- `-R [n]`: Resize right by n cells
+Directions:
+- `U`: Resize up
+- `D`: Resize down
+- `L`: Resize left
+- `R`: Resize right
+
+The size parameter is optional and defaults to 5 cells.
 
 ### send-keys
 Send keystrokes to a pane (tmux only)
 ```bash
-txm send-keys [session_name] [window_index] [pane_index] [keys]
+txm send-keys [session_name] [window_name] [pane_number] [keys]
 ```
 
 ## Environment Variables
@@ -189,8 +209,8 @@ txm prev-window mysession
 
 3. Split window (vertical split works in both, horizontal in tmux only):
 ```bash
-txm split-window mysession 0 v  # works in both
-txm split-window mysession 0 h  # tmux only
+txm split-window mysession mywindow v  # works in both
+txm split-window mysession mywindow h  # tmux only
 ```
 
 4. Complex window management (tmux only):
@@ -204,7 +224,23 @@ txm new-window session1 window1
 txm new-window session1 window2
 
 # Move window2 to session2
-txm move-window session1 2 session2
+txm move-window session1 window2 session2
+```
+
+5. Manage panes (tmux only):
+```bash
+# Create a new window and split it horizontally
+txm new-window mysession mywindow
+txm split-window mysession mywindow h
+
+# List panes in the window
+txm list-panes mysession mywindow
+
+# Resize a pane
+txm resize-pane mysession mywindow 0 U 10  # Resize pane 0 up by 10 cells
+
+# Send a command to a pane
+txm send-keys mysession mywindow 0 "echo hello"  # Send command to pane
 ```
 
 ## Troubleshooting
@@ -251,4 +287,3 @@ which screen
 - Color support is automatically detected based on terminal capabilities
 - Use verbose mode (-v) for debugging and learning
 - Window management commands try to provide consistent behavior across both backends where possible
-
