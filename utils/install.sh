@@ -29,6 +29,10 @@ case "$(uname -s)" in
         ;;
 esac
 
+# Install shell completion
+echo "Installing shell completion..."
+bash "$SCRIPT_DIR/install_completion.sh"
+
 # Set up installation directories
 USER_BIN_DIR="$HOME/.local/bin"
 USER_MAN_DIR="$HOME/.local/share/man/man1"

@@ -191,6 +191,12 @@ func UninstallTxm(sm *SessionManager) error {
 	os.RemoveAll(inst.CacheDir)
 	os.RemoveAll(inst.LogDir)
 
+	// Remove shell completions
+	homeDir, _ := os.UserHomeDir()
+	os.Remove(filepath.Join(homeDir, ".local/share/bash-completion/completions/txm"))
+	os.Remove(filepath.Join(homeDir, ".config/fish/completions/txm.fish"))
+	os.Remove(filepath.Join(homeDir, ".zsh/completion/_txm"))
+
 	sm.logInfo(fmt.Sprintf("Successfully uninstalled %s installation", inst.Type))
 	return nil
 }

@@ -142,6 +142,17 @@ rm -rf ~/.cache/txm 2>/dev/null
 echo -e "${BLUE}Removing txm log files...${NC}"
 rm -rf ~/.local/share/txm 2>/dev/null
 
+# Remove shell completions
+echo -e "${BLUE}Removing txm shell completions...${NC}"
+# Remove bash completion
+remove_file "$HOME/.local/share/bash-completion/completions/txm" false
+
+# Remove fish completion
+remove_file "$HOME/.config/fish/completions/txm.fish" false
+
+# Remove zsh completion
+remove_file "$HOME/.zsh/completion/_txm" false
+
 # Remove PATH from shell configuration if it's a user installation
 if [ "$IS_SYSTEM_INSTALL" = false ]; then
     remove_shell_config
