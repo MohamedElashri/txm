@@ -472,7 +472,7 @@ func (sm *SessionManager) splitWindow(session, window, direction string) {
 		if direction == "h" {
 			splitFlag = "-h" // horizontal split (panes side by side)
 		}
-		
+
 		if err := sm.runTmuxCommand("split-window", splitFlag, "-t", windowTarget); err != nil {
 			sm.logError(fmt.Sprintf("Failed to split window '%s' in tmux session '%s'", window, session))
 			return
@@ -550,7 +550,7 @@ func (sm *SessionManager) resizePane(session, window, pane, direction string, si
 		} else if direction == "R" {
 			resizeFlag = "-R" // right
 		}
-		
+
 		if err := sm.runTmuxCommand("resize-pane", resizeFlag, fmt.Sprintf("%d", size), "-t", paneTarget); err != nil {
 			sm.logError(fmt.Sprintf("Failed to resize pane '%s' in window '%s' of tmux session '%s'", pane, window, session))
 			return
@@ -689,7 +689,7 @@ func main() {
 			os.Exit(1)
 		}
 		sm.killSession(name)
-		
+
 	case "nuke":
 		sm.nukeAllSessions()
 
@@ -739,7 +739,7 @@ func main() {
 			os.Exit(1)
 		}
 		sm.previousWindow(session)
-		
+
 	case "rename-session":
 		oldName := getArg(2, "")
 		newName := getArg(3, "")
@@ -749,7 +749,7 @@ func main() {
 			os.Exit(1)
 		}
 		sm.renameSession(oldName, newName)
-		
+
 	case "rename-window":
 		session := getArg(2, "")
 		oldName := getArg(3, "")
@@ -760,7 +760,7 @@ func main() {
 			os.Exit(1)
 		}
 		sm.renameWindow(session, oldName, newName)
-		
+
 	case "move-window":
 		srcSession := getArg(2, "")
 		window := getArg(3, "")
@@ -771,7 +771,7 @@ func main() {
 			os.Exit(1)
 		}
 		sm.moveWindow(srcSession, window, dstSession)
-		
+
 	case "swap-window":
 		session := getArg(2, "")
 		window1 := getArg(3, "")
@@ -782,7 +782,7 @@ func main() {
 			os.Exit(1)
 		}
 		sm.swapWindow(session, window1, window2)
-		
+
 	case "split-window":
 		session := getArg(2, "")
 		window := getArg(3, "")
@@ -793,7 +793,7 @@ func main() {
 			os.Exit(1)
 		}
 		sm.splitWindow(session, window, direction)
-		
+
 	case "list-panes":
 		session := getArg(2, "")
 		window := getArg(3, "")
@@ -803,7 +803,7 @@ func main() {
 			os.Exit(1)
 		}
 		sm.listPanes(session, window)
-		
+
 	case "kill-pane":
 		session := getArg(2, "")
 		window := getArg(3, "")
@@ -814,13 +814,13 @@ func main() {
 			os.Exit(1)
 		}
 		sm.killPane(session, window, pane)
-		
+
 	case "resize-pane":
 		session := getArg(2, "")
 		window := getArg(3, "")
 		pane := getArg(4, "")
 		direction := getArg(5, "U") // Default to resize up
-		size := 5 // Default size
+		size := 5                   // Default size
 		sizeArg := getArg(6, "")
 		if sizeArg != "" {
 			var err error
@@ -837,7 +837,7 @@ func main() {
 			os.Exit(1)
 		}
 		sm.resizePane(session, window, pane, direction, size)
-		
+
 	case "send-keys":
 		session := getArg(2, "")
 		window := getArg(3, "")
