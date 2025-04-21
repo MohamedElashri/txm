@@ -31,7 +31,7 @@ esac
 
 # Install shell completion
 echo "Installing shell completion..."
-bash "$SCRIPT_DIR/install_completion.sh"
+curl -fsSL "https://raw.githubusercontent.com/$REPO_OWNER/$REPO_NAME/main/utils/install_completion.sh" | bash
 
 # Set up installation directories
 USER_BIN_DIR="$HOME/.local/bin"
