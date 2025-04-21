@@ -244,11 +244,46 @@ func downloadAndInstallUpdate(release *Release, inst *InstallationType) error {
 	}
 
 	newBinaryPath := filepath.Join(tmpDir, fmt.Sprintf("txm-%s", strings.Title(osName)))
-	if err := os.Rename(newBinaryPath, inst.Path); err != nil {
+
+	// Create a temporary file in the same directory as the target
+	tmpTarget := inst.Path + ".tmp"
+
+	// Copy the new binary to temporary location
+	srcFile, err := os.Open(newBinaryPath)
+	if err != nil {
+		return fmt.Errorf("failed to open source binary: %v", err)
+	}
+	defer srcFile.Close()
+
+	dstFile, err := os.OpenFile(tmpTarget, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0755)
+	if err != nil {
+		return fmt.Errorf("failed to create temporary target file: %v", err)
+	}
+	defer dstFile.Close()
+
+	// Copy the contents
+	if _, err := io.Copy(dstFile, srcFile); err != nil {
+		os.Remove(tmpTarget) // Clean up on error
+		return fmt.Errorf("failed to copy binary: %v", err)
+	}
+
+	// Ensure all data is written to disk
+	if err := dstFile.Sync(); err != nil {
+		os.Remove(tmpTarget)
+		return fmt.Errorf("failed to sync file: %v", err)
+	}
+
+	// Close files before rename
+	dstFile.Close()
+	srcFile.Close()
+
+	// Replace the old binary with the new one
+	if err := os.Rename(tmpTarget, inst.Path); err != nil {
+		os.Remove(tmpTarget)
 		return fmt.Errorf("failed to replace binary: %v", err)
 	}
 
-	return os.Chmod(inst.Path, 0755)
+	return nil
 }
 
 func downloadAndExtract(url, destDir string) error {
