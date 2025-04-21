@@ -15,7 +15,10 @@ mkdir -p "$HOME/.config/fish/completions" 2>/dev/null || true
 mkdir -p "$HOME/.zsh/completion" 2>/dev/null || true
 
 # Get the directory where txm is installed
-TXM_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/.."
+TXM_DIR="$(dirname "$(dirname "$(readlink -f "$0")")")"
+
+# Ensure we're in a valid directory
+cd "$HOME" || exit 1
 
 # Install bash completion
 cp "$TXM_DIR/utils/completion.sh" "$HOME/.local/share/bash-completion/completions/txm"

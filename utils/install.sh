@@ -93,6 +93,9 @@ fi
 create_dir_if_needed "$INSTALL_BIN_DIR"
 create_dir_if_needed "$INSTALL_MAN_DIR"
 
+# Ensure we're in a valid directory before proceeding
+cd "$HOME" || exit 1
+
 # Add ~/.local/bin to PATH if it's not already there and doing user installation
 if [ "$SYSTEM_INSTALL" = false ]; then
     if [[ ":$PATH:" != *":$USER_BIN_DIR:"* ]]; then
