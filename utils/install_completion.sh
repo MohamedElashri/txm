@@ -14,18 +14,19 @@ mkdir -p "$HOME/.local/share/bash-completion/completions" 2>/dev/null || true
 mkdir -p "$HOME/.config/fish/completions" 2>/dev/null || true
 mkdir -p "$HOME/.zsh/completion" 2>/dev/null || true
 
-# Get the directory where txm is installed
-TXM_DIR="$(dirname "$(dirname "$(readlink -f "$0")")")"
+# GitHub raw content URLs for completion scripts
+BASH_COMPLETION_URL="https://raw.githubusercontent.com/melashri/txm/main/utils/completion.sh"
+FISH_COMPLETION_URL="https://raw.githubusercontent.com/melashri/txm/main/utils/completion.fish"
 
 # Ensure we're in a valid directory
 cd "$HOME" || exit 1
 
-# Install bash completion
-cp "$TXM_DIR/utils/completion.sh" "$HOME/.local/share/bash-completion/completions/txm"
+# Download and install bash completion
+curl -fsSL "$BASH_COMPLETION_URL" > "$HOME/.local/share/bash-completion/completions/txm"
 
-# Install fish completion if fish is installed
+# Download and install fish completion if fish is installed
 if command -v fish >/dev/null 2>&1; then
-    cp "$TXM_DIR/utils/completion.fish" "$HOME/.config/fish/completions/txm.fish"
+    curl -fsSL "$FISH_COMPLETION_URL" > "$HOME/.config/fish/completions/txm.fish"
 fi
 
 # Install zsh completion
@@ -37,8 +38,8 @@ if [ "$SHELL_NAME" = "zsh" ]; then
         echo "autoload -U compinit && compinit" >> "$HOME/.zshrc"
     fi
     
-    # Copy completion script
-    cp "$TXM_DIR/utils/completion.sh" "$HOME/.zsh/completion/_txm"
+    # Download and install zsh completion
+    curl -fsSL "$BASH_COMPLETION_URL" > "$HOME/.zsh/completion/_txm"
 fi
 
 echo "Shell completion installed. You may need to restart your shell or source your shell configuration file."
