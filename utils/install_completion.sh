@@ -15,8 +15,8 @@ mkdir -p "$HOME/.config/fish/completions" 2>/dev/null || true
 mkdir -p "$HOME/.zsh/completion" 2>/dev/null || true
 
 # GitHub raw content URLs for completion scripts
-BASH_COMPLETION_URL="https://raw.githubusercontent.com/melashri/txm/main/utils/completion.sh"
-FISH_COMPLETION_URL="https://raw.githubusercontent.com/melashri/txm/main/utils/completion.fish"
+BASH_COMPLETION_URL="https://raw.githubusercontent.com/MohamedElashri/txm/main/utils/completion.sh"
+FISH_COMPLETION_URL="https://raw.githubusercontent.com/MohamedElashri/txm/main/utils/completion.fish"
 
 # Ensure we're in a valid directory
 cd "$HOME" || exit 1
