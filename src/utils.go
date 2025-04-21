@@ -14,7 +14,7 @@ import (
 )
 
 const (
-	Version   = "0.2.5"
+	Version   = "0.2.7"
 	githubAPI = "https://api.github.com/repos/MohamedElashri/txm/releases/latest"
 )
 
