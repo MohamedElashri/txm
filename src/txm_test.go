@@ -291,3 +291,63 @@ func TestArgumentHandling(t *testing.T) {
 		})
 	}
 }
+
+// TestConfigFunctionality tests the configuration functionality
+func TestConfigFunctionality(t *testing.T) {
+	// Test config loading and default values
+	config := NewDefaultConfig()
+	if config.DefaultBackend != BackendTmux {
+		t.Error("Default backend should be tmux")
+	}
+	
+	// Test backend parsing
+	if ParseBackend("tmux") != BackendTmux {
+		t.Error("Failed to parse tmux backend")
+	}
+	if ParseBackend("zellij") != BackendZellij {
+		t.Error("Failed to parse zellij backend")
+	}
+	if ParseBackend("screen") != BackendScreen {
+		t.Error("Failed to parse screen backend")
+	}
+	if ParseBackend("invalid") != BackendTmux {
+		t.Error("Invalid backend should default to tmux")
+	}
+	
+	// Test backend string representation
+	if BackendTmux.String() != "tmux" {
+		t.Error("Backend tmux string representation incorrect")
+	}
+	if BackendZellij.String() != "zellij" {
+		t.Error("Backend zellij string representation incorrect")
+	}
+	if BackendScreen.String() != "screen" {
+		t.Error("Backend screen string representation incorrect")
+	}
+}
+
+// TestBackendSelection tests the backend selection logic
+func TestBackendSelection(t *testing.T) {
+	sm := NewSessionManager(false)
+	
+	// Test that backend selection works
+	if sm.currentBackend == BackendTmux && !sm.tmuxAvailable {
+		t.Error("Should not select tmux when not available")
+	}
+	
+	// Test backend availability checking
+	tmuxAvail := sm.isBackendAvailable(BackendTmux)
+	zellijAvail := sm.isBackendAvailable(BackendZellij)
+	screenAvail := sm.isBackendAvailable(BackendScreen)
+	
+	if tmuxAvail != sm.tmuxAvailable {
+		t.Error("Tmux availability check inconsistent")
+	}
+	if zellijAvail != sm.zellijAvailable {
+		t.Error("Zellij availability check inconsistent")
+	}
+	if !screenAvail {
+		// Screen should be available in most test environments
+		t.Log("Screen not available in test environment")
+	}
+}
