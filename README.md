@@ -1,49 +1,99 @@
 # txm - A Terminal Session Manager
 
-`txm` is a command-line utility designed to manage terminal multiplexer sessions efficiently. It primarily works with tmux, with GNU Screen support as a fallback option. This makes it versatile across different environments and setups.
+`txm` is a powerful command-line utility designed to manage terminal multiplexer sessions efficiently. It supports multiple backends including **tmux**, **zellij**, and **GNU Screen**, making it versatile across different environments and setups.
 
 ## Features
 
-- Primary support for tmux with enhanced GNU Screen support
+- **Multi-backend support**: tmux (primary), zellij, and GNU Screen
+- **Configuration system**: Choose your preferred backend with persistent settings
+- **Environment variable override**: Temporary backend switching via `TXM_DEFAULT_BACKEND`
+- **Intelligent fallback**: Automatically detects and uses available backends
 - Colored output support with automatic terminal capability detection
 - Comprehensive session management (`create`, `list`, `attach`, `delete`)
-- Window management for both tmux and GNU Screen
-- Advanced tmux-specific features (`pane splitting`, `resizing`, `key sending`)
-- Cross-compatible window navigation between tmux and screen
+- Window management for all supported backends
+- Advanced backend-specific features (tmux pane operations, zellij workspaces)
+- Cross-compatible command interface with backend-specific optimizations
+
+## Backend Support Matrix
+
+| Feature | tmux | zellij | GNU Screen |
+|---------|------|--------|------------|
+| Session Management | ✓ | ✓ | ✓ |
+| Window Operations | ✓ | ✓ | ✓ |
+| Pane/Panel Operations | ✓ | ✓ | ✓* |
+| Advanced Window Mgmt | ✓ | ✓ | ✗ |
+| Configuration Support | ✓ | ✓ | ✓ |
+| Workspace/Tab Paradigm | Windows | Tabs | Windows |
+
+**Note**: *GNU Screen supports basic splitting but with limited pane management
+
+## Configuration
+
+### Setting Your Preferred Backend
+
+```bash
+# Set default backend persistently
+txm config set backend zellij
+
+# View current configuration
+txm config show
+
+# Get specific configuration value
+txm config get backend
+
+# Temporarily override via environment variable
+TXM_DEFAULT_BACKEND=tmux txm create my-session
+```
+
+### Backend Selection Priority
+
+1. **Environment Variable**: `TXM_DEFAULT_BACKEND` (temporary override)
+2. **Config File**: `~/.txm/config` (persistent setting)
+3. **Default**: tmux (if available, otherwise first available backend)
 
 
 ## Available Commands
 
-| Command | Description | tmux | GNU Screen |
-|---------|-------------|------|------------|
-| `create` | Create a new session | ✓ | ✓ |
-| `list` | List all active sessions | ✓ | ✓ |
-| `attach` | Attach to an existing session | ✓ | ✓ |
-| `detach` | Detach from current session | ✓ | ✓ |
-| `delete` | Delete a session | ✓ | ✓ |
-| `nuke` | Remove all sessions | ✓ | ✓ |
-| `new-window` | Create a new window | ✓ | ✓ |
-| `list-windows` | List windows in a session | ✓ | ✓ |
-| `kill-window` | Remove a window | ✓ | ✓ |
-| `next-window` | Switch to next window | ✓ | ✓ |
-| `prev-window` | Switch to previous window | ✓ | ✓ |
-| `rename-session` | Rename an existing session | ✓ | ✗ |
-| `rename-window` | Rename a window | ✓ | ✓ |
-| `move-window` | Move window between sessions | ✓ | ✗ |
-| `swap-window` | Swap window positions | ✓ | ✗ |
-| `split-window` | Split a window into panes | ✓ | ✓* |
-| `list-panes` | List panes in a window | ✓ | ✗ |
-| `kill-pane` | Remove a pane | ✓ | ✗ |
-| `resize-pane` | Resize a pane | ✓ | ✗ |
-| `send-keys` | Send keystrokes to a pane | ✓ | ✗ |
-| `update` | Update txm to the latest version | ✓ | ✓ |
-| `uninstall` | Uninstall txm | ✓ | ✓ |
-| `version` | Show version and check for updates | ✓ | ✓ |
+| Command | Description | tmux | zellij | GNU Screen |
+|---------|-------------|------|--------|------------|
+| `create` | Create a new session | ✓ | ✓ | ✓ |
+| `list` | List all active sessions | ✓ | ✓ | ✓ |
+| `attach` | Attach to an existing session | ✓ | ✓ | ✓ |
+| `detach` | Detach from current session | ✓ | ✓ | ✓ |
+| `delete` | Delete a session | ✓ | ✓ | ✓ |
+| `nuke` | Remove all sessions | ✓ | ✓ | ✓ |
+| `new-window` | Create a new window/tab | ✓ | ✓ | ✓ |
+| `list-windows` | List windows in a session | ✓ | ✓ | ✓ |
+| `kill-window` | Remove a window | ✓ | ✓ | ✓ |
+| `next-window` | Switch to next window | ✓ | ✓ | ✓ |
+| `prev-window` | Switch to previous window | ✓ | ✓ | ✓ |
+| `rename-session` | Rename an existing session | ✓ | ✓ | ✗ |
+| `rename-window` | Rename a window | ✓ | ✓ | ✓ |
+| `move-window` | Move window between sessions | ✓ | ✓ | ✗ |
+| `swap-window` | Swap window positions | ✓ | ✗ | ✗ |
+| `split-window` | Split a window into panes | ✓ | ✓ | ✓* |
+| `list-panes` | List panes in a window | ✓ | ✓ | ✗ |
+| `kill-pane` | Remove a pane | ✓ | ✓ | ✗ |
+| `resize-pane` | Resize a pane | ✓ | ✓ | ✗ |
+| `send-keys` | Send keystrokes to a pane | ✓ | ✓ | ✗ |
+| `config` | Configuration management | ✓ | ✓ | ✓ |
+| `update` | Update txm to the latest version | ✓ | ✓ | ✓ |
+| `uninstall` | Uninstall txm | ✓ | ✓ | ✓ |
+| `version` | Show version and check for updates | ✓ | ✓ | ✓ |
+
+### Configuration Commands
+
+| Command | Description |
+|---------|-------------|
+| `txm config set backend <backend>` | Set default backend (tmux/zellij/screen) |
+| `txm config get <key>` | Get configuration value |
+| `txm config show` | Show all configuration |
 
 **Note**: 
-- Basic session and window management commands are supported in both backends
-- * GNU Screen only supports vertical splitting
-- Some advanced window and all pane operations are exclusively available in tmux
+- Basic session and window management commands are supported across all backends
+- *GNU Screen only supports vertical splitting
+- Advanced features automatically adapt to backend capabilities
+- zellij uses tab-based workflow while tmux/screen use windows
 
 ## Installation
 
@@ -85,7 +135,7 @@ curl -s https://raw.githubusercontent.com/MohamedElashri/txm/main/utils/install.
 
 Requirements:
 - Go 1.17 or later
-- Either tmux or GNU Screen installed
+- At least one terminal multiplexer: tmux, zellij, or GNU Screen
 
 Steps:
 
@@ -98,6 +148,75 @@ Steps:
    ```bash
    cd txm
    ```
+
+3. Build the binary:
+   ```bash
+   cd src
+   go build -o txm
+   ```
+
+4. (Optional) Move to PATH:
+   ```bash
+   sudo mv txm /usr/local/bin/
+   ```
+
+## Usage Examples
+
+### Backend Configuration
+
+```bash
+# Set zellij as your default backend
+txm config set backend zellij
+
+# View current configuration
+txm config show
+
+# Temporarily use tmux for a single command
+TXM_DEFAULT_BACKEND=tmux txm create dev-session
+```
+
+### Session Management
+
+```bash
+# Create a new session (uses configured backend)
+txm create my-project
+
+# List all sessions
+txm list
+
+# Attach to session
+txm attach my-project
+
+# Create session with specific backend
+TXM_DEFAULT_BACKEND=zellij txm create zellij-session
+```
+
+### Window/Tab Management
+
+```bash
+# Create new window/tab
+txm new-window my-project development
+
+# Navigate between windows
+txm next-window my-project
+txm prev-window my-project
+
+# List windows in session
+txm list-windows my-project
+```
+
+### Advanced Operations (Backend-Specific)
+
+```bash
+# Pane operations (tmux/zellij)
+txm split-window my-project development v  # vertical split
+txm split-window my-project development h  # horizontal split (tmux only)
+txm list-panes my-project development
+txm resize-pane my-project development 0 R 10
+
+# Send commands to specific pane
+txm send-keys my-project development 0 "npm start"
+```
 
 3. Initialize module:
    ```bash

@@ -29,10 +29,6 @@ case "$(uname -s)" in
         ;;
 esac
 
-# Install shell completion
-echo "Installing shell completion..."
-curl -fsSL "https://raw.githubusercontent.com/$REPO_OWNER/$REPO_NAME/main/utils/install_completion.sh" | bash
-
 # Set up installation directories
 USER_BIN_DIR="$HOME/.local/bin"
 USER_MAN_DIR="$HOME/.local/share/man/man1"
@@ -108,17 +104,20 @@ fi
 
 # Check if txm is already installed
 if command -v txm &> /dev/null; then
-    CURRENT_VERSION=$(txm --version 2>/dev/null || echo "unknown")
-    LATEST_VERSION=$(curl -s "$LATEST_RELEASE_URL" | jq -r ".tag_name")
-
-    if [ "$CURRENT_VERSION" == "$LATEST_VERSION" ]; then
+    CURRENT_VERSION=$(txm version 2>/dev/null | grep -o 'txm version [0-9]\+\.[0-9]\+\.[0-9]\+' | cut -d' ' -f3 || echo "unknown")
+    echo -e "${BLUE}Fetching the latest release information...${NC}"
+    LATEST_VERSION=$(curl -s "$LATEST_RELEASE_URL" | jq -r ".tag_name" 2>/dev/null || echo "unknown")
+    
+    if [ "$LATEST_VERSION" == "unknown" ] || [ "$LATEST_VERSION" == "null" ]; then
+        echo -e "${RED}Failed to fetch latest version information. Proceeding with installation...${NC}"
+    elif [ "$CURRENT_VERSION" == "$LATEST_VERSION" ]; then
         echo -e "${YELLOW}txm is already installed and up to date (version $CURRENT_VERSION).${NC}"
         read -p "Do you want to re-install txm? (y/n): " REINSTALL
         if [ "$REINSTALL" != "y" ]; then
             echo -e "${BLUE}Installation aborted. Exiting.${NC}"
             exit 0
         fi
-    else
+    elif [ "$CURRENT_VERSION" != "unknown" ]; then
         echo -e "${YELLOW}txm is already installed (version $CURRENT_VERSION), but a newer version ($LATEST_VERSION) is available.${NC}"
         read -p "Do you want to upgrade txm? (y/n): " UPGRADE
         if [ "$UPGRADE" != "y" ]; then
@@ -126,11 +125,15 @@ if command -v txm &> /dev/null; then
             exit 0
         fi
     fi
+else
+    echo -e "${BLUE}Fetching the latest release information...${NC}"
+    LATEST_VERSION=$(curl -s "$LATEST_RELEASE_URL" | jq -r ".tag_name" 2>/dev/null || echo "unknown")
 fi
 
-# Fetch the latest release information
-echo -e "${BLUE}Fetching the latest release information...${NC}"
-RELEASE_INFO=$(curl -s "$LATEST_RELEASE_URL")
+# Fetch the latest release information if not already done
+if [ -z "$RELEASE_INFO" ]; then
+    RELEASE_INFO=$(curl -s "$LATEST_RELEASE_URL" || error_exit "Failed to fetch release information")
+fi
 
 # Extract the download URL for the current platform
 DOWNLOAD_URL=$(echo "$RELEASE_INFO" | jq -r ".assets[] | select(.name | contains(\"$OS.zip\")) | .browser_download_url")
@@ -172,6 +175,33 @@ else
     mv "txm.1" "$INSTALL_MAN_DIR/txm.1" || error_exit "Failed to move the txm man page"
     chmod 644 "$INSTALL_MAN_DIR/txm.1"
 fi
+
+# Verify binary installation and functionality
+echo -e "${BLUE}Verifying txm installation...${NC}"
+if [ "$SYSTEM_INSTALL" = true ]; then
+    INSTALLED_TXM="$INSTALL_BIN_DIR/txm"
+else
+    INSTALLED_TXM="$INSTALL_BIN_DIR/txm"
+fi
+
+if [ ! -f "$INSTALLED_TXM" ]; then
+    error_exit "Binary was not installed correctly at $INSTALLED_TXM"
+fi
+
+if [ ! -x "$INSTALLED_TXM" ]; then
+    error_exit "Binary is not executable at $INSTALLED_TXM"
+fi
+
+# Test that the binary works
+if ! "$INSTALLED_TXM" version >/dev/null 2>&1; then
+    error_exit "Installed binary failed to execute properly"
+fi
+
+echo -e "${GREEN}Binary verification successful!${NC}"
+
+# Install shell completion after successful binary installation
+echo -e "${BLUE}Installing shell completion...${NC}"
+curl -fsSL "https://raw.githubusercontent.com/$REPO_OWNER/$REPO_NAME/main/utils/install_completion.sh" | bash || echo -e "${YELLOW}Warning: Shell completion installation failed, but txm is installed successfully.${NC}"
 
 # Update the man page index
 echo -e "${BLUE}Updating the man page index...${NC}"

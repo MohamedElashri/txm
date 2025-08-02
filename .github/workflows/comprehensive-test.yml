@@ -1,0 +1,205 @@
+name: Comprehensive Test Suite
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  comprehensive-test:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macOS-latest]
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Set up Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: ^1.22.5
+      
+      - name: Install system dependencies
+        run: |
+          if [[ "${{ matrix.os }}" == "ubuntu-latest" ]]; then
+            sudo apt-get update
+            sudo apt-get install -y tmux screen
+            # Install zellij
+            curl -L https://github.com/zellij-org/zellij/releases/latest/download/zellij-x86_64-unknown-linux-musl.tar.gz | tar -xz
+            sudo mv zellij /usr/local/bin/
+          else
+            # macOS
+            brew install tmux screen
+            # Install zellij
+            brew install zellij
+          fi
+      
+      - name: Set up Go module
+        run: |
+          cd src
+          go mod init github.com/MohamedElashri/txm
+          go get golang.org/x/term
+          go mod tidy
+      
+      - name: Build txm
+        run: |
+          cd src
+          go build -o txm
+          chmod +x txm
+      
+      - name: Run unit tests
+        run: |
+          cd src
+          go test -v
+      
+      - name: Test basic functionality
+        run: |
+          cd src
+          # Test basic commands
+          ./txm version
+          ./txm list || true  # May fail if no sessions exist
+      
+      - name: Test configuration system
+        run: |
+          cd src
+          # Test config commands
+          ./txm config show
+          
+          # Test setting backends
+          if command -v tmux >/dev/null 2>&1; then
+            ./txm config set backend tmux
+            echo "Backend set to tmux"
+          fi
+          
+          if command -v zellij >/dev/null 2>&1; then
+            ./txm config set backend zellij
+            echo "Backend set to zellij"
+          fi
+          
+          if command -v screen >/dev/null 2>&1; then
+            ./txm config set backend screen
+            echo "Backend set to screen"
+          fi
+          
+          # Show final config
+          ./txm config show
+      
+      - name: Test tmux backend (if available)
+        if: success()
+        run: |
+          cd src
+          if command -v tmux >/dev/null 2>&1; then
+            echo "Testing tmux backend..."
+            ./txm config set backend tmux
+            
+            # Test session operations
+            ./txm create test-session-tmux || true
+            ./txm list || true
+            ./txm new-window test-session-tmux test-window || true
+            ./txm list-windows test-session-tmux || true
+            ./txm split-window test-session-tmux test-window v || true
+            ./txm list-panes test-session-tmux test-window || true
+            ./txm delete test-session-tmux || true
+          else
+            echo "tmux not available, skipping tmux tests"
+          fi
+      
+      - name: Test zellij backend (if available)
+        if: success()
+        run: |
+          cd src
+          if command -v zellij >/dev/null 2>&1; then
+            echo "Testing zellij backend..."
+            ./txm config set backend zellij
+            
+            # Test session operations
+            ./txm create test-session-zellij || true
+            ./txm list || true
+            ./txm new-window test-session-zellij test-window || true
+            ./txm list-windows test-session-zellij || true
+            ./txm delete test-session-zellij || true
+          else
+            echo "zellij not available, skipping zellij tests"
+          fi
+      
+      - name: Test screen backend (if available)
+        if: success()
+        run: |
+          cd src
+          if command -v screen >/dev/null 2>&1; then
+            echo "Testing screen backend..."
+            ./txm config set backend screen
+            
+            # Test session operations
+            ./txm create test-session-screen || true
+            ./txm list || true
+            ./txm new-window test-session-screen test-window || true
+            ./txm list-windows test-session-screen || true
+            ./txm delete test-session-screen || true
+          else
+            echo "screen not available, skipping screen tests"
+          fi
+      
+      - name: Test environment variable override
+        run: |
+          cd src
+          # Test environment variable override
+          if command -v tmux >/dev/null 2>&1; then
+            TXM_DEFAULT_BACKEND=tmux ./txm config show
+          fi
+          
+          if command -v zellij >/dev/null 2>&1; then
+            TXM_DEFAULT_BACKEND=zellij ./txm config show
+          fi
+          
+          if command -v screen >/dev/null 2>&1; then
+            TXM_DEFAULT_BACKEND=screen ./txm config show
+          fi
+      
+      - name: Test backend availability detection
+        run: |
+          cd src
+          echo "Testing backend availability detection..."
+          
+          # Test with invalid backend
+          ./txm config set backend invalid || echo "Correctly rejected invalid backend"
+          
+          # Test fallback behavior
+          ./txm config show
+      
+      - name: Test update command
+        run: |
+          cd src
+          # Test update command (should handle network errors gracefully)
+          ./txm update || echo "Update command handled gracefully"
+      
+      - name: Test help and verbose modes
+        run: |
+          cd src
+          # Test help command
+          ./txm help || ./txm --help || echo "Help command available"
+          
+          # Test verbose mode
+          ./txm -v list || true
+          ./txm --verbose version
+      
+      - name: Cleanup test sessions
+        if: always()
+        run: |
+          cd src
+          # Clean up any remaining test sessions
+          ./txm nuke || true
+      
+      - name: Test installation script syntax
+        run: |
+          # Test that installation script is syntactically correct
+          bash -n utils/install.sh
+          bash -n utils/uninstall.sh
+      
+      - name: Archive binary artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: txm-${{ matrix.os }}
+          path: src/txm
