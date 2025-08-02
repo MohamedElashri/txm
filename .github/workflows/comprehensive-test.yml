@@ -39,7 +39,6 @@ jobs:
       - name: Set up Go module
         run: |
           cd src
-          go mod init github.com/MohamedElashri/txm
           go get golang.org/x/term
           go mod tidy
       
@@ -199,7 +198,7 @@ jobs:
           bash -n utils/uninstall.sh
       
       - name: Archive binary artifacts
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: txm-${{ matrix.os }}
           path: src/txm
