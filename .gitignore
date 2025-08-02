@@ -6,6 +6,10 @@
 *.dylib
 bin
 
+# Project binaries
+src/txm
+txm
+
 # Test binary, built with `go test -c`
 *.test
 
