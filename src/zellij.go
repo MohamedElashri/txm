@@ -206,8 +206,9 @@ func (sm *SessionManager) zellijSplitWindow(session, window, direction string) e
 }
 
 func (sm *SessionManager) zellijListPanes(session, window string) error {
-	// Zellij shows pane info in its UI, not via command line listing
-	return fmt.Errorf("listing panes not directly supported in zellij - use zellij session view")
+	// Zellij doesn't provide direct pane listing like tmux
+	// Operations work on the currently focused pane
+	return fmt.Errorf("zellij does not support listing panes by number - operations work on the focused pane")
 }
 
 func (sm *SessionManager) zellijKillPane(session, window, pane string) error {
@@ -216,6 +217,9 @@ func (sm *SessionManager) zellijKillPane(session, window, pane string) error {
 		return fmt.Errorf("session '%s' does not exist", session)
 	}
 	
+	// Note: Zellij doesn't support targeting specific panes by number like tmux
+	// This operation will close the currently focused pane in the session
+	// The 'pane' parameter is ignored as zellij works on focused pane only
 	return sm.runZellijCommandWithSession(session, "action", "close-pane")
 }
 
@@ -224,6 +228,10 @@ func (sm *SessionManager) zellijResizePane(session, window, pane, direction stri
 	if !sm.zellijSessionExists(session) {
 		return fmt.Errorf("session '%s' does not exist", session)
 	}
+	
+	// Note: Zellij doesn't support targeting specific panes by number like tmux
+	// This operation will resize the currently focused pane in the session
+	// The 'pane' parameter is ignored as zellij works on focused pane only
 	
 	var dir string
 	switch direction {
@@ -239,7 +247,7 @@ func (sm *SessionManager) zellijResizePane(session, window, pane, direction stri
 		return fmt.Errorf("invalid resize direction for zellij: %s", direction)
 	}
 	
-	// Zellij resize commands
+	// Zellij resize commands - apply resize multiple times for the given size
 	for i := 0; i < size; i++ {
 		if err := sm.runZellijCommandWithSession(session, "action", "resize", dir); err != nil {
 			return err
@@ -254,7 +262,9 @@ func (sm *SessionManager) zellijSendKeys(session, window, pane, keys string) err
 		return fmt.Errorf("session '%s' does not exist", session)
 	}
 	
-	// Zellij can write text to the current pane
+	// Note: Zellij doesn't support targeting specific panes by number like tmux
+	// This operation will send keys to the currently focused pane in the session
+	// The 'pane' parameter is ignored as zellij works on focused pane only
 	return sm.runZellijCommandWithSession(session, "action", "write-chars", keys)
 }
 

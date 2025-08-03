@@ -606,7 +606,7 @@ func (sm *SessionManager) killPane(session, window, pane string) {
 			sm.logError(fmt.Sprintf("Failed to close pane in zellij session '%s': %v", session, err))
 			return
 		}
-		sm.logInfo(fmt.Sprintf("Closed pane in zellij session '%s'", session))
+		sm.logInfo(fmt.Sprintf("Closed focused pane in zellij session '%s' (zellij works on focused pane)", session))
 		return
 	case BackendScreen:
 		sm.logError("Killing panes is not supported in GNU Screen")
@@ -634,7 +634,7 @@ func (sm *SessionManager) resizePane(session, window, pane, direction string, si
 			sm.logError(fmt.Sprintf("Failed to resize pane in zellij session '%s': %v", session, err))
 			return
 		}
-		sm.logInfo(fmt.Sprintf("Resized pane in zellij session '%s'", session))
+		sm.logInfo(fmt.Sprintf("Resized focused pane in zellij session '%s' (zellij works on focused pane)", session))
 		return
 	case BackendScreen:
 		sm.logError("Resizing panes is not supported in GNU Screen")
@@ -662,7 +662,7 @@ func (sm *SessionManager) sendKeys(session, window, pane, keys string) {
 			sm.logError(fmt.Sprintf("Failed to send keys to zellij session '%s': %v", session, err))
 			return
 		}
-		sm.logInfo(fmt.Sprintf("Sent keys to zellij session '%s'", session))
+		sm.logInfo(fmt.Sprintf("Sent keys to focused pane in zellij session '%s' (zellij works on focused pane)", session))
 		return
 	case BackendScreen:
 		sm.logError("Sending keys to panes is not supported in GNU Screen")
@@ -1098,10 +1098,10 @@ Commands:
 │ move-window   │ [src_session_name] [window_name] [dst_session_name]│ Move a window to another session     │
 │ swap-window   │ [session_name] [window1_name] [window2_name] │ Swap two windows in a tmux session       │
 │ split-window  │ [session_name] [window_name] [direction]     │ Split a window in a tmux session         │
-│ list-panes    │ [session_name] [window_name]                │ List panes in a window of a tmux session │
-│ kill-pane     │ [session_name] [window_name] [pane_number]   │ Kill a pane in a window of a tmux session│
-│ resize-pane   │ [session_name] [window_name] [pane_number] [direction] [size]│ Resize a pane in a window of a tmux session│
-│ send-keys     │ [session_name] [window_name] [pane_number] [keys]│ Send keys to a pane in a window of a tmux session│
+│ list-panes    │ [session_name] [window_name]                │ List panes in a window (tmux only)           │
+│ kill-pane     │ [session_name] [window_name] [pane_number]   │ Kill a pane (tmux: by number, zellij: focused)│
+│ resize-pane   │ [session_name] [window_name] [pane_number] [direction] [size]│ Resize a pane (tmux: by number, zellij: focused)│
+│ send-keys     │ [session_name] [window_name] [pane_number] [keys]│ Send keys to a pane (tmux: by number, zellij: focused)│
 │ config        │ [set|get|show] [key] [value]                │ Manage configuration                      │
 │ update        │                                             │ Update txm to the latest version         │
 │ uninstall     │                                             │ Uninstall txm                           │
@@ -1123,6 +1123,11 @@ Supported Backends:
   tmux     - Primary backend with full feature support
   zellij   - Modern terminal workspace with good feature support  
   screen   - Fallback backend with limited features
+
+Pane Operations:
+  tmux     - Full pane targeting by number (session:window.pane)
+  zellij   - Focus-based operations (works on currently focused pane)
+  screen   - Limited pane support
 
 Note: Feature availability varies by backend. Some advanced commands 
       are only available with specific backends.

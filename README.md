@@ -20,12 +20,30 @@
 |---------|------|--------|------------|
 | Session Management | ✓ | ✓ | ✓ |
 | Window Operations | ✓ | ✓ | ✓ |
-| Pane/Panel Operations | ✓ | ✓ | ✓* |
+| Pane/Panel Operations | ✓ (full targeting) | ✓ (focus-based) | ✓* |
 | Advanced Window Mgmt | ✓ | ✓ | ✗ |
 | Configuration Support | ✓ | ✓ | ✓ |
 | Workspace/Tab Paradigm | Windows | Tabs | Windows |
 
 **Note**: *GNU Screen supports basic splitting but with limited pane management
+
+## Pane Operation Differences
+
+**tmux**: Full pane targeting by number - you can specify which pane to operate on
+```bash
+txm kill-pane my-session window-name 2    # Kills pane number 2
+txm resize-pane my-session window-name 1 R 10  # Resizes pane 1
+txm send-keys my-session window-name 0 "echo hello"  # Sends to pane 0
+```
+
+**zellij**: Focus-based operations - works on the currently focused pane
+```bash
+txm kill-pane my-session tab-name 0    # Kills focused pane (number ignored)
+txm resize-pane my-session tab-name 0 R 10  # Resizes focused pane
+txm send-keys my-session tab-name 0 "echo hello"  # Sends to focused pane
+```
+
+**GNU Screen**: Limited pane support - basic splitting only
 
 ## Configuration
 
@@ -205,17 +223,21 @@ txm prev-window my-project
 txm list-windows my-project
 ```
 
-### Advanced Operations (Backend-Specific)
+### Advanced Operations
 
 ```bash
-# Pane operations (tmux/zellij)
-txm split-window my-project development v  # vertical split
+# Pane operations
+txm split-window my-project development v  # vertical split (all backends)
 txm split-window my-project development h  # horizontal split (tmux only)
-txm list-panes my-project development
-txm resize-pane my-project development 0 R 10
 
-# Send commands to specific pane
-txm send-keys my-project development 0 "npm start"
+# tmux: Target specific panes by number
+txm list-panes my-project development      # Lists all panes with numbers
+txm resize-pane my-project development 0 R 10  # Resize pane 0
+txm send-keys my-project development 1 "npm start"  # Send to pane 1
+
+# zellij: Operations work on focused pane (pane numbers ignored)
+txm resize-pane my-project tab-name 0 R 10  # Resizes focused pane
+txm send-keys my-project tab-name 0 "npm start"  # Sends to focused pane
 ```
 
 3. Initialize module:
