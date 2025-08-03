@@ -124,6 +124,9 @@ func TestSessionManager(t *testing.T) {
 func TestCommandExecution(t *testing.T) {
 	sm := NewSessionManager(true)
 
+	// Set backend to tmux for this test
+	sm.currentBackend = BackendTmux
+
 	// Create a test session first to ensure tmux server is running
 	sm.createSession("test-session")
 	defer sm.killSession("test-session")

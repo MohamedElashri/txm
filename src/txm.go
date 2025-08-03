@@ -347,33 +347,54 @@ func (sm *SessionManager) newWindow(session, name string) {
 }
 
 func (sm *SessionManager) listWindows(session string) {
-	if sm.tmuxAvailable {
+	switch sm.currentBackend {
+	case BackendTmux:
 		if err := sm.runTmuxCommand("list-windows", "-t", session); err != nil {
 			sm.logError(fmt.Sprintf("Failed to list windows in tmux session '%s'", session))
 		}
 		return
-	}
-
-	if err := sm.listScreenWindows(session); err != nil {
-		sm.logError(fmt.Sprintf("Failed to list windows in screen session '%s'", session))
+	case BackendZellij:
+		if err := sm.listZellijTabs(session); err != nil {
+			sm.logError(fmt.Sprintf("Failed to list tabs in zellij session '%s'", session))
+		}
+		return
+	case BackendScreen:
+		if err := sm.listScreenWindows(session); err != nil {
+			sm.logError(fmt.Sprintf("Failed to list windows in screen session '%s'", session))
+		}
+		return
+	default:
+		sm.logError("No available backend to list windows")
 	}
 }
 
 func (sm *SessionManager) killWindow(session, window string) {
-	if sm.tmuxAvailable {
+	switch sm.currentBackend {
+	case BackendTmux:
 		if err := sm.runTmuxCommand("kill-window", "-t", fmt.Sprintf("%s:%s", session, window)); err != nil {
 			sm.logError(fmt.Sprintf("Failed to kill window '%s' in tmux session '%s'", window, session))
 			return
 		}
 		sm.logInfo(fmt.Sprintf("Window '%s' killed in tmux session '%s'", window, session))
 		return
-	}
-
-	if err := sm.killScreenWindow(session); err != nil {
-		sm.logError(fmt.Sprintf("Failed to kill window in screen session '%s'", session))
+	case BackendZellij:
+		if err := sm.killZellijTab(session, window); err != nil {
+			sm.logError(fmt.Sprintf("Failed to kill tab '%s' in zellij session '%s'", window, session))
+			return
+		}
+		sm.logInfo(fmt.Sprintf("Tab '%s' killed in zellij session '%s'", window, session))
 		return
+	case BackendScreen:
+		if err := sm.killScreenWindow(session); err != nil {
+			sm.logError(fmt.Sprintf("Failed to kill window in screen session '%s'", session))
+			return
+		}
+		sm.logInfo(fmt.Sprintf("Window killed in screen session '%s'", session))
+		return
+	default:
+		sm.logError("No available backend to kill window")
 	}
-	sm.logInfo(fmt.Sprintf("Window killed in screen session '%s'", session))
+}
 }
 
 func (sm *SessionManager) nextWindow(session string) {

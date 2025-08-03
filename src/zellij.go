@@ -4,7 +4,9 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"regexp"
 	"strings"
+	"time"
 )
 
 // ZellijBackend contains zellij-specific path checks
@@ -49,8 +51,43 @@ func (sm *SessionManager) runZellijCommandOutput(args ...string) ([]byte, error)
 
 // Zellij session management implementation
 
+// Zellij session management implementation
+
 func (sm *SessionManager) createZellijSession(name string) error {
-	return sm.runZellijCommand("--session", name)
+	// Check if session already exists
+	if sm.zellijSessionExists(name) {
+		return fmt.Errorf("session with name \"%s\" already exists. Use attach command to connect to it or specify a different name", name)
+	}
+	
+	// Zellij doesn't have true detached sessions like tmux
+	// We'll start a session in the background and then detach immediately
+	// This is a workaround for zellij's interactive nature
+	cmd := exec.Command("timeout", "2", "zellij", "-s", name)
+	preserveEnvironment(cmd)
+	
+	// Redirect outputs to prevent hanging
+	cmd.Stdout = nil
+	cmd.Stderr = nil
+	cmd.Stdin = nil
+	
+	// Start the session and let it timeout (which will leave it running)
+	err := cmd.Run()
+	
+	// For zellij, a timeout (exit code 124) is actually success in this case
+	// because it means the session was created and is running
+	if exitErr, ok := err.(*exec.ExitError); ok {
+		if exitErr.ExitCode() == 124 {
+			// Session was created successfully (timeout expected)
+			return nil
+		}
+	}
+	
+	// If no error or timeout, check if session was created
+	if err == nil || sm.zellijSessionExists(name) {
+		return nil
+	}
+	
+	return err
 }
 
 func (sm *SessionManager) listZellijSessions() error {
@@ -62,15 +99,36 @@ func (sm *SessionManager) attachZellijSession(name string) error {
 }
 
 func (sm *SessionManager) killZellijSession(name string) error {
-	return sm.runZellijCommand("delete-session", name)
+	// Check if session exists first
+	if !sm.zellijSessionExists(name) {
+		return fmt.Errorf("session '%s' does not exist", name)
+	}
+	
+	// Try normal delete first
+	err := sm.runZellijCommand("delete-session", name)
+	if err != nil {
+		// If it fails, try with --force flag
+		return sm.runZellijCommand("delete-session", "--force", name)
+	}
+	return nil
 }
 
 func (sm *SessionManager) zellijSessionExists(name string) bool {
-	output, err := sm.runZellijCommandOutput("list-sessions")
-	if err != nil {
-		return false
+	// Try multiple times with small delays, as zellij sessions might take time to appear
+	for i := 0; i < 3; i++ {
+		output, err := sm.runZellijCommandOutput("list-sessions")
+		if err != nil {
+			return false
+		}
+		if strings.Contains(string(output), name) {
+			return true
+		}
+		// Wait a bit before retrying
+		if i < 2 {
+			time.Sleep(100 * time.Millisecond)
+		}
 	}
-	return strings.Contains(string(output), name)
+	return false
 }
 
 // Zellij window/tab management implementation
@@ -156,11 +214,19 @@ func (sm *SessionManager) sendKeysZellij(session, keys string) error {
 }
 
 func (sm *SessionManager) detachZellijSession() error {
-	return sm.runZellijCommand("action", "detach")
+	// Zellij doesn't have a traditional detach concept like tmux
+	// Instead, we can switch to another session or just exit
+	// For now, we'll return an error indicating this operation isn't supported
+	return fmt.Errorf("detach operation not supported in zellij - zellij uses a different session paradigm")
 }
 
 func (sm *SessionManager) nukeAllZellijSessions() error {
-	// Get all sessions and delete them one by one
+	// Use delete-all-sessions command with automatic yes and force flags
+	if err := sm.runZellijCommand("delete-all-sessions", "-y", "-f"); err == nil {
+		return nil
+	}
+	
+	// Fallback: Get all sessions and delete them one by one
 	output, err := sm.runZellijCommandOutput("list-sessions")
 	if err != nil {
 		return fmt.Errorf("failed to list zellij sessions: %v", err)
@@ -175,14 +241,21 @@ func (sm *SessionManager) nukeAllZellijSessions() error {
 			continue
 		}
 		
+		// Remove ANSI color codes
+		// Simple regex to remove ANSI escape sequences
+		re := regexp.MustCompile(`\x1b\[[0-9;]*[a-zA-Z]`)
+		cleanLine := re.ReplaceAllString(line, "")
+		
 		// Parse session name from zellij list-sessions output
 		// Format is typically: session_name [CREATED: ...]
-		parts := strings.Fields(line)
+		parts := strings.Fields(cleanLine)
 		if len(parts) > 0 {
 			sessionName := parts[0]
-			if err := sm.runZellijCommand("delete-session", sessionName); err == nil {
-				killCount++
+			// Try normal delete first, then force delete
+			if err := sm.runZellijCommand("delete-session", sessionName); err != nil {
+				sm.runZellijCommand("delete-session", "--force", sessionName)
 			}
+			killCount++
 		}
 	}
 

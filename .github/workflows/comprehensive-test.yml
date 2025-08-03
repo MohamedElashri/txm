@@ -58,7 +58,8 @@ jobs:
           cd src
           # Test basic commands
           ./txm version
-          ./txm list || true  # May fail if no sessions exist
+          # List command may fail if no sessions exist, but should not error
+          ./txm list || echo "No sessions found (expected)"
       
       - name: Test configuration system
         run: |
@@ -93,14 +94,27 @@ jobs:
             echo "Testing tmux backend..."
             ./txm config set backend tmux
             
-            # Test session operations
-            ./txm create test-session-tmux || true
-            ./txm list || true
-            ./txm new-window test-session-tmux test-window || true
-            ./txm list-windows test-session-tmux || true
-            ./txm split-window test-session-tmux test-window v || true
-            ./txm list-panes test-session-tmux test-window || true
-            ./txm delete test-session-tmux || true
+            # Test session operations - these should succeed
+            echo "Creating tmux session..."
+            ./txm create test-session-tmux
+            
+            echo "Listing sessions..."
+            ./txm list
+            
+            echo "Creating window..."
+            ./txm new-window test-session-tmux test-window
+            
+            echo "Listing windows..."
+            ./txm list-windows test-session-tmux
+            
+            echo "Splitting window..."
+            ./txm split-window test-session-tmux test-window v
+            
+            echo "Listing panes..."
+            ./txm list-panes test-session-tmux test-window
+            
+            echo "Cleaning up tmux session..."
+            ./txm delete test-session-tmux
           else
             echo "tmux not available, skipping tmux tests"
           fi
@@ -113,12 +127,20 @@ jobs:
             echo "Testing zellij backend..."
             ./txm config set backend zellij
             
-            # Test session operations
-            ./txm create test-session-zellij || true
-            ./txm list || true
-            ./txm new-window test-session-zellij test-window || true
-            ./txm list-windows test-session-zellij || true
-            ./txm delete test-session-zellij || true
+            # Zellij has different behavior in non-interactive mode
+            # Test what should work
+            echo "Testing zellij list command..."
+            ./txm list || echo "No zellij sessions found (expected)"
+            
+            # Note: zellij session creation may have limitations in CI environment
+            echo "Attempting zellij session creation (may fail in CI)..."
+            if ./txm create test-session-zellij 2>/dev/null; then
+              echo "Zellij session created successfully"
+              ./txm list
+              ./txm delete test-session-zellij || echo "Delete failed - session may need force deletion"
+            else
+              echo "Zellij session creation failed (expected in non-interactive environment)"
+            fi
           else
             echo "zellij not available, skipping zellij tests"
           fi
@@ -131,13 +153,24 @@ jobs:
             echo "Testing screen backend..."
             ./txm config set backend screen
             
-            # Test session operations
-            ./txm create test-session-screen || true
-            ./txm list || true
-            ./txm new-window test-session-screen test-window || true
-            ./txm list-windows test-session-screen || true
-            ./txm delete test-session-screen || true
+            # Test session operations - these should succeed
+            echo "Creating screen session..."
+            ./txm create test-session-screen
+            
+            echo "Listing sessions..."
+            ./txm list
+            
+            echo "Creating window..."
+            ./txm new-window test-session-screen test-window
+            
+            echo "Listing windows..."
+            ./txm list-windows test-session-screen
+            
+            echo "Cleaning up screen session..."
+            ./txm delete test-session-screen
           else
+            echo "screen not available, skipping screen tests"
+          fi
             echo "screen not available, skipping screen tests"
           fi
       
@@ -162,8 +195,13 @@ jobs:
           cd src
           echo "Testing backend availability detection..."
           
-          # Test with invalid backend
-          ./txm config set backend invalid || echo "Correctly rejected invalid backend"
+          # Test with invalid backend - this should fail
+          if ./txm config set backend invalid; then
+            echo "ERROR: Invalid backend was accepted (should have failed)"
+            exit 1
+          else
+            echo "Correctly rejected invalid backend"
+          fi
           
           # Test fallback behavior
           ./txm config show
@@ -172,24 +210,29 @@ jobs:
         run: |
           cd src
           # Test update command (should handle network errors gracefully)
-          ./txm update || echo "Update command handled gracefully"
+          # This may fail due to network issues but should not crash
+          if ./txm update; then
+            echo "Update command succeeded"
+          else
+            echo "Update command failed gracefully (expected in CI)"
+          fi
       
       - name: Test help and verbose modes
         run: |
           cd src
-          # Test help command
-          ./txm help || ./txm --help || echo "Help command available"
+          # Test help command - should always work
+          ./txm help || ./txm --help
           
           # Test verbose mode
-          ./txm -v list || true
+          ./txm -v list || echo "No sessions in verbose mode"
           ./txm --verbose version
       
       - name: Cleanup test sessions
         if: always()
         run: |
           cd src
-          # Clean up any remaining test sessions
-          ./txm nuke || true
+          # Clean up any remaining test sessions - this may fail if no sessions exist
+          ./txm nuke || echo "No sessions to clean up"
       
       - name: Test installation script syntax
         run: |
