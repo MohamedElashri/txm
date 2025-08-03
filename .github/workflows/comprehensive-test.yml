@@ -94,6 +94,9 @@ jobs:
             echo "Testing tmux backend..."
             ./txm config set backend tmux
             
+            # Clean any existing sessions first
+            ./txm nuke || echo "No existing sessions to clean"
+            
             # Test session operations - these should succeed
             echo "Creating tmux session..."
             ./txm create test-session-tmux
@@ -115,6 +118,9 @@ jobs:
             
             echo "Cleaning up tmux session..."
             ./txm delete test-session-tmux
+            
+            # Final cleanup
+            ./txm nuke || echo "No sessions to clean up"
           else
             echo "tmux not available, skipping tmux tests"
           fi
@@ -126,6 +132,9 @@ jobs:
           if command -v zellij >/dev/null 2>&1; then
             echo "Testing zellij backend..."
             ./txm config set backend zellij
+            
+            # Clean any existing sessions first
+            ./txm nuke || echo "No existing sessions to clean"
             
             # Test session operations - these should succeed
             echo "Creating zellij session..."
@@ -141,25 +150,24 @@ jobs:
             if ./txm list-windows test-session-zellij; then
               echo "List tabs worked"
             else
-              echo "List tabs failed (may not be supported in zellij)"
+              echo "List tabs not supported in zellij (expected limitation)"
             fi
             
             echo "Splitting pane..."
-            if ./txm split-window test-session-zellij test-tab v; then
-              echo "Split pane worked"
-            else
-              echo "Split pane failed (may require active session in zellij)"
-            fi
+            ./txm split-window test-session-zellij test-tab v
             
             echo "Listing panes..."
             if ./txm list-panes test-session-zellij test-tab; then
               echo "List panes worked"
             else
-              echo "List panes failed (may not be supported in zellij)"
+              echo "List panes not supported in zellij (expected limitation)"
             fi
             
             echo "Cleaning up zellij session..."
             ./txm delete test-session-zellij
+            
+            # Final cleanup
+            ./txm nuke || echo "No sessions to clean up"
           else
             echo "zellij not available, skipping zellij tests"
           fi
@@ -171,6 +179,9 @@ jobs:
           if command -v screen >/dev/null 2>&1; then
             echo "Testing screen backend..."
             ./txm config set backend screen
+            
+            # Clean any existing sessions first
+            ./txm nuke || echo "No existing sessions to clean"
             
             # Test session operations - these should succeed
             echo "Creating screen session..."
@@ -187,6 +198,9 @@ jobs:
             
             echo "Cleaning up screen session..."
             ./txm delete test-session-screen
+            
+            # Final cleanup
+            ./txm nuke || echo "No sessions to clean up"
           else
             echo "screen not available, skipping screen tests"
           fi

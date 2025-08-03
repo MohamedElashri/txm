@@ -6,7 +6,6 @@ import (
 	"os/exec"
 	"regexp"
 	"strings"
-	"time"
 )
 
 // ZellijBackend contains zellij-specific path checks
@@ -42,6 +41,17 @@ func (sm *SessionManager) runZellijCommand(args ...string) error {
 	return cmd.Run()
 }
 
+// runZellijCommandWithSession executes a zellij command with session context
+func (sm *SessionManager) runZellijCommandWithSession(session string, args ...string) error {
+	fullArgs := append([]string{"-s", session}, args...)
+	cmd := exec.Command("zellij", fullArgs...)
+	preserveEnvironment(cmd)
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+	cmd.Stdin = os.Stdin
+	return cmd.Run()
+}
+
 // runZellijCommandOutput executes a zellij command and returns output
 func (sm *SessionManager) runZellijCommandOutput(args ...string) ([]byte, error) {
 	cmd := exec.Command("zellij", args...)
@@ -59,10 +69,8 @@ func (sm *SessionManager) createZellijSession(name string) error {
 		return fmt.Errorf("session with name \"%s\" already exists. Use attach command to connect to it or specify a different name", name)
 	}
 	
-	// Zellij doesn't have true detached sessions like tmux
-	// We'll start a session in the background and then detach immediately
-	// This is a workaround for zellij's interactive nature
-	cmd := exec.Command("timeout", "2", "zellij", "-s", name)
+	// Use zellij's proper background session creation
+	cmd := exec.Command("zellij", "attach", "--create-background", name)
 	preserveEnvironment(cmd)
 	
 	// Redirect outputs to prevent hanging
@@ -70,24 +78,17 @@ func (sm *SessionManager) createZellijSession(name string) error {
 	cmd.Stderr = nil
 	cmd.Stdin = nil
 	
-	// Start the session and let it timeout (which will leave it running)
 	err := cmd.Run()
-	
-	// For zellij, a timeout (exit code 124) is actually success in this case
-	// because it means the session was created and is running
-	if exitErr, ok := err.(*exec.ExitError); ok {
-		if exitErr.ExitCode() == 124 {
-			// Session was created successfully (timeout expected)
-			return nil
-		}
+	if err != nil {
+		return fmt.Errorf("failed to create zellij session: %v", err)
 	}
 	
-	// If no error or timeout, check if session was created
-	if err == nil || sm.zellijSessionExists(name) {
-		return nil
+	// Verify session was created
+	if !sm.zellijSessionExists(name) {
+		return fmt.Errorf("session creation appeared to succeed but session not found")
 	}
 	
-	return err
+	return nil
 }
 
 func (sm *SessionManager) listZellijSessions() error {
@@ -114,30 +115,29 @@ func (sm *SessionManager) killZellijSession(name string) error {
 }
 
 func (sm *SessionManager) zellijSessionExists(name string) bool {
-	// Try multiple times with small delays, as zellij sessions might take time to appear
-	for i := 0; i < 3; i++ {
-		output, err := sm.runZellijCommandOutput("list-sessions")
-		if err != nil {
-			return false
-		}
-		if strings.Contains(string(output), name) {
-			return true
-		}
-		// Wait a bit before retrying
-		if i < 2 {
-			time.Sleep(100 * time.Millisecond)
-		}
+	output, err := sm.runZellijCommandOutput("list-sessions")
+	if err != nil {
+		// If zellij list-sessions fails, assume no sessions exist
+		return false
 	}
-	return false
+	
+	// Simple string contains check for now - more precise later
+	return strings.Contains(string(output), name)
 }
 
 // Zellij window/tab management implementation
 
 func (sm *SessionManager) newZellijTab(session, name string) error {
-	// For zellij, we need to use actions within a session
-	// This is a simplified approach - in practice, zellij tab management
-	// works differently as it's more focused on panes and layouts
-	return sm.runZellijCommand("action", "new-tab")
+	// Check if session exists first
+	if !sm.zellijSessionExists(session) {
+		return fmt.Errorf("session '%s' does not exist", session)
+	}
+	
+	// For zellij, create a new tab with session context
+	if name != "" {
+		return sm.runZellijCommandWithSession(session, "action", "new-tab", "--name", name)
+	}
+	return sm.runZellijCommandWithSession(session, "action", "new-tab")
 }
 
 func (sm *SessionManager) listZellijTabs(session string) error {
@@ -147,15 +147,30 @@ func (sm *SessionManager) listZellijTabs(session string) error {
 }
 
 func (sm *SessionManager) killZellijTab(session, tab string) error {
-	return sm.runZellijCommand("action", "close-tab")
+	// Check if session exists first
+	if !sm.zellijSessionExists(session) {
+		return fmt.Errorf("session '%s' does not exist", session)
+	}
+	
+	return sm.runZellijCommandWithSession(session, "action", "close-tab")
 }
 
 func (sm *SessionManager) nextZellijTab(session string) error {
-	return sm.runZellijCommand("action", "go-to-next-tab")
+	// Check if session exists first
+	if !sm.zellijSessionExists(session) {
+		return fmt.Errorf("session '%s' does not exist", session)
+	}
+	
+	return sm.runZellijCommandWithSession(session, "action", "go-to-next-tab")
 }
 
 func (sm *SessionManager) previousZellijTab(session string) error {
-	return sm.runZellijCommand("action", "go-to-previous-tab")
+	// Check if session exists first
+	if !sm.zellijSessionExists(session) {
+		return fmt.Errorf("session '%s' does not exist", session)
+	}
+	
+	return sm.runZellijCommandWithSession(session, "action", "go-to-previous-tab")
 }
 
 func (sm *SessionManager) renameZellijTab(session, oldName, newName string) error {
@@ -167,10 +182,15 @@ func (sm *SessionManager) renameZellijTab(session, oldName, newName string) erro
 // Zellij pane management implementation
 
 func (sm *SessionManager) splitZellijPane(session, direction string) error {
+	// Check if session exists first
+	if !sm.zellijSessionExists(session) {
+		return fmt.Errorf("session '%s' does not exist", session)
+	}
+	
 	if direction == "v" {
-		return sm.runZellijCommand("action", "new-pane", "--direction", "down")
+		return sm.runZellijCommandWithSession(session, "action", "new-pane", "--direction", "down")
 	} else if direction == "h" {
-		return sm.runZellijCommand("action", "new-pane", "--direction", "right")
+		return sm.runZellijCommandWithSession(session, "action", "new-pane", "--direction", "right")
 	}
 	return fmt.Errorf("invalid split direction for zellij: %s", direction)
 }
@@ -181,10 +201,20 @@ func (sm *SessionManager) listZellijPanes(session string) error {
 }
 
 func (sm *SessionManager) killZellijPane(session, pane string) error {
-	return sm.runZellijCommand("action", "close-pane")
+	// Check if session exists first
+	if !sm.zellijSessionExists(session) {
+		return fmt.Errorf("session '%s' does not exist", session)
+	}
+	
+	return sm.runZellijCommandWithSession(session, "action", "close-pane")
 }
 
 func (sm *SessionManager) resizeZellijPane(session, direction string, size int) error {
+	// Check if session exists first
+	if !sm.zellijSessionExists(session) {
+		return fmt.Errorf("session '%s' does not exist", session)
+	}
+	
 	var dir string
 	switch direction {
 	case "U":
@@ -201,7 +231,7 @@ func (sm *SessionManager) resizeZellijPane(session, direction string, size int) 
 	
 	// Zellij resize commands
 	for i := 0; i < size; i++ {
-		if err := sm.runZellijCommand("action", "resize", dir); err != nil {
+		if err := sm.runZellijCommandWithSession(session, "action", "resize", dir); err != nil {
 			return err
 		}
 	}
@@ -209,8 +239,13 @@ func (sm *SessionManager) resizeZellijPane(session, direction string, size int) 
 }
 
 func (sm *SessionManager) sendKeysZellij(session, keys string) error {
+	// Check if session exists first
+	if !sm.zellijSessionExists(session) {
+		return fmt.Errorf("session '%s' does not exist", session)
+	}
+	
 	// Zellij can write text to the current pane
-	return sm.runZellijCommand("action", "write-chars", keys)
+	return sm.runZellijCommandWithSession(session, "action", "write-chars", keys)
 }
 
 func (sm *SessionManager) detachZellijSession() error {
@@ -221,12 +256,22 @@ func (sm *SessionManager) detachZellijSession() error {
 }
 
 func (sm *SessionManager) closeZellijPane(session string) error {
-	return sm.runZellijCommand("action", "close-pane")
+	// Check if session exists first
+	if !sm.zellijSessionExists(session) {
+		return fmt.Errorf("session '%s' does not exist", session)
+	}
+	
+	return sm.runZellijCommandWithSession(session, "action", "close-pane")
 }
 
 func (sm *SessionManager) sendKeysToZellijPane(session, keys string) error {
+	// Check if session exists first
+	if !sm.zellijSessionExists(session) {
+		return fmt.Errorf("session '%s' does not exist", session)
+	}
+	
 	// Zellij can write text to the current pane
-	return sm.runZellijCommand("action", "write-chars", keys)
+	return sm.runZellijCommandWithSession(session, "action", "write-chars", keys)
 }
 
 func (sm *SessionManager) nukeAllZellijSessions() error {
