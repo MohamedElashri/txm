@@ -171,8 +171,6 @@ jobs:
           else
             echo "screen not available, skipping screen tests"
           fi
-            echo "screen not available, skipping screen tests"
-          fi
       
       - name: Test environment variable override
         run: |
