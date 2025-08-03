@@ -1098,10 +1098,10 @@ Commands:
 │ move-window   │ [src_session_name] [window_name] [dst_session_name]│ Move a window to another session     │
 │ swap-window   │ [session_name] [window1_name] [window2_name] │ Swap two windows in a tmux session       │
 │ split-window  │ [session_name] [window_name] [direction]     │ Split a window in a tmux session         │
-│ list-panes    │ [session_name] [window_name]                │ List panes in a window (tmux only)           │
-│ kill-pane     │ [session_name] [window_name] [pane_number]   │ Kill a pane (tmux: by number, zellij: focused)│
-│ resize-pane   │ [session_name] [window_name] [pane_number] [direction] [size]│ Resize a pane (tmux: by number, zellij: focused)│
-│ send-keys     │ [session_name] [window_name] [pane_number] [keys]│ Send keys to a pane (tmux: by number, zellij: focused)│
+│ list-panes    │ [session_name] [window_name]                │ List panes (tmux: by number, zellij: layout info)│
+│ kill-pane     │ [session_name] [window_name] [pane_number]   │ Kill a pane (tmux: exact pane, zellij: navigates+kills)│
+│ resize-pane   │ [session_name] [window_name] [pane_number] [direction] [size]│ Resize a pane (tmux: exact pane, zellij: navigates+resizes)│
+│ send-keys     │ [session_name] [window_name] [pane_number] [keys]│ Send keys to a pane (tmux: exact pane, zellij: navigates+sends)│
 │ config        │ [set|get|show] [key] [value]                │ Manage configuration                      │
 │ update        │                                             │ Update txm to the latest version         │
 │ uninstall     │                                             │ Uninstall txm                           │

@@ -5,6 +5,7 @@ import (
 	"os"
 	"os/exec"
 	"regexp"
+	"strconv"
 	"strings"
 )
 
@@ -205,10 +206,69 @@ func (sm *SessionManager) zellijSplitWindow(session, window, direction string) e
 	return fmt.Errorf("invalid split direction for zellij: %s", direction)
 }
 
+// zellijFocusPane attempts to focus a specific pane by number
+// Zellij uses a focus-based model, so we navigate to the target pane before operations
+// 
+// IMPORTANT: Zellij vs tmux pane model differences:
+// - tmux: Supports explicit pane targeting (e.g., session:window.pane_id)
+// - zellij: Uses focus-based operations (commands work on currently focused pane)
+//
+// This function implements a best-effort approach to bridge the gap:
+// 1. Resets focus to top-left pane
+// 2. Cycles through panes using focus-next-pane to reach target pane number
+// 3. If target pane doesn't exist, ends up on the last available pane
+//
+// NOTE: This approach has limitations:
+// - Assumes panes are numbered sequentially starting from 1
+// - Pane layout changes can affect targeting accuracy
+// - May not work reliably with complex layouts
+func (sm *SessionManager) zellijFocusPane(session, window, pane string) error {
+	if !sm.zellijSessionExists(session) {
+		return fmt.Errorf("session '%s' does not exist", session)
+	}
+	
+	// If pane is empty or "0", we assume current pane
+	if pane == "" || pane == "0" {
+		return nil
+	}
+	
+	// Zellij doesn't have direct pane targeting by number like tmux
+	// We implement a best-effort approach by cycling through panes
+	// Note: This assumes panes are numbered sequentially starting from 1
+	
+	// First, focus the first pane (move to top-left)
+	sm.runZellijCommandWithSession(session, "action", "move-focus-or-tab", "left")
+	sm.runZellijCommandWithSession(session, "action", "move-focus-or-tab", "up")
+	
+	// Convert pane string to number
+	targetPane := 1
+	if p, err := strconv.Atoi(pane); err == nil && p > 0 {
+		targetPane = p
+	}
+	
+	// Navigate to target pane by cycling through focus-next-pane
+	// This is a best-effort approach - if there are fewer panes than target,
+	// we'll end up on the last available pane
+	for i := 1; i < targetPane; i++ {
+		if err := sm.runZellijCommandWithSession(session, "action", "focus-next-pane"); err != nil {
+			// If we can't navigate further, we've reached the last pane
+			break
+		}
+	}
+	
+	return nil
+}
+
 func (sm *SessionManager) zellijListPanes(session, window string) error {
+	// Check if session exists first
+	if !sm.zellijSessionExists(session) {
+		return fmt.Errorf("session '%s' does not exist", session)
+	}
+	
 	// Zellij doesn't provide direct pane listing like tmux
-	// Operations work on the currently focused pane
-	return fmt.Errorf("zellij does not support listing panes by number - operations work on the focused pane")
+	// We can show the session info which includes layout information
+	sm.logInfo("Listing panes for zellij session (focus-based operations)")
+	return sm.runZellijCommandWithSession(session, "action", "dump-screen", "/dev/stdout")
 }
 
 func (sm *SessionManager) zellijKillPane(session, window, pane string) error {
@@ -217,9 +277,13 @@ func (sm *SessionManager) zellijKillPane(session, window, pane string) error {
 		return fmt.Errorf("session '%s' does not exist", session)
 	}
 	
-	// Note: Zellij doesn't support targeting specific panes by number like tmux
-	// This operation will close the currently focused pane in the session
-	// The 'pane' parameter is ignored as zellij works on focused pane only
+	// First, try to focus the target pane
+	if err := sm.zellijFocusPane(session, window, pane); err != nil {
+		sm.logError(fmt.Sprintf("Failed to focus pane %s: %v", pane, err))
+	}
+	
+	// Now close the focused pane
+	sm.logInfo(fmt.Sprintf("Killing focused pane in zellij session '%s' (target pane: %s)", session, pane))
 	return sm.runZellijCommandWithSession(session, "action", "close-pane")
 }
 
@@ -229,9 +293,10 @@ func (sm *SessionManager) zellijResizePane(session, window, pane, direction stri
 		return fmt.Errorf("session '%s' does not exist", session)
 	}
 	
-	// Note: Zellij doesn't support targeting specific panes by number like tmux
-	// This operation will resize the currently focused pane in the session
-	// The 'pane' parameter is ignored as zellij works on focused pane only
+	// First, try to focus the target pane
+	if err := sm.zellijFocusPane(session, window, pane); err != nil {
+		sm.logError(fmt.Sprintf("Failed to focus pane %s: %v", pane, err))
+	}
 	
 	var dir string
 	switch direction {
@@ -247,7 +312,8 @@ func (sm *SessionManager) zellijResizePane(session, window, pane, direction stri
 		return fmt.Errorf("invalid resize direction for zellij: %s", direction)
 	}
 	
-	// Zellij resize commands - apply resize multiple times for the given size
+	// Resize the focused pane multiple times for the given size
+	sm.logInfo(fmt.Sprintf("Resizing focused pane in zellij session '%s' (target pane: %s, direction: %s, size: %d)", session, pane, direction, size))
 	for i := 0; i < size; i++ {
 		if err := sm.runZellijCommandWithSession(session, "action", "resize", dir); err != nil {
 			return err
@@ -262,9 +328,13 @@ func (sm *SessionManager) zellijSendKeys(session, window, pane, keys string) err
 		return fmt.Errorf("session '%s' does not exist", session)
 	}
 	
-	// Note: Zellij doesn't support targeting specific panes by number like tmux
-	// This operation will send keys to the currently focused pane in the session
-	// The 'pane' parameter is ignored as zellij works on focused pane only
+	// First, try to focus the target pane
+	if err := sm.zellijFocusPane(session, window, pane); err != nil {
+		sm.logError(fmt.Sprintf("Failed to focus pane %s: %v", pane, err))
+	}
+	
+	// Send keys to the focused pane
+	sm.logInfo(fmt.Sprintf("Sending keys to focused pane in zellij session '%s' (target pane: %s)", session, pane))
 	return sm.runZellijCommandWithSession(session, "action", "write-chars", keys)
 }
 

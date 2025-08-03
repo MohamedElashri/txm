@@ -36,11 +36,14 @@ txm resize-pane my-session window-name 1 R 10  # Resizes pane 1
 txm send-keys my-session window-name 0 "echo hello"  # Sends to pane 0
 ```
 
-**zellij**: Focus-based operations - works on the currently focused pane
+**zellij**: Focus-based operations with automatic pane navigation
 ```bash
-txm kill-pane my-session tab-name 0    # Kills focused pane (number ignored)
-txm resize-pane my-session tab-name 0 R 10  # Resizes focused pane
-txm send-keys my-session tab-name 0 "echo hello"  # Sends to focused pane
+# zellij attempts to navigate to the target pane number before operations
+txm kill-pane my-session tab-name 2    # Navigates to pane 2, then kills it
+txm resize-pane my-session tab-name 1 R 10  # Navigates to pane 1, then resizes
+txm send-keys my-session tab-name 3 "echo hello"  # Navigates to pane 3, then sends keys
+
+# Note: Navigation is best-effort - if pane doesn't exist, operates on last reachable pane
 ```
 
 **GNU Screen**: Limited pane support - basic splitting only
