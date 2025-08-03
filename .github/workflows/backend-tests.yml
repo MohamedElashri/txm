@@ -1,4 +1,4 @@
-name: Comprehensive Test Suite
+name: Backend Tests
 
 on:
   push:
@@ -6,7 +6,7 @@ on:
   workflow_dispatch:
 
 jobs:
-  comprehensive-test:
+  backend-tests:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
@@ -48,46 +48,7 @@ jobs:
           go build -o txm
           chmod +x txm
       
-      - name: Run unit tests
-        run: |
-          cd src
-          go test -v
-      
-      - name: Test basic functionality
-        run: |
-          cd src
-          # Test basic commands
-          ./txm version
-          # List command may fail if no sessions exist, but should not error
-          ./txm list || echo "No sessions found (expected)"
-      
-      - name: Test configuration system
-        run: |
-          cd src
-          # Test config commands
-          ./txm config show
-          
-          # Test setting backends
-          if command -v tmux >/dev/null 2>&1; then
-            ./txm config set backend tmux
-            echo "Backend set to tmux"
-          fi
-          
-          if command -v zellij >/dev/null 2>&1; then
-            ./txm config set backend zellij
-            echo "Backend set to zellij"
-          fi
-          
-          if command -v screen >/dev/null 2>&1; then
-            ./txm config set backend screen
-            echo "Backend set to screen"
-          fi
-          
-          # Show final config
-          ./txm config show
-      
       - name: Test tmux backend (if available)
-        if: success()
         run: |
           cd src
           if command -v tmux >/dev/null 2>&1; then
@@ -126,7 +87,6 @@ jobs:
           fi
       
       - name: Test zellij backend (if available)
-        if: success()
         run: |
           cd src
           if command -v zellij >/dev/null 2>&1; then
@@ -173,7 +133,6 @@ jobs:
           fi
       
       - name: Test screen backend (if available)
-        if: success()
         run: |
           cd src
           if command -v screen >/dev/null 2>&1; then
@@ -205,54 +164,6 @@ jobs:
             echo "screen not available, skipping screen tests"
           fi
       
-      - name: Test environment variable override
-        run: |
-          cd src
-          # Test environment variable override
-          if command -v tmux >/dev/null 2>&1; then
-            TXM_DEFAULT_BACKEND=tmux ./txm config show
-          fi
-          
-          if command -v zellij >/dev/null 2>&1; then
-            TXM_DEFAULT_BACKEND=zellij ./txm config show
-          fi
-          
-          if command -v screen >/dev/null 2>&1; then
-            TXM_DEFAULT_BACKEND=screen ./txm config show
-          fi
-      
-      - name: Test backend availability detection
-        run: |
-          cd src
-          echo "Testing backend availability detection..."
-          
-          # Test with invalid backend - this should fail
-          if ./txm config set backend invalid; then
-            echo "ERROR: Invalid backend was accepted (should have failed)"
-            exit 1
-          else
-            echo "Correctly rejected invalid backend"
-          fi
-          
-          # Test fallback behavior
-          ./txm config show
-      
-      - name: Test update command
-        run: |
-          cd src
-          # Test update command - should handle development installation properly
-          ./txm update
-      
-      - name: Test help and verbose modes
-        run: |
-          cd src
-          # Test help command - should always work
-          ./txm help || ./txm --help
-          
-          # Test verbose mode
-          ./txm -v list || echo "No sessions in verbose mode"
-          ./txm --verbose version
-      
       - name: Cleanup test sessions
         if: always()
         run: |
@@ -260,14 +171,8 @@ jobs:
           # Clean up any remaining test sessions - this may fail if no sessions exist
           ./txm nuke || echo "No sessions to clean up"
       
-      - name: Test installation script syntax
-        run: |
-          # Test that installation script is syntactically correct
-          bash -n utils/install.sh
-          bash -n utils/uninstall.sh
-      
       - name: Archive binary artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: txm-${{ matrix.os }}
+          name: txm-backend-${{ matrix.os }}
           path: src/txm
