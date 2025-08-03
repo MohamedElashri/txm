@@ -144,9 +144,42 @@ func (sm *SessionManager) zellijNewWindow(session, name string) error {
 }
 
 func (sm *SessionManager) zellijListWindows(session string) error {
-	// Zellij doesn't have a direct equivalent to list tabs/windows
-	// This would typically show the current layout/tab info
-	return fmt.Errorf("listing tabs not directly supported in zellij - use zellij session view")
+	// Check if session exists first
+	if !sm.zellijSessionExists(session) {
+		return fmt.Errorf("session '%s' does not exist", session)
+	}
+	
+	// Zellij can provide tab information using the dump-layout action
+	// This gives us information about the current layout including tabs
+	sm.logInfo(fmt.Sprintf("Getting layout information for zellij session '%s' (tabs/windows):", session))
+	
+	// Use dump-layout to get session structure information
+	err := sm.runZellijCommandWithSession(session, "action", "dump-layout")
+	if err != nil {
+		// Fallback: try to get session information from list-sessions
+		sm.logInfo("Dump layout not available, using session list:")
+		output, listErr := sm.runZellijCommandOutput("list-sessions")
+		if listErr != nil {
+			return fmt.Errorf("failed to get session information: %v", listErr)
+		}
+		
+		// Filter output to show only the specified session if possible
+		lines := strings.Split(string(output), "\n")
+		sessionFound := false
+		for _, line := range lines {
+			if strings.Contains(line, session) {
+				fmt.Println(line)
+				sessionFound = true
+			}
+		}
+		
+		if !sessionFound {
+			fmt.Printf("Session '%s' found but no detailed tab information available\n", session)
+		}
+		return nil
+	}
+	
+	return nil
 }
 
 func (sm *SessionManager) zellijKillWindow(session, tab string) error {
