@@ -55,9 +55,6 @@ jobs:
             echo "Testing tmux backend..."
             ./txm config set backend tmux
             
-            # Clean any existing sessions first
-            ./txm nuke || echo "No existing sessions to clean"
-            
             # Test session operations - these should succeed
             echo "Creating tmux session..."
             ./txm create test-session-tmux
@@ -79,9 +76,6 @@ jobs:
             
             echo "Cleaning up tmux session..."
             ./txm delete test-session-tmux
-            
-            # Final cleanup
-            ./txm nuke || echo "No sessions to clean up"
           else
             echo "tmux not available, skipping tmux tests"
           fi
@@ -92,9 +86,6 @@ jobs:
           if command -v zellij >/dev/null 2>&1; then
             echo "Testing zellij backend..."
             ./txm config set backend zellij
-            
-            # Clean any existing sessions first
-            ./txm nuke || echo "No existing sessions to clean"
             
             # Test session operations - these should succeed
             echo "Creating zellij session..."
@@ -125,9 +116,6 @@ jobs:
             
             echo "Cleaning up zellij session..."
             ./txm delete test-session-zellij
-            
-            # Final cleanup
-            ./txm nuke || echo "No sessions to clean up"
           else
             echo "zellij not available, skipping zellij tests"
           fi
@@ -138,9 +126,6 @@ jobs:
           if command -v screen >/dev/null 2>&1; then
             echo "Testing screen backend..."
             ./txm config set backend screen
-            
-            # Clean any existing sessions first
-            ./txm nuke || echo "No existing sessions to clean"
             
             # Test session operations - these should succeed
             echo "Creating screen session..."
@@ -157,9 +142,6 @@ jobs:
             
             echo "Cleaning up screen session..."
             ./txm delete test-session-screen
-            
-            # Final cleanup
-            ./txm nuke || echo "No sessions to clean up"
           else
             echo "screen not available, skipping screen tests"
           fi
@@ -168,8 +150,8 @@ jobs:
         if: always()
         run: |
           cd src
-          # Clean up any remaining test sessions - this may fail if no sessions exist
-          ./txm nuke || echo "No sessions to clean up"
+          # Clean up any remaining test sessions
+          ./txm nuke
       
       - name: Archive binary artifacts
         uses: actions/upload-artifact@v4
