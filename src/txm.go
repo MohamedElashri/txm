@@ -223,7 +223,7 @@ func (sm *SessionManager) newWindow(session, name string) {
 func (sm *SessionManager) listWindows(session string) {
 	switch sm.currentBackend {
 	case BackendTmux:
-		if err := sm.runTmuxCommand("list-windows", "-t", session); err != nil {
+		if err := sm.tmuxListWindows(session); err != nil {
 			sm.logError(fmt.Sprintf("Failed to list windows in tmux session '%s'", session))
 		}
 		return
@@ -245,7 +245,7 @@ func (sm *SessionManager) listWindows(session string) {
 func (sm *SessionManager) killWindow(session, window string) {
 	switch sm.currentBackend {
 	case BackendTmux:
-		if err := sm.runTmuxCommand("kill-window", "-t", fmt.Sprintf("%s:%s", session, window)); err != nil {
+		if err := sm.tmuxKillWindow(session, window); err != nil {
 			sm.logError(fmt.Sprintf("Failed to kill window '%s' in tmux session '%s'", window, session))
 			return
 		}
@@ -273,7 +273,7 @@ func (sm *SessionManager) killWindow(session, window string) {
 func (sm *SessionManager) nextWindow(session string) {
 	switch sm.currentBackend {
 	case BackendTmux:
-		if err := sm.runTmuxCommand("next-window", "-t", session); err != nil {
+		if err := sm.tmuxNextWindow(session); err != nil {
 			sm.logError(fmt.Sprintf("Failed to switch to next window in tmux session '%s'", session))
 			return
 		}
@@ -283,7 +283,7 @@ func (sm *SessionManager) nextWindow(session string) {
 			return
 		}
 	case BackendScreen:
-		if err := sm.runScreenCommand("-S", session, "-X", "next"); err != nil {
+		if err := sm.screenNextWindow(session); err != nil {
 			sm.logError(fmt.Sprintf("Failed to switch to next window in screen session '%s'", session))
 			return
 		}
@@ -297,7 +297,7 @@ func (sm *SessionManager) nextWindow(session string) {
 func (sm *SessionManager) previousWindow(session string) {
 	switch sm.currentBackend {
 	case BackendTmux:
-		if err := sm.runTmuxCommand("previous-window", "-t", session); err != nil {
+		if err := sm.tmuxPreviousWindow(session); err != nil {
 			sm.logError(fmt.Sprintf("Failed to switch to previous window in tmux session '%s'", session))
 			return
 		}
@@ -307,7 +307,7 @@ func (sm *SessionManager) previousWindow(session string) {
 			return
 		}
 	case BackendScreen:
-		if err := sm.runScreenCommand("-S", session, "-X", "prev"); err != nil {
+		if err := sm.screenPreviousWindow(session); err != nil {
 			sm.logError(fmt.Sprintf("Failed to switch to previous window in screen session '%s'", session))
 			return
 		}
@@ -326,7 +326,7 @@ func (sm *SessionManager) attachSession(name string) {
 
 	switch sm.currentBackend {
 	case BackendTmux:
-		if err := sm.runTmuxCommand("attach-session", "-t", name); err != nil {
+		if err := sm.tmuxAttachSession(name); err != nil {
 			sm.logError(fmt.Sprintf("Failed to attach to tmux session '%s'", name))
 			return
 		}
@@ -338,7 +338,7 @@ func (sm *SessionManager) attachSession(name string) {
 		}
 		return
 	case BackendScreen:
-		if err := sm.runScreenCommand("-r", name); err != nil {
+		if err := sm.screenAttachSession(name); err != nil {
 			sm.logError(fmt.Sprintf("Failed to attach to screen session '%s'", name))
 			return
 		}
@@ -351,7 +351,7 @@ func (sm *SessionManager) attachSession(name string) {
 func (sm *SessionManager) detachSession() {
 	switch sm.currentBackend {
 	case BackendTmux:
-		if err := sm.runTmuxCommand("detach-client"); err != nil {
+		if err := sm.tmuxDetachSession(); err != nil {
 			sm.logError("Failed to detach from tmux session")
 			return
 		}
@@ -365,7 +365,7 @@ func (sm *SessionManager) detachSession() {
 		sm.logInfo("Detached from zellij session")
 		return
 	case BackendScreen:
-		if err := sm.runScreenCommand("-d"); err != nil {
+		if err := sm.screenDetachSession(); err != nil {
 			sm.logError("Failed to detach from screen session")
 			return
 		}
@@ -383,7 +383,7 @@ func (sm *SessionManager) killSession(name string) {
 			sm.logError(fmt.Sprintf("Session '%s' does not exist", name))
 			return
 		}
-		if err := sm.runTmuxCommand("kill-session", "-t", name); err != nil {
+		if err := sm.tmuxKillSession(name); err != nil {
 			sm.logError(fmt.Sprintf("Failed to kill tmux session '%s'", name))
 			return
 		}
@@ -401,42 +401,11 @@ func (sm *SessionManager) killSession(name string) {
 		sm.logInfo(fmt.Sprintf("Killed zellij session '%s'", name))
 		return
 	case BackendScreen:
-		// For screen, handle multiple sessions with the same name by killing all matching ones
-		cmd := exec.Command("screen", "-ls")
-		output, err := cmd.Output()
-		if err != nil {
-			sm.logError(fmt.Sprintf("Session '%s' does not exist", name))
+		if err := sm.screenKillSession(name); err != nil {
+			sm.logError(fmt.Sprintf("Failed to kill screen session '%s'", name))
 			return
 		}
-		
-		outputStr := string(output)
-		lines := strings.Split(outputStr, "\n")
-		killCount := 0
-		
-		for _, line := range lines {
-			line = strings.TrimSpace(line)
-			if strings.Contains(line, "(") && strings.Contains(line, ")") {
-				parts := strings.Fields(line)
-				if len(parts) > 0 {
-					sessionPart := parts[0]
-					if strings.Contains(sessionPart, ".") {
-						sessionName := strings.SplitN(sessionPart, ".", 2)[1]
-						if sessionName == name {
-							// Use the full session ID (pid.name) to avoid ambiguity
-							if err := sm.runScreenCommand("-X", "-S", sessionPart, "quit"); err == nil {
-								killCount++
-							}
-						}
-					}
-				}
-			}
-		}
-		
-		if killCount > 0 {
-			sm.logInfo(fmt.Sprintf("Killed %d screen session(s) named '%s'", killCount, name))
-		} else {
-			sm.logError(fmt.Sprintf("Session '%s' does not exist", name))
-		}
+		sm.logInfo(fmt.Sprintf("Killed screen session '%s'", name))
 		return
 	default:
 		sm.logError("No available backend to kill session")
@@ -451,7 +420,7 @@ func (sm *SessionManager) renameSession(oldName, newName string) {
 
 	switch sm.currentBackend {
 	case BackendTmux:
-		if err := sm.runTmuxCommand("rename-session", "-t", oldName, newName); err != nil {
+		if err := sm.tmuxRenameSession(oldName, newName); err != nil {
 			sm.logError(fmt.Sprintf("Failed to rename tmux session from '%s' to '%s'", oldName, newName))
 			return
 		}
@@ -476,8 +445,7 @@ func (sm *SessionManager) renameWindow(session, oldName, newName string) {
 
 	switch sm.currentBackend {
 	case BackendTmux:
-		windowTarget := fmt.Sprintf("%s:%s", session, oldName)
-		if err := sm.runTmuxCommand("rename-window", "-t", windowTarget, newName); err != nil {
+		if err := sm.tmuxRenameWindow(session, oldName, newName); err != nil {
 			sm.logError(fmt.Sprintf("Failed to rename window from '%s' to '%s' in tmux session '%s'", oldName, newName, session))
 			return
 		}
@@ -491,7 +459,7 @@ func (sm *SessionManager) renameWindow(session, oldName, newName string) {
 		sm.logInfo(fmt.Sprintf("Renamed tab from '%s' to '%s' in zellij session '%s'", oldName, newName, session))
 		return
 	case BackendScreen:
-		if err := sm.runScreenCommand("-S", session, "-X", "title", newName); err != nil {
+		if err := sm.screenRenameWindow(session, oldName, newName); err != nil {
 			sm.logError(fmt.Sprintf("Failed to rename window in screen session '%s'", session))
 			return
 		}
@@ -509,8 +477,7 @@ func (sm *SessionManager) moveWindow(srcSession, windowName, dstSession string) 
 
 	switch sm.currentBackend {
 	case BackendTmux:
-		windowTarget := fmt.Sprintf("%s:%s", srcSession, windowName)
-		if err := sm.runTmuxCommand("move-window", "-s", windowTarget, "-t", dstSession); err != nil {
+		if err := sm.tmuxMoveWindow(srcSession, windowName, dstSession); err != nil {
 			sm.logError(fmt.Sprintf("Failed to move window '%s' from session '%s' to session '%s'", windowName, srcSession, dstSession))
 			return
 		}
@@ -534,9 +501,7 @@ func (sm *SessionManager) swapWindow(session, windowName1, windowName2 string) {
 
 	switch sm.currentBackend {
 	case BackendTmux:
-		windowTarget1 := fmt.Sprintf("%s:%s", session, windowName1)
-		windowTarget2 := fmt.Sprintf("%s:%s", session, windowName2)
-		if err := sm.runTmuxCommand("swap-window", "-s", windowTarget1, "-t", windowTarget2); err != nil {
+		if err := sm.tmuxSwapWindow(session, windowName1, windowName2); err != nil {
 			sm.logError(fmt.Sprintf("Failed to swap windows '%s' and '%s' in tmux session '%s'", windowName1, windowName2, session))
 			return
 		}
@@ -560,13 +525,7 @@ func (sm *SessionManager) splitWindow(session, window, direction string) {
 
 	switch sm.currentBackend {
 	case BackendTmux:
-		windowTarget := fmt.Sprintf("%s:%s", session, window)
-		splitFlag := "-v" // vertical split (one pane above another)
-		if direction == "h" {
-			splitFlag = "-h" // horizontal split (panes side by side)
-		}
-
-		if err := sm.runTmuxCommand("split-window", splitFlag, "-t", windowTarget); err != nil {
+		if err := sm.tmuxSplitWindow(session, window, direction); err != nil {
 			sm.logError(fmt.Sprintf("Failed to split window '%s' in tmux session '%s'", window, session))
 			return
 		}
@@ -589,7 +548,7 @@ func (sm *SessionManager) splitWindow(session, window, direction string) {
 		return
 	case BackendScreen:
 		if direction == "v" {
-			if err := sm.runScreenCommand("-S", session, "-X", "split"); err != nil {
+			if err := sm.screenSplitWindow(session, window, direction); err != nil {
 				sm.logError(fmt.Sprintf("Failed to split window in screen session '%s'", session))
 				return
 			}
@@ -610,8 +569,7 @@ func (sm *SessionManager) listPanes(session, window string) {
 
 	switch sm.currentBackend {
 	case BackendTmux:
-		windowTarget := fmt.Sprintf("%s:%s", session, window)
-		if err := sm.runTmuxCommand("list-panes", "-t", windowTarget); err != nil {
+		if err := sm.tmuxListPanes(session, window); err != nil {
 			sm.logError(fmt.Sprintf("Failed to list panes in window '%s' of tmux session '%s'", window, session))
 			return
 		}
@@ -637,8 +595,7 @@ func (sm *SessionManager) killPane(session, window, pane string) {
 
 	switch sm.currentBackend {
 	case BackendTmux:
-		paneTarget := fmt.Sprintf("%s:%s.%s", session, window, pane)
-		if err := sm.runTmuxCommand("kill-pane", "-t", paneTarget); err != nil {
+		if err := sm.tmuxKillPane(session, window, pane); err != nil {
 			sm.logError(fmt.Sprintf("Failed to kill pane '%s' in window '%s' of tmux session '%s'", pane, window, session))
 			return
 		}
@@ -666,17 +623,7 @@ func (sm *SessionManager) resizePane(session, window, pane, direction string, si
 
 	switch sm.currentBackend {
 	case BackendTmux:
-		paneTarget := fmt.Sprintf("%s:%s.%s", session, window, pane)
-		resizeFlag := "-U" // up
-		if direction == "D" {
-			resizeFlag = "-D" // down
-		} else if direction == "L" {
-			resizeFlag = "-L" // left
-		} else if direction == "R" {
-			resizeFlag = "-R" // right
-		}
-
-		if err := sm.runTmuxCommand("resize-pane", resizeFlag, fmt.Sprintf("%d", size), "-t", paneTarget); err != nil {
+		if err := sm.tmuxResizePane(session, window, pane, direction, size); err != nil {
 			sm.logError(fmt.Sprintf("Failed to resize pane '%s' in window '%s' of tmux session '%s'", pane, window, session))
 			return
 		}
@@ -704,8 +651,7 @@ func (sm *SessionManager) sendKeys(session, window, pane, keys string) {
 
 	switch sm.currentBackend {
 	case BackendTmux:
-		paneTarget := fmt.Sprintf("%s:%s.%s", session, window, pane)
-		if err := sm.runTmuxCommand("send-keys", "-t", paneTarget, keys); err != nil {
+		if err := sm.tmuxSendKeys(session, window, pane, keys); err != nil {
 			sm.logError(fmt.Sprintf("Failed to send keys to pane '%s' in window '%s' of tmux session '%s'", pane, window, session))
 			return
 		}
@@ -728,7 +674,7 @@ func (sm *SessionManager) sendKeys(session, window, pane, keys string) {
 func (sm *SessionManager) nukeAllSessions() {
 	switch sm.currentBackend {
 	case BackendTmux:
-		if err := sm.runTmuxCommand("kill-server"); err != nil {
+		if err := sm.tmuxNukeAllSessions(); err != nil {
 			sm.logError("Failed to kill all tmux sessions")
 			return
 		}
@@ -742,37 +688,11 @@ func (sm *SessionManager) nukeAllSessions() {
 		sm.logInfo("Killed all zellij sessions")
 		return
 	case BackendScreen:
-		// For screen, we need to parse the output of screen -ls and kill each session
-		cmd := exec.Command("screen", "-ls")
-		output, err := cmd.Output()
-		if err != nil {
-			sm.logError("No screen sessions found")
+		if err := sm.screenNukeAllSessions(); err != nil {
+			sm.logError("Failed to kill all screen sessions")
 			return
 		}
-
-		// Parse the output to find session names
-		outputStr := string(output)
-		lines := strings.Split(outputStr, "\n")
-		killCount := 0
-
-		for _, line := range lines {
-			line = strings.TrimSpace(line)
-			if strings.Contains(line, "(") && strings.Contains(line, ")") {
-				parts := strings.Fields(line)
-				if len(parts) > 0 {
-					sessionName := strings.Split(parts[0], ".")[0]
-					if err := sm.runScreenCommand("-X", "-S", sessionName, "quit"); err == nil {
-						killCount++
-					}
-				}
-			}
-		}
-
-		if killCount > 0 {
-			sm.logInfo(fmt.Sprintf("Killed %d screen sessions", killCount))
-		} else {
-			sm.logWarning("No screen sessions were killed")
-		}
+		sm.logInfo("Killed all screen sessions")
 		return
 	default:
 		sm.logError("No available backend to nuke sessions")
