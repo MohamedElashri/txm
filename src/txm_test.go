@@ -75,7 +75,7 @@ func TestNewDefaultConfig(t *testing.T) {
 		t.Errorf("NewDefaultConfig().DefaultBackend = %v, want %v", config.DefaultBackend, BackendTmux)
 	}
 	
-	expectedOrder := []Backend{BackendTmux, BackendZellij, BackendScreen}
+	expectedOrder := []Backend{BackendTmux, BackendScreen, BackendZellij}
 	if len(config.BackendOrder) != len(expectedOrder) {
 		t.Errorf("NewDefaultConfig().BackendOrder length = %d, want %d", len(config.BackendOrder), len(expectedOrder))
 	}
@@ -225,7 +225,7 @@ func TestBackendSelection(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			config := &Config{
 				DefaultBackend: tt.configBackend,
-				BackendOrder:   []Backend{BackendTmux, BackendZellij, BackendScreen},
+				BackendOrder:   []Backend{BackendTmux, BackendScreen, BackendZellij},
 			}
 			
 			sm := &SessionManager{

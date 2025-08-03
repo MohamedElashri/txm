@@ -54,7 +54,7 @@ type Config struct {
 func NewDefaultConfig() *Config {
 	return &Config{
 		DefaultBackend: BackendTmux,
-		BackendOrder:   []Backend{BackendTmux, BackendZellij, BackendScreen},
+		BackendOrder:   []Backend{BackendTmux, BackendScreen, BackendZellij},
 	}
 }
 
