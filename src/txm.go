@@ -240,7 +240,33 @@ func (sm *SessionManager) sessionExists(name string) bool {
 		if err != nil {
 			return false
 		}
-		return strings.Contains(string(output), name)
+		
+		outputStr := string(output)
+		// Check if the output contains "several suitable screens" which indicates multiple sessions
+		if strings.Contains(outputStr, "several suitable screens") || strings.Contains(outputStr, "Use -S to specify") {
+			// When multiple sessions exist with the same name, we can't reliably operate on them
+			// Return false to trigger proper cleanup
+			return false
+		}
+		
+		// Look for exact session name matches in the format: pid.name (status)
+		lines := strings.Split(outputStr, "\n")
+		for _, line := range lines {
+			line = strings.TrimSpace(line)
+			if strings.Contains(line, "(") && strings.Contains(line, ")") {
+				parts := strings.Fields(line)
+				if len(parts) > 0 {
+					sessionPart := parts[0]
+					if strings.Contains(sessionPart, ".") {
+						sessionName := strings.SplitN(sessionPart, ".", 2)[1]
+						if sessionName == name {
+							return true
+						}
+					}
+				}
+			}
+		}
+		return false
 	default:
 		return false
 	}
@@ -503,13 +529,12 @@ func (sm *SessionManager) detachSession() {
 }
 
 func (sm *SessionManager) killSession(name string) {
-	if !sm.sessionExists(name) {
-		sm.logError(fmt.Sprintf("Session '%s' does not exist", name))
-		return
-	}
-
 	switch sm.currentBackend {
 	case BackendTmux:
+		if !sm.sessionExists(name) {
+			sm.logError(fmt.Sprintf("Session '%s' does not exist", name))
+			return
+		}
 		if err := sm.runTmuxCommand("kill-session", "-t", name); err != nil {
 			sm.logError(fmt.Sprintf("Failed to kill tmux session '%s'", name))
 			return
@@ -517,6 +542,10 @@ func (sm *SessionManager) killSession(name string) {
 		sm.logInfo(fmt.Sprintf("Killed tmux session '%s'", name))
 		return
 	case BackendZellij:
+		if !sm.sessionExists(name) {
+			sm.logError(fmt.Sprintf("Session '%s' does not exist", name))
+			return
+		}
 		if err := sm.killZellijSession(name); err != nil {
 			sm.logError(fmt.Sprintf("Failed to kill zellij session '%s'", name))
 			return
@@ -524,11 +553,42 @@ func (sm *SessionManager) killSession(name string) {
 		sm.logInfo(fmt.Sprintf("Killed zellij session '%s'", name))
 		return
 	case BackendScreen:
-		if err := sm.runScreenCommand("-X", "-S", name, "quit"); err != nil {
-			sm.logError(fmt.Sprintf("Failed to kill screen session '%s'", name))
+		// For screen, handle multiple sessions with the same name by killing all matching ones
+		cmd := exec.Command("screen", "-ls")
+		output, err := cmd.Output()
+		if err != nil {
+			sm.logError(fmt.Sprintf("Session '%s' does not exist", name))
 			return
 		}
-		sm.logInfo(fmt.Sprintf("Killed screen session '%s'", name))
+		
+		outputStr := string(output)
+		lines := strings.Split(outputStr, "\n")
+		killCount := 0
+		
+		for _, line := range lines {
+			line = strings.TrimSpace(line)
+			if strings.Contains(line, "(") && strings.Contains(line, ")") {
+				parts := strings.Fields(line)
+				if len(parts) > 0 {
+					sessionPart := parts[0]
+					if strings.Contains(sessionPart, ".") {
+						sessionName := strings.SplitN(sessionPart, ".", 2)[1]
+						if sessionName == name {
+							// Use the full session ID (pid.name) to avoid ambiguity
+							if err := sm.runScreenCommand("-X", "-S", sessionPart, "quit"); err == nil {
+								killCount++
+							}
+						}
+					}
+				}
+			}
+		}
+		
+		if killCount > 0 {
+			sm.logInfo(fmt.Sprintf("Killed %d screen session(s) named '%s'", killCount, name))
+		} else {
+			sm.logError(fmt.Sprintf("Session '%s' does not exist", name))
+		}
 		return
 	default:
 		sm.logError("No available backend to kill session")

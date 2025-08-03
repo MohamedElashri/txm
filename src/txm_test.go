@@ -21,6 +21,7 @@ func TestSessionManager(t *testing.T) {
 		{
 			name: "New Session Manager Initialization",
 			setup: func(t *testing.T) *SessionManager {
+				cleanupTestSessions(t)
 				return NewSessionManager(true)
 			},
 			test: func(t *testing.T, sm *SessionManager) {
@@ -31,11 +32,14 @@ func TestSessionManager(t *testing.T) {
 					t.Error("SessionManager should be verbose")
 				}
 			},
-			teardown: func(t *testing.T, sm *SessionManager) {},
+			teardown: func(t *testing.T, sm *SessionManager) {
+				cleanupTestSessions(t)
+			},
 		},
 		{
 			name: "Session Creation and Deletion",
 			setup: func(t *testing.T) *SessionManager {
+				cleanupTestSessions(t)
 				return NewSessionManager(true)
 			},
 			test: func(t *testing.T, sm *SessionManager) {
@@ -58,15 +62,13 @@ func TestSessionManager(t *testing.T) {
 				}
 			},
 			teardown: func(t *testing.T, sm *SessionManager) {
-				// Clean up any remaining test sessions
-				if sm.sessionExists("test-session") {
-					sm.killSession("test-session")
-				}
+				cleanupTestSessions(t)
 			},
 		},
 		{
 			name: "Window Management",
 			setup: func(t *testing.T) *SessionManager {
+				cleanupTestSessions(t)
 				sm := NewSessionManager(true)
 				sm.createSession("test-session")
 				return sm
@@ -86,12 +88,13 @@ func TestSessionManager(t *testing.T) {
 				sm.killWindow(session, window)
 			},
 			teardown: func(t *testing.T, sm *SessionManager) {
-				sm.killSession("test-session")
+				cleanupTestSessions(t)
 			},
 		},
 		{
 			name: "Session Attach/Detach",
 			setup: func(t *testing.T) *SessionManager {
+				cleanupTestSessions(t)
 				sm := NewSessionManager(true)
 				sm.createSession("test-session")
 				return sm
@@ -99,14 +102,14 @@ func TestSessionManager(t *testing.T) {
 			test: func(t *testing.T, sm *SessionManager) {
 				session := "test-session"
 				
-				// Test attach
+				// Test attach - this will fail in CI due to no TTY, but should not crash
 				sm.attachSession(session)
 				
-				// Test detach
+				// Test detach - this will fail in CI due to no active session, but should not crash
 				sm.detachSession()
 			},
 			teardown: func(t *testing.T, sm *SessionManager) {
-				sm.killSession("test-session")
+				cleanupTestSessions(t)
 			},
 		},
 	}
@@ -120,16 +123,70 @@ func TestSessionManager(t *testing.T) {
 	}
 }
 
+// cleanupTestSessions removes any leftover test sessions to prevent interference
+func cleanupTestSessions(t *testing.T) {
+	// Create a temporary session manager to clean up
+	sm := NewSessionManager(false) // Non-verbose to reduce noise
+	
+	// Kill any existing test sessions
+	testSessionNames := []string{"test-session", "test-session-tmux", "test-session-zellij", "test-session-screen"}
+	
+	for _, sessionName := range testSessionNames {
+		if sm.sessionExists(sessionName) {
+			sm.killSession(sessionName)
+		}
+	}
+	
+	// For screen backend, do a more thorough cleanup since it can have multiple sessions with same name
+	if sm.currentBackend == BackendScreen {
+		cmd := exec.Command("screen", "-ls")
+		output, err := cmd.Output()
+		if err == nil {
+			outputStr := string(output)
+			lines := strings.Split(outputStr, "\n")
+			
+			for _, line := range lines {
+				line = strings.TrimSpace(line)
+				if strings.Contains(line, "(") && strings.Contains(line, ")") {
+					parts := strings.Fields(line)
+					if len(parts) > 0 {
+						sessionPart := parts[0]
+						if strings.Contains(sessionPart, ".") {
+							sessionName := strings.SplitN(sessionPart, ".", 2)[1]
+							// Kill any test-related sessions
+							for _, testName := range testSessionNames {
+								if sessionName == testName {
+									exec.Command("screen", "-X", "-S", sessionPart, "quit").Run()
+									break
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+}
+
 // TestCommandExecution tests the command execution functionality
 func TestCommandExecution(t *testing.T) {
+	cleanupTestSessions(t)
 	sm := NewSessionManager(true)
+
+	// Skip this test if tmux is not available
+	if !sm.tmuxAvailable {
+		t.Skip("Tmux not available, skipping command execution tests")
+		return
+	}
 
 	// Set backend to tmux for this test
 	sm.currentBackend = BackendTmux
 
 	// Create a test session first to ensure tmux server is running
 	sm.createSession("test-session")
-	defer sm.killSession("test-session")
+	defer func() {
+		cleanupTestSessions(t)
+	}()
 
 	tests := []struct {
 		name    string
