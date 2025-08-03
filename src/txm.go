@@ -395,7 +395,6 @@ func (sm *SessionManager) killWindow(session, window string) {
 		sm.logError("No available backend to kill window")
 	}
 }
-}
 
 func (sm *SessionManager) nextWindow(session string) {
 	switch sm.currentBackend {
@@ -542,16 +541,23 @@ func (sm *SessionManager) renameSession(oldName, newName string) {
 		return
 	}
 
-	if sm.tmuxAvailable {
+	switch sm.currentBackend {
+	case BackendTmux:
 		if err := sm.runTmuxCommand("rename-session", "-t", oldName, newName); err != nil {
 			sm.logError(fmt.Sprintf("Failed to rename tmux session from '%s' to '%s'", oldName, newName))
 			return
 		}
 		sm.logInfo(fmt.Sprintf("Renamed tmux session from '%s' to '%s'", oldName, newName))
 		return
+	case BackendZellij:
+		sm.logError("Session renaming is not supported in zellij")
+		return
+	case BackendScreen:
+		sm.logError("Session renaming is not supported in GNU Screen")
+		return
+	default:
+		sm.logError("No available backend to rename session")
 	}
-
-	sm.logError("Session renaming is not supported in GNU Screen")
 }
 
 func (sm *SessionManager) renameWindow(session, oldName, newName string) {
@@ -1120,7 +1126,10 @@ func getArg(index int, defaultValue string) string {
 func setConfigValue(sm *SessionManager, key, value string) error {
 	switch strings.ToLower(key) {
 	case "backend":
-		backend := ParseBackend(value)
+		backend, err := ParseBackend(value)
+		if err != nil {
+			return err
+		}
 		if !sm.isBackendAvailable(backend) {
 			return fmt.Errorf("backend '%s' is not available on this system", value)
 		}

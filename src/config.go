@@ -31,16 +31,16 @@ func (b Backend) String() string {
 }
 
 // ParseBackend parses a string into a Backend type
-func ParseBackend(s string) Backend {
+func ParseBackend(s string) (Backend, error) {
 	switch strings.ToLower(s) {
 	case "tmux":
-		return BackendTmux
+		return BackendTmux, nil
 	case "zellij":
-		return BackendZellij
+		return BackendZellij, nil
 	case "screen":
-		return BackendScreen
+		return BackendScreen, nil
 	default:
-		return BackendTmux // Default to tmux
+		return BackendTmux, fmt.Errorf("invalid backend: %s", s)
 	}
 }
 
@@ -76,7 +76,10 @@ func LoadConfig() (*Config, error) {
 
 	// Check environment variable last (highest priority)
 	if envBackend := os.Getenv("TXM_DEFAULT_BACKEND"); envBackend != "" {
-		config.DefaultBackend = ParseBackend(envBackend)
+		if backend, err := ParseBackend(envBackend); err == nil {
+			config.DefaultBackend = backend
+		}
+		// If invalid, silently ignore and use existing config/default
 	}
 
 	return config, nil
@@ -128,7 +131,10 @@ func loadConfigFile(config *Config, filePath string) error {
 
 				switch strings.ToLower(key) {
 				case "default_backend", "backend":
-					config.DefaultBackend = ParseBackend(value)
+					if backend, err := ParseBackend(value); err == nil {
+						config.DefaultBackend = backend
+					}
+					// If invalid, silently ignore and use default
 				}
 			}
 		}

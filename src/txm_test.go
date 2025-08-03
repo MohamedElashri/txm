@@ -302,17 +302,17 @@ func TestConfigFunctionality(t *testing.T) {
 	}
 	
 	// Test backend parsing
-	if ParseBackend("tmux") != BackendTmux {
+	if backend, err := ParseBackend("tmux"); err != nil || backend != BackendTmux {
 		t.Error("Failed to parse tmux backend")
 	}
-	if ParseBackend("zellij") != BackendZellij {
+	if backend, err := ParseBackend("zellij"); err != nil || backend != BackendZellij {
 		t.Error("Failed to parse zellij backend")
 	}
-	if ParseBackend("screen") != BackendScreen {
+	if backend, err := ParseBackend("screen"); err != nil || backend != BackendScreen {
 		t.Error("Failed to parse screen backend")
 	}
-	if ParseBackend("invalid") != BackendTmux {
-		t.Error("Invalid backend should default to tmux")
+	if _, err := ParseBackend("invalid"); err == nil {
+		t.Error("Invalid backend should return an error")
 	}
 	
 	// Test backend string representation
