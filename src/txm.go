@@ -566,7 +566,8 @@ func (sm *SessionManager) renameWindow(session, oldName, newName string) {
 		return
 	}
 
-	if sm.tmuxAvailable {
+	switch sm.currentBackend {
+	case BackendTmux:
 		windowTarget := fmt.Sprintf("%s:%s", session, oldName)
 		if err := sm.runTmuxCommand("rename-window", "-t", windowTarget, newName); err != nil {
 			sm.logError(fmt.Sprintf("Failed to rename window from '%s' to '%s' in tmux session '%s'", oldName, newName, session))
@@ -574,13 +575,22 @@ func (sm *SessionManager) renameWindow(session, oldName, newName string) {
 		}
 		sm.logInfo(fmt.Sprintf("Renamed window from '%s' to '%s' in tmux session '%s'", oldName, newName, session))
 		return
-	}
-
-	if err := sm.runScreenCommand("-S", session, "-X", "title", newName); err != nil {
-		sm.logError(fmt.Sprintf("Failed to rename window in screen session '%s'", session))
+	case BackendZellij:
+		if err := sm.renameZellijTab(session, oldName, newName); err != nil {
+			sm.logError(fmt.Sprintf("Failed to rename tab in zellij session '%s': %v", session, err))
+			return
+		}
+		sm.logInfo(fmt.Sprintf("Renamed tab from '%s' to '%s' in zellij session '%s'", oldName, newName, session))
 		return
+	case BackendScreen:
+		if err := sm.runScreenCommand("-S", session, "-X", "title", newName); err != nil {
+			sm.logError(fmt.Sprintf("Failed to rename window in screen session '%s'", session))
+			return
+		}
+		sm.logInfo(fmt.Sprintf("Renamed window to '%s' in screen session '%s'", newName, session))
+	default:
+		sm.logError(fmt.Sprintf("Backend %v does not support window renaming", sm.currentBackend))
 	}
-	sm.logInfo(fmt.Sprintf("Renamed window to '%s' in screen session '%s'", newName, session))
 }
 
 func (sm *SessionManager) moveWindow(srcSession, windowName, dstSession string) {
@@ -628,7 +638,8 @@ func (sm *SessionManager) splitWindow(session, window, direction string) {
 		return
 	}
 
-	if sm.tmuxAvailable {
+	switch sm.currentBackend {
+	case BackendTmux:
 		windowTarget := fmt.Sprintf("%s:%s", session, window)
 		splitFlag := "-v" // vertical split (one pane above another)
 		if direction == "h" {
@@ -645,18 +656,30 @@ func (sm *SessionManager) splitWindow(session, window, direction string) {
 		}
 		sm.logInfo(fmt.Sprintf("Split window '%s' %s in tmux session '%s'", window, splitDesc, session))
 		return
-	}
-
-	if direction == "v" {
-		if err := sm.runScreenCommand("-S", session, "-X", "split"); err != nil {
-			sm.logError(fmt.Sprintf("Failed to split window in screen session '%s'", session))
+	case BackendZellij:
+		if err := sm.splitZellijPane(session, direction); err != nil {
+			sm.logError(fmt.Sprintf("Failed to split pane in zellij session '%s': %v", session, err))
 			return
 		}
-		sm.logInfo(fmt.Sprintf("Split window vertically in screen session '%s'", session))
+		splitDesc := "vertically"
+		if direction == "h" {
+			splitDesc = "horizontally"
+		}
+		sm.logInfo(fmt.Sprintf("Split pane %s in zellij session '%s'", splitDesc, session))
 		return
+	case BackendScreen:
+		if direction == "v" {
+			if err := sm.runScreenCommand("-S", session, "-X", "split"); err != nil {
+				sm.logError(fmt.Sprintf("Failed to split window in screen session '%s'", session))
+				return
+			}
+			sm.logInfo(fmt.Sprintf("Split window vertically in screen session '%s'", session))
+			return
+		}
+		sm.logError("Horizontal window splitting is not supported in GNU Screen")
+	default:
+		sm.logError(fmt.Sprintf("Backend %v does not support window splitting", sm.currentBackend))
 	}
-
-	sm.logError("Horizontal window splitting is not supported in GNU Screen")
 }
 
 func (sm *SessionManager) listPanes(session, window string) {
@@ -665,16 +688,25 @@ func (sm *SessionManager) listPanes(session, window string) {
 		return
 	}
 
-	if sm.tmuxAvailable {
+	switch sm.currentBackend {
+	case BackendTmux:
 		windowTarget := fmt.Sprintf("%s:%s", session, window)
 		if err := sm.runTmuxCommand("list-panes", "-t", windowTarget); err != nil {
 			sm.logError(fmt.Sprintf("Failed to list panes in window '%s' of tmux session '%s'", window, session))
 			return
 		}
 		return
+	case BackendZellij:
+		if err := sm.listZellijPanes(session); err != nil {
+			sm.logError(fmt.Sprintf("Failed to list panes in zellij session '%s': %v", session, err))
+			return
+		}
+		return
+	case BackendScreen:
+		sm.logError("Listing panes is not supported in GNU Screen")
+	default:
+		sm.logError(fmt.Sprintf("Backend %v does not support listing panes", sm.currentBackend))
 	}
-
-	sm.logError("Listing panes is not supported in GNU Screen")
 }
 
 func (sm *SessionManager) killPane(session, window, pane string) {

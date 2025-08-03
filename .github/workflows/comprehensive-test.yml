@@ -127,20 +127,27 @@ jobs:
             echo "Testing zellij backend..."
             ./txm config set backend zellij
             
-            # Zellij has different behavior in non-interactive mode
-            # Test what should work
-            echo "Testing zellij list command..."
-            ./txm list || echo "No zellij sessions found (expected)"
+            # Test session operations - these should succeed
+            echo "Creating zellij session..."
+            ./txm create test-session-zellij
             
-            # Note: zellij session creation may have limitations in CI environment
-            echo "Attempting zellij session creation (may fail in CI)..."
-            if ./txm create test-session-zellij 2>/dev/null; then
-              echo "Zellij session created successfully"
-              ./txm list
-              ./txm delete test-session-zellij || echo "Delete failed - session may need force deletion"
-            else
-              echo "Zellij session creation failed (expected in non-interactive environment)"
-            fi
+            echo "Listing sessions..."
+            ./txm list
+            
+            echo "Creating tab..."
+            ./txm new-window test-session-zellij test-tab
+            
+            echo "Listing tabs..."
+            ./txm list-windows test-session-zellij || echo "List tabs not supported in zellij (expected)"
+            
+            echo "Splitting pane..."
+            ./txm split-window test-session-zellij test-tab v || echo "Split pane failed (may need active session)"
+            
+            echo "Listing panes..."
+            ./txm list-panes test-session-zellij test-tab || echo "List panes not supported in zellij (expected)"
+            
+            echo "Cleaning up zellij session..."
+            ./txm delete test-session-zellij
           else
             echo "zellij not available, skipping zellij tests"
           fi
@@ -207,13 +214,8 @@ jobs:
       - name: Test update command
         run: |
           cd src
-          # Test update command (should handle network errors gracefully)
-          # This may fail due to network issues but should not crash
-          if ./txm update; then
-            echo "Update command succeeded"
-          else
-            echo "Update command failed gracefully (expected in CI)"
-          fi
+          # Test update command - should handle development installation properly
+          ./txm update
       
       - name: Test help and verbose modes
         run: |
