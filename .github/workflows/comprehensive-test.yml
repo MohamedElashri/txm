@@ -138,13 +138,25 @@ jobs:
             ./txm new-window test-session-zellij test-tab
             
             echo "Listing tabs..."
-            ./txm list-windows test-session-zellij || echo "List tabs not supported in zellij (expected)"
+            if ./txm list-windows test-session-zellij; then
+              echo "List tabs worked"
+            else
+              echo "List tabs failed (may not be supported in zellij)"
+            fi
             
             echo "Splitting pane..."
-            ./txm split-window test-session-zellij test-tab v || echo "Split pane failed (may need active session)"
+            if ./txm split-window test-session-zellij test-tab v; then
+              echo "Split pane worked"
+            else
+              echo "Split pane failed (may require active session in zellij)"
+            fi
             
             echo "Listing panes..."
-            ./txm list-panes test-session-zellij test-tab || echo "List panes not supported in zellij (expected)"
+            if ./txm list-panes test-session-zellij test-tab; then
+              echo "List panes worked"
+            else
+              echo "List panes failed (may not be supported in zellij)"
+            fi
             
             echo "Cleaning up zellij session..."
             ./txm delete test-session-zellij

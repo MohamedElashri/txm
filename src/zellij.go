@@ -220,6 +220,15 @@ func (sm *SessionManager) detachZellijSession() error {
 	return fmt.Errorf("detach operation not supported in zellij - zellij uses a different session paradigm")
 }
 
+func (sm *SessionManager) closeZellijPane(session string) error {
+	return sm.runZellijCommand("action", "close-pane")
+}
+
+func (sm *SessionManager) sendKeysToZellijPane(session, keys string) error {
+	// Zellij can write text to the current pane
+	return sm.runZellijCommand("action", "write-chars", keys)
+}
+
 func (sm *SessionManager) nukeAllZellijSessions() error {
 	// Use delete-all-sessions command with automatic yes and force flags
 	if err := sm.runZellijCommand("delete-all-sessions", "-y", "-f"); err == nil {

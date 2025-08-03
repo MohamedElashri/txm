@@ -599,7 +599,8 @@ func (sm *SessionManager) moveWindow(srcSession, windowName, dstSession string) 
 		return
 	}
 
-	if sm.tmuxAvailable {
+	switch sm.currentBackend {
+	case BackendTmux:
 		windowTarget := fmt.Sprintf("%s:%s", srcSession, windowName)
 		if err := sm.runTmuxCommand("move-window", "-s", windowTarget, "-t", dstSession); err != nil {
 			sm.logError(fmt.Sprintf("Failed to move window '%s' from session '%s' to session '%s'", windowName, srcSession, dstSession))
@@ -607,9 +608,14 @@ func (sm *SessionManager) moveWindow(srcSession, windowName, dstSession string) 
 		}
 		sm.logInfo(fmt.Sprintf("Moved window '%s' from session '%s' to session '%s'", windowName, srcSession, dstSession))
 		return
+	case BackendZellij:
+		sm.logError("Moving windows between sessions is not supported in zellij")
+		return
+	case BackendScreen:
+		sm.logError("Moving windows between sessions is not supported in GNU Screen")
+	default:
+		sm.logError(fmt.Sprintf("Backend %v does not support moving windows", sm.currentBackend))
 	}
-
-	sm.logError("Moving windows between sessions is not supported in GNU Screen")
 }
 
 func (sm *SessionManager) swapWindow(session, windowName1, windowName2 string) {
@@ -618,7 +624,8 @@ func (sm *SessionManager) swapWindow(session, windowName1, windowName2 string) {
 		return
 	}
 
-	if sm.tmuxAvailable {
+	switch sm.currentBackend {
+	case BackendTmux:
 		windowTarget1 := fmt.Sprintf("%s:%s", session, windowName1)
 		windowTarget2 := fmt.Sprintf("%s:%s", session, windowName2)
 		if err := sm.runTmuxCommand("swap-window", "-s", windowTarget1, "-t", windowTarget2); err != nil {
@@ -627,9 +634,14 @@ func (sm *SessionManager) swapWindow(session, windowName1, windowName2 string) {
 		}
 		sm.logInfo(fmt.Sprintf("Swapped windows '%s' and '%s' in tmux session '%s'", windowName1, windowName2, session))
 		return
+	case BackendZellij:
+		sm.logError("Swapping windows is not supported in zellij")
+		return
+	case BackendScreen:
+		sm.logError("Swapping windows is not supported in GNU Screen")
+	default:
+		sm.logError(fmt.Sprintf("Backend %v does not support swapping windows", sm.currentBackend))
 	}
-
-	sm.logError("Swapping windows is not supported in GNU Screen")
 }
 
 func (sm *SessionManager) splitWindow(session, window, direction string) {
@@ -715,7 +727,8 @@ func (sm *SessionManager) killPane(session, window, pane string) {
 		return
 	}
 
-	if sm.tmuxAvailable {
+	switch sm.currentBackend {
+	case BackendTmux:
 		paneTarget := fmt.Sprintf("%s:%s.%s", session, window, pane)
 		if err := sm.runTmuxCommand("kill-pane", "-t", paneTarget); err != nil {
 			sm.logError(fmt.Sprintf("Failed to kill pane '%s' in window '%s' of tmux session '%s'", pane, window, session))
@@ -723,9 +736,18 @@ func (sm *SessionManager) killPane(session, window, pane string) {
 		}
 		sm.logInfo(fmt.Sprintf("Killed pane '%s' in window '%s' of tmux session '%s'", pane, window, session))
 		return
+	case BackendZellij:
+		if err := sm.closeZellijPane(session); err != nil {
+			sm.logError(fmt.Sprintf("Failed to close pane in zellij session '%s': %v", session, err))
+			return
+		}
+		sm.logInfo(fmt.Sprintf("Closed pane in zellij session '%s'", session))
+		return
+	case BackendScreen:
+		sm.logError("Killing panes is not supported in GNU Screen")
+	default:
+		sm.logError(fmt.Sprintf("Backend %v does not support killing panes", sm.currentBackend))
 	}
-
-	sm.logError("Killing panes is not supported in GNU Screen")
 }
 
 func (sm *SessionManager) resizePane(session, window, pane, direction string, size int) {
@@ -734,7 +756,8 @@ func (sm *SessionManager) resizePane(session, window, pane, direction string, si
 		return
 	}
 
-	if sm.tmuxAvailable {
+	switch sm.currentBackend {
+	case BackendTmux:
 		paneTarget := fmt.Sprintf("%s:%s.%s", session, window, pane)
 		resizeFlag := "-U" // up
 		if direction == "D" {
@@ -751,9 +774,18 @@ func (sm *SessionManager) resizePane(session, window, pane, direction string, si
 		}
 		sm.logInfo(fmt.Sprintf("Resized pane '%s' in window '%s' of tmux session '%s'", pane, window, session))
 		return
+	case BackendZellij:
+		if err := sm.resizeZellijPane(session, direction, size); err != nil {
+			sm.logError(fmt.Sprintf("Failed to resize pane in zellij session '%s': %v", session, err))
+			return
+		}
+		sm.logInfo(fmt.Sprintf("Resized pane in zellij session '%s'", session))
+		return
+	case BackendScreen:
+		sm.logError("Resizing panes is not supported in GNU Screen")
+	default:
+		sm.logError(fmt.Sprintf("Backend %v does not support resizing panes", sm.currentBackend))
 	}
-
-	sm.logError("Resizing panes is not supported in GNU Screen")
 }
 
 func (sm *SessionManager) sendKeys(session, window, pane, keys string) {
@@ -762,7 +794,8 @@ func (sm *SessionManager) sendKeys(session, window, pane, keys string) {
 		return
 	}
 
-	if sm.tmuxAvailable {
+	switch sm.currentBackend {
+	case BackendTmux:
 		paneTarget := fmt.Sprintf("%s:%s.%s", session, window, pane)
 		if err := sm.runTmuxCommand("send-keys", "-t", paneTarget, keys); err != nil {
 			sm.logError(fmt.Sprintf("Failed to send keys to pane '%s' in window '%s' of tmux session '%s'", pane, window, session))
@@ -770,9 +803,18 @@ func (sm *SessionManager) sendKeys(session, window, pane, keys string) {
 		}
 		sm.logInfo(fmt.Sprintf("Sent keys to pane '%s' in window '%s' of tmux session '%s'", pane, window, session))
 		return
+	case BackendZellij:
+		if err := sm.sendKeysToZellijPane(session, keys); err != nil {
+			sm.logError(fmt.Sprintf("Failed to send keys to zellij session '%s': %v", session, err))
+			return
+		}
+		sm.logInfo(fmt.Sprintf("Sent keys to zellij session '%s'", session))
+		return
+	case BackendScreen:
+		sm.logError("Sending keys to panes is not supported in GNU Screen")
+	default:
+		sm.logError(fmt.Sprintf("Backend %v does not support sending keys to panes", sm.currentBackend))
 	}
-
-	sm.logError("Sending keys to panes is not supported in GNU Screen")
 }
 
 func (sm *SessionManager) nukeAllSessions() {
@@ -850,11 +892,15 @@ func main() {
 
 	// Check if any backend is available
 	if !sm.isBackendAvailable(sm.currentBackend) {
-		if !sm.tmuxAvailable && !sm.zellijAvailable {
-			if _, err := exec.LookPath("screen"); err != nil {
-				sm.logError("None of tmux, zellij, or screen is installed. Please install at least one and try again.")
-				os.Exit(1)
-			}
+		// Check if any backends are available at all
+		hasAnyBackend := sm.tmuxAvailable || sm.zellijAvailable
+		if _, err := exec.LookPath("screen"); err == nil {
+			hasAnyBackend = true
+		}
+		
+		if !hasAnyBackend {
+			sm.logError("None of tmux, zellij, or screen is installed. Please install at least one and try again.")
+			os.Exit(1)
 		}
 		sm.logWarning(fmt.Sprintf("Configured backend '%s' is not available. Using fallback.", sm.currentBackend))
 	}
