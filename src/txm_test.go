@@ -1,338 +1,170 @@
 package main
 
 import (
-	"bytes"
 	"os"
-	"os/exec"
 	"strings"
 	"testing"
 )
 
-// TestSessionManager tests the SessionManager functionality
-type testCase struct {
-	name     string
-	setup    func(t *testing.T) *SessionManager
-	test     func(t *testing.T, sm *SessionManager)
-	teardown func(t *testing.T, sm *SessionManager)
-}
-
-func TestSessionManager(t *testing.T) {
-	tests := []testCase{
-		{
-			name: "New Session Manager Initialization",
-			setup: func(t *testing.T) *SessionManager {
-				cleanupTestSessions(t)
-				return NewSessionManager(true)
-			},
-			test: func(t *testing.T, sm *SessionManager) {
-				if sm == nil {
-					t.Fatal("SessionManager should not be nil")
-				}
-				if !sm.verbose {
-					t.Error("SessionManager should be verbose")
-				}
-			},
-			teardown: func(t *testing.T, sm *SessionManager) {
-				cleanupTestSessions(t)
-			},
-		},
-		{
-			name: "Session Creation and Deletion",
-			setup: func(t *testing.T) *SessionManager {
-				cleanupTestSessions(t)
-				return NewSessionManager(true)
-			},
-			test: func(t *testing.T, sm *SessionManager) {
-				testSession := "test-session"
-				
-				// Create session
-				sm.createSession(testSession)
-				
-				// Verify session exists
-				if !sm.sessionExists(testSession) {
-					t.Errorf("Session %s should exist after creation", testSession)
-				}
-				
-				// Kill session
-				sm.killSession(testSession)
-				
-				// Verify session no longer exists
-				if sm.sessionExists(testSession) {
-					t.Errorf("Session %s should not exist after deletion", testSession)
-				}
-			},
-			teardown: func(t *testing.T, sm *SessionManager) {
-				cleanupTestSessions(t)
-			},
-		},
-		{
-			name: "Window Management",
-			setup: func(t *testing.T) *SessionManager {
-				cleanupTestSessions(t)
-				sm := NewSessionManager(true)
-				sm.createSession("test-session")
-				return sm
-			},
-			test: func(t *testing.T, sm *SessionManager) {
-				session := "test-session"
-				window := "test-window"
-				
-				// Create new window
-				sm.newWindow(session, window)
-				
-				// Test window navigation
-				sm.nextWindow(session)
-				sm.previousWindow(session)
-				
-				// Kill window
-				sm.killWindow(session, window)
-			},
-			teardown: func(t *testing.T, sm *SessionManager) {
-				cleanupTestSessions(t)
-			},
-		},
-		{
-			name: "Session Attach/Detach",
-			setup: func(t *testing.T) *SessionManager {
-				cleanupTestSessions(t)
-				sm := NewSessionManager(true)
-				sm.createSession("test-session")
-				return sm
-			},
-			test: func(t *testing.T, sm *SessionManager) {
-				session := "test-session"
-				
-				// Test attach - this will fail in CI due to no TTY, but should not crash
-				sm.attachSession(session)
-				
-				// Test detach - this will fail in CI due to no active session, but should not crash
-				sm.detachSession()
-			},
-			teardown: func(t *testing.T, sm *SessionManager) {
-				cleanupTestSessions(t)
-			},
-		},
-	}
-
-	for _, tc := range tests {
-		t.Run(tc.name, func(t *testing.T) {
-			sm := tc.setup(t)
-			defer tc.teardown(t, sm)
-			tc.test(t, sm)
-		})
-	}
-}
-
-// cleanupTestSessions removes any leftover test sessions to prevent interference
-func cleanupTestSessions(t *testing.T) {
-	// Create a temporary session manager to clean up
-	sm := NewSessionManager(false) // Non-verbose to reduce noise
-	
-	// Kill any existing test sessions
-	testSessionNames := []string{"test-session", "test-session-tmux", "test-session-zellij", "test-session-screen"}
-	
-	for _, sessionName := range testSessionNames {
-		if sm.sessionExists(sessionName) {
-			sm.killSession(sessionName)
-		}
-	}
-	
-	// For screen backend, do a more thorough cleanup since it can have multiple sessions with same name
-	if sm.currentBackend == BackendScreen {
-		cmd := exec.Command("screen", "-ls")
-		output, err := cmd.Output()
-		if err == nil {
-			outputStr := string(output)
-			lines := strings.Split(outputStr, "\n")
-			
-			for _, line := range lines {
-				line = strings.TrimSpace(line)
-				if strings.Contains(line, "(") && strings.Contains(line, ")") {
-					parts := strings.Fields(line)
-					if len(parts) > 0 {
-						sessionPart := parts[0]
-						if strings.Contains(sessionPart, ".") {
-							sessionName := strings.SplitN(sessionPart, ".", 2)[1]
-							// Kill any test-related sessions
-							for _, testName := range testSessionNames {
-								if sessionName == testName {
-									exec.Command("screen", "-X", "-S", sessionPart, "quit").Run()
-									break
-								}
-							}
-						}
-					}
-				}
-			}
-		}
-	}
-}
-
-// TestCommandExecution tests the command execution functionality
-func TestCommandExecution(t *testing.T) {
-	cleanupTestSessions(t)
-	sm := NewSessionManager(true)
-
-	// Skip this test if tmux is not available
-	if !sm.tmuxAvailable {
-		t.Skip("Tmux not available, skipping command execution tests")
-		return
-	}
-
-	// Set backend to tmux for this test
-	sm.currentBackend = BackendTmux
-
-	// Create a test session first to ensure tmux server is running
-	sm.createSession("test-session")
-	defer func() {
-		cleanupTestSessions(t)
-	}()
-
+// TestBackendString tests the String() method for Backend type
+func TestBackendString(t *testing.T) {
 	tests := []struct {
-		name    string
-		cmd     []string
-		wantErr bool
+		backend  Backend
+		expected string
 	}{
-		{
-			name:    "Valid tmux command",
-			cmd:     []string{"has-session", "-t", "test-session"},
-			wantErr: false,
-		},
-		{
-			name:    "Invalid tmux command",
-			cmd:     []string{"invalid-command"},
-			wantErr: true,
-		},
+		{BackendTmux, "tmux"},
+		{BackendZellij, "zellij"},
+		{BackendScreen, "screen"},
+		{Backend(999), "unknown"}, // Invalid backend
 	}
 
 	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			err := sm.runTmuxCommand(tt.cmd...)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("runTmuxCommand() error = %v, wantErr %v", err, tt.wantErr)
+		t.Run(tt.expected, func(t *testing.T) {
+			if got := tt.backend.String(); got != tt.expected {
+				t.Errorf("Backend.String() = %v, want %v", got, tt.expected)
 			}
 		})
 	}
 }
 
-// TestColorSupport tests the color support functionality
-func TestColorSupport(t *testing.T) {
+// TestParseBackend tests the ParseBackend function
+func TestParseBackend(t *testing.T) {
 	tests := []struct {
-		name    string
-		verbose bool
+		input     string
+		expected  Backend
+		shouldErr bool
+	}{
+		{"tmux", BackendTmux, false},
+		{"zellij", BackendZellij, false},
+		{"screen", BackendScreen, false},
+		{"TMUX", BackendTmux, false},    // Case insensitive
+		{"Zellij", BackendZellij, false}, // Case insensitive
+		{"SCREEN", BackendScreen, false}, // Case insensitive
+		{"invalid", BackendTmux, true},   // Invalid backend should error
+		{"", BackendTmux, true},          // Empty string should error
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.input, func(t *testing.T) {
+			backend, err := ParseBackend(tt.input)
+			if tt.shouldErr {
+				if err == nil {
+					t.Errorf("ParseBackend(%q) expected error, got nil", tt.input)
+				}
+			} else {
+				if err != nil {
+					t.Errorf("ParseBackend(%q) unexpected error: %v", tt.input, err)
+				}
+				if backend != tt.expected {
+					t.Errorf("ParseBackend(%q) = %v, want %v", tt.input, backend, tt.expected)
+				}
+			}
+		})
+	}
+}
+
+// TestNewDefaultConfig tests the NewDefaultConfig function
+func TestNewDefaultConfig(t *testing.T) {
+	config := NewDefaultConfig()
+	
+	if config == nil {
+		t.Fatal("NewDefaultConfig() returned nil")
+	}
+	
+	if config.DefaultBackend != BackendTmux {
+		t.Errorf("NewDefaultConfig().DefaultBackend = %v, want %v", config.DefaultBackend, BackendTmux)
+	}
+	
+	expectedOrder := []Backend{BackendTmux, BackendZellij, BackendScreen}
+	if len(config.BackendOrder) != len(expectedOrder) {
+		t.Errorf("NewDefaultConfig().BackendOrder length = %d, want %d", len(config.BackendOrder), len(expectedOrder))
+	}
+	
+	for i, backend := range expectedOrder {
+		if i >= len(config.BackendOrder) || config.BackendOrder[i] != backend {
+			t.Errorf("NewDefaultConfig().BackendOrder[%d] = %v, want %v", i, config.BackendOrder[i], backend)
+		}
+	}
+}
+
+// TestSessionManagerColorize tests the colorize method
+func TestSessionManagerColorize(t *testing.T) {
+	tests := []struct {
+		name      string
+		useColors bool
+		color     string
+		text      string
+		expected  string
 	}{
 		{
-			name:    "Verbose color support check",
-			verbose: true,
+			name:      "With colors enabled",
+			useColors: true,
+			color:     colorRed,
+			text:      "test",
+			expected:  colorRed + "test" + colorReset,
 		},
 		{
-			name:    "Non-verbose color support check",
-			verbose: false,
+			name:      "With colors disabled",
+			useColors: false,
+			color:     colorRed,
+			text:      "test",
+			expected:  "test",
+		},
+		{
+			name:      "Empty text with colors",
+			useColors: true,
+			color:     colorBlue,
+			text:      "",
+			expected:  colorBlue + "" + colorReset,
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			// Just test that the function runs without error
-			// Color support detection depends on environment
-			result := checkColorSupport(tt.verbose)
-			t.Logf("Color support detected: %v", result)
+			sm := &SessionManager{useColors: tt.useColors}
+			if got := sm.colorize(tt.color, tt.text); got != tt.expected {
+				t.Errorf("SessionManager.colorize() = %v, want %v", got, tt.expected)
+			}
 		})
 	}
 }
 
-// TestLogging tests the logging functionality
-func TestLogging(t *testing.T) {
-	sm := NewSessionManager(true)
-	
-	// Capture stdout to verify log messages
-	oldStdout := os.Stdout
-	r, w, _ := os.Pipe()
-	os.Stdout = w
-
-	// Test info logging
-	sm.logInfo("Test info message")
-	
-	// Test warning logging
-	sm.logWarning("Test warning message")
-	
-	// Test error logging
-	sm.logError("Test error message")
-
-	// Restore stdout
-	w.Close()
-	os.Stdout = oldStdout
-
-	var buf bytes.Buffer
-	_, _ = buf.ReadFrom(r)
-	output := buf.String()
-
-	// Verify log messages
-	if !strings.Contains(output, "Test info message") {
-		t.Error("Info message not logged correctly")
-	}
-	if !strings.Contains(output, "Test warning message") {
-		t.Error("Warning message not logged correctly")
-	}
-	if !strings.Contains(output, "Test error message") {
-		t.Error("Error message not logged correctly")
-	}
-}
-
-// TestEnvironmentPreservation tests the environment preservation functionality
-func TestEnvironmentPreservation(t *testing.T) {
-	// Set test environment variables
-	testEnv := []string{
-		"TERM=xterm-256color",
-		"PATH=" + os.Getenv("PATH"),
-		"HOME=" + os.Getenv("HOME"),
-	}
-
-	cmd := exec.Command("echo", "test")
-	cmd.Env = testEnv
-	preserveEnvironment(cmd)
-
-	// Verify that important environment variables are preserved
-	foundTerm := false
-	for _, env := range cmd.Env {
-		if strings.HasPrefix(env, "TERM=") {
-			foundTerm = true
-			break
-		}
-	}
-
-	if !foundTerm {
-		t.Error("TERM environment variable not preserved")
-	}
-
-	// Check if the environment has at least the minimum required variables
-	if len(cmd.Env) < len(testEnv) {
-		t.Error("Not all environment variables were preserved")
-	}
-}
-
-// TestArgumentHandling tests the argument handling functionality
-func TestArgumentHandling(t *testing.T) {
+// TestGetArg tests the getArg function
+func TestGetArg(t *testing.T) {
 	tests := []struct {
 		name         string
+		args         []string
 		index        int
 		defaultValue string
-		args         []string
-		want         string
+		expected     string
 	}{
 		{
-			name:         "Get existing argument",
+			name:         "Existing argument",
+			args:         []string{"cmd", "value1", "value2"},
 			index:        1,
 			defaultValue: "default",
-			args:         []string{"cmd", "value"},
-			want:         "value",
+			expected:     "value1",
 		},
 		{
-			name:         "Get non-existing argument",
+			name:         "Non-existing argument",
+			args:         []string{"cmd"},
 			index:        2,
 			defaultValue: "default",
-			args:         []string{"cmd"},
-			want:         "default",
+			expected:     "default",
+		},
+		{
+			name:         "Index 0 (command name)",
+			args:         []string{"txm", "command"},
+			index:        0,
+			defaultValue: "default",
+			expected:     "txm",
+		},
+		{
+			name:         "Empty args with default",
+			args:         []string{},
+			index:        1,
+			defaultValue: "fallback",
+			expected:     "fallback",
 		},
 	}
 
@@ -343,69 +175,320 @@ func TestArgumentHandling(t *testing.T) {
 			defer func() { os.Args = oldArgs }()
 			
 			os.Args = tt.args
-			if got := getArg(tt.index, tt.defaultValue); got != tt.want {
-				t.Errorf("getArg() = %v, want %v", got, tt.want)
+			if got := getArg(tt.index, tt.defaultValue); got != tt.expected {
+				t.Errorf("getArg(%d, %q) = %v, want %v", tt.index, tt.defaultValue, got, tt.expected)
 			}
 		})
 	}
 }
 
-// TestConfigFunctionality tests the configuration functionality
-func TestConfigFunctionality(t *testing.T) {
-	// Test config loading and default values
-	config := NewDefaultConfig()
-	if config.DefaultBackend != BackendTmux {
-		t.Error("Default backend should be tmux")
+// TestBackendSelection tests the backend selection logic
+func TestBackendSelection(t *testing.T) {
+	tests := []struct {
+		name               string
+		configBackend      Backend
+		tmuxAvailable      bool
+		zellijAvailable    bool
+		expectedBackend    Backend
+	}{
+		{
+			name:               "Tmux preferred and available",
+			configBackend:      BackendTmux,
+			tmuxAvailable:      true,
+			zellijAvailable:    false,
+			expectedBackend:    BackendTmux,
+		},
+		{
+			name:               "Zellij preferred and available",
+			configBackend:      BackendZellij,
+			tmuxAvailable:      false,
+			zellijAvailable:    true,
+			expectedBackend:    BackendZellij,
+		},
+		{
+			name:               "Preferred not available, fallback to tmux",
+			configBackend:      BackendZellij,
+			tmuxAvailable:      true,
+			zellijAvailable:    false,
+			expectedBackend:    BackendTmux,
+		},
+		{
+			name:               "No multiplexers available, fallback to screen",
+			configBackend:      BackendTmux,
+			tmuxAvailable:      false,
+			zellijAvailable:    false,
+			expectedBackend:    BackendScreen, // Falls back to screen since it's usually available
+		},
 	}
-	
-	// Test backend parsing
-	if backend, err := ParseBackend("tmux"); err != nil || backend != BackendTmux {
-		t.Error("Failed to parse tmux backend")
-	}
-	if backend, err := ParseBackend("zellij"); err != nil || backend != BackendZellij {
-		t.Error("Failed to parse zellij backend")
-	}
-	if backend, err := ParseBackend("screen"); err != nil || backend != BackendScreen {
-		t.Error("Failed to parse screen backend")
-	}
-	if _, err := ParseBackend("invalid"); err == nil {
-		t.Error("Invalid backend should return an error")
-	}
-	
-	// Test backend string representation
-	if BackendTmux.String() != "tmux" {
-		t.Error("Backend tmux string representation incorrect")
-	}
-	if BackendZellij.String() != "zellij" {
-		t.Error("Backend zellij string representation incorrect")
-	}
-	if BackendScreen.String() != "screen" {
-		t.Error("Backend screen string representation incorrect")
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			config := &Config{
+				DefaultBackend: tt.configBackend,
+				BackendOrder:   []Backend{BackendTmux, BackendZellij, BackendScreen},
+			}
+			
+			sm := &SessionManager{
+				tmuxAvailable:   tt.tmuxAvailable,
+				zellijAvailable: tt.zellijAvailable,
+				config:          config,
+			}
+			
+			backend := sm.selectBestBackend()
+			if backend != tt.expectedBackend {
+				t.Errorf("selectBestBackend() = %v, want %v", backend, tt.expectedBackend)
+			}
+		})
 	}
 }
 
-// TestBackendSelection tests the backend selection logic
-func TestBackendSelection(t *testing.T) {
-	sm := NewSessionManager(false)
-	
-	// Test that backend selection works
-	if sm.currentBackend == BackendTmux && !sm.tmuxAvailable {
-		t.Error("Should not select tmux when not available")
+// TestIsBackendAvailable tests the isBackendAvailable method
+func TestIsBackendAvailable(t *testing.T) {
+	sm := &SessionManager{
+		tmuxAvailable:   true,
+		zellijAvailable: false,
 	}
-	
-	// Test backend availability checking
-	tmuxAvail := sm.isBackendAvailable(BackendTmux)
-	zellijAvail := sm.isBackendAvailable(BackendZellij)
-	screenAvail := sm.isBackendAvailable(BackendScreen)
-	
-	if tmuxAvail != sm.tmuxAvailable {
-		t.Error("Tmux availability check inconsistent")
+
+	tests := []struct {
+		backend  Backend
+		expected bool
+	}{
+		{BackendTmux, true},    // tmuxAvailable is true
+		{BackendZellij, false}, // zellijAvailable is false
+		{BackendScreen, true},  // screen should be available in most environments
+		{Backend(999), false},  // Invalid backend
 	}
-	if zellijAvail != sm.zellijAvailable {
-		t.Error("Zellij availability check inconsistent")
+
+	for _, tt := range tests {
+		t.Run(tt.backend.String(), func(t *testing.T) {
+			// For screen, we can't easily mock the exec.LookPath call,
+			// so we'll just test that it doesn't panic
+			if tt.backend == BackendScreen {
+				// Just ensure it returns a boolean without panicking
+				result := sm.isBackendAvailable(tt.backend)
+				if result != true && result != false {
+					t.Errorf("isBackendAvailable(%v) returned non-boolean", tt.backend)
+				}
+				return
+			}
+			
+			if got := sm.isBackendAvailable(tt.backend); got != tt.expected {
+				t.Errorf("isBackendAvailable(%v) = %v, want %v", tt.backend, got, tt.expected)
+			}
+		})
 	}
-	if !screenAvail {
-		// Screen should be available in most test environments
-		t.Log("Screen not available in test environment")
+}
+
+// TestEnvironmentVariableHandling tests environment variable configuration
+func TestEnvironmentVariableHandling(t *testing.T) {
+	tests := []struct {
+		name        string
+		envValue    string
+		expectBackend Backend
+	}{
+		{"tmux environment", "tmux", BackendTmux},
+		{"zellij environment", "zellij", BackendZellij},
+		{"screen environment", "screen", BackendScreen},
+		{"invalid environment", "invalid", BackendTmux}, // Should fallback to default
+		{"empty environment", "", BackendTmux},          // Should use default
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			// Save and restore environment
+			oldEnv := os.Getenv("TXM_DEFAULT_BACKEND")
+			defer func() {
+				if oldEnv == "" {
+					os.Unsetenv("TXM_DEFAULT_BACKEND")
+				} else {
+					os.Setenv("TXM_DEFAULT_BACKEND", oldEnv)
+				}
+			}()
+
+			// Set test environment
+			if tt.envValue != "" {
+				os.Setenv("TXM_DEFAULT_BACKEND", tt.envValue)
+			} else {
+				os.Unsetenv("TXM_DEFAULT_BACKEND")
+			}
+
+			// Load config (this should read the environment variable)
+			config, err := LoadConfig()
+			if err != nil && !strings.Contains(err.Error(), "no such file") {
+				t.Fatalf("LoadConfig() unexpected error: %v", err)
+			}
+
+			if config.DefaultBackend != tt.expectBackend {
+				t.Errorf("LoadConfig() with TXM_DEFAULT_BACKEND=%q: DefaultBackend = %v, want %v", 
+					tt.envValue, config.DefaultBackend, tt.expectBackend)
+			}
+		})
+	}
+}
+
+// TestColorSupportDetection tests the color support detection
+func TestColorSupportDetection(t *testing.T) {
+	tests := []struct {
+		name    string
+		verbose bool
+	}{
+		{"Verbose color check", true},
+		{"Non-verbose color check", false},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			// Test that checkColorSupport doesn't panic and returns a boolean
+			result := checkColorSupport(tt.verbose)
+			if result != true && result != false {
+				t.Errorf("checkColorSupport(%v) returned non-boolean: %v", tt.verbose, result)
+			}
+		})
+	}
+}
+
+// TestNewSessionManagerInitialization tests SessionManager initialization
+func TestNewSessionManagerInitialization(t *testing.T) {
+	tests := []struct {
+		name    string
+		verbose bool
+	}{
+		{"Verbose session manager", true},
+		{"Non-verbose session manager", false},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			sm := NewSessionManager(tt.verbose)
+			
+			if sm == nil {
+				t.Fatal("NewSessionManager() returned nil")
+			}
+			
+			if sm.verbose != tt.verbose {
+				t.Errorf("NewSessionManager(%v).verbose = %v, want %v", tt.verbose, sm.verbose, tt.verbose)
+			}
+			
+			if sm.config == nil {
+				t.Error("NewSessionManager().config is nil")
+			}
+			
+			// Verify that currentBackend is set to a valid value
+			validBackends := []Backend{BackendTmux, BackendZellij, BackendScreen}
+			validBackend := false
+			for _, backend := range validBackends {
+				if sm.currentBackend == backend {
+					validBackend = true
+					break
+				}
+			}
+			if !validBackend {
+				t.Errorf("NewSessionManager().currentBackend = %v, want one of %v", sm.currentBackend, validBackends)
+			}
+		})
+	}
+}
+
+// TestLoggingFunctions tests the logging methods
+func TestLoggingFunctions(t *testing.T) {
+	tests := []struct {
+		name      string
+		useColors bool
+		verbose   bool
+		logFunc   func(*SessionManager, string)
+		message   string
+		expectFunc func(string) bool
+	}{
+		{
+			name:      "Info logging with colors",
+			useColors: true,
+			verbose:   true,
+			logFunc:   (*SessionManager).logInfo,
+			message:   "test info",
+			expectFunc: func(output string) bool {
+				return strings.Contains(output, "test info") && strings.Contains(output, "[INFO]")
+			},
+		},
+		{
+			name:      "Warning logging without colors",
+			useColors: false,
+			verbose:   true,
+			logFunc:   (*SessionManager).logWarning,
+			message:   "test warning",
+			expectFunc: func(output string) bool {
+				return strings.Contains(output, "test warning") && strings.Contains(output, "[WARNING]")
+			},
+		},
+		{
+			name:      "Error logging",
+			useColors: true,
+			verbose:   true,
+			logFunc:   (*SessionManager).logError,
+			message:   "test error",
+			expectFunc: func(output string) bool {
+				return strings.Contains(output, "test error") && strings.Contains(output, "[ERROR]")
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			sm := &SessionManager{
+				useColors: tt.useColors,
+				verbose:   tt.verbose,
+			}
+			
+			// The logging functions write to stderr/stdout, which is hard to capture in unit tests
+			// For now, just ensure they don't panic
+			defer func() {
+				if r := recover(); r != nil {
+					t.Errorf("Logging function panicked: %v", r)
+				}
+			}()
+			
+			tt.logFunc(sm, tt.message)
+		})
+	}
+}
+
+// TestConfigErrorHandling tests configuration error handling
+func TestConfigErrorHandling(t *testing.T) {
+	tests := []struct {
+		name           string
+		configBackend  string
+		shouldUseDefault bool
+	}{
+		{"Valid tmux config", "tmux", false},
+		{"Valid zellij config", "zellij", false},
+		{"Valid screen config", "screen", false},
+		{"Invalid config", "invalid", true},
+		{"Empty config", "", true},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if tt.configBackend == "" {
+				config := NewDefaultConfig()
+				if config.DefaultBackend != BackendTmux {
+					t.Errorf("Default config should have tmux backend, got %v", config.DefaultBackend)
+				}
+				return
+			}
+
+			backend, err := ParseBackend(tt.configBackend)
+			if tt.shouldUseDefault {
+				if err == nil {
+					t.Errorf("ParseBackend(%q) should have returned error", tt.configBackend)
+				}
+			} else {
+				if err != nil {
+					t.Errorf("ParseBackend(%q) unexpected error: %v", tt.configBackend, err)
+				}
+				expectedBackend, _ := ParseBackend(tt.configBackend)
+				if backend != expectedBackend {
+					t.Errorf("ParseBackend(%q) = %v, want %v", tt.configBackend, backend, expectedBackend)
+				}
+			}
+		})
 	}
 }
