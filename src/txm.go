@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
-	"path/filepath"
 	"strconv"
 	"strings"
 
@@ -19,13 +18,6 @@ const (
 	colorMagenta = "\x1b[35m"
 	colorReset   = "\x1b[0m"
 )
-
-var commonTmuxPaths = []string{
-	"/usr/bin/tmux",
-	"/usr/local/bin/tmux",
-	"/opt/homebrew/bin/tmux",
-	"/home/linuxbrew/.linuxbrew/bin/tmux",
-}
 
 type SessionManager struct {
 	tmuxAvailable   bool
@@ -62,39 +54,6 @@ func NewSessionManager(verbose bool) *SessionManager {
 	}
 
 	return sm
-}
-
-func (sm *SessionManager) selectBestBackend() Backend {
-	// First try the configured default backend if it's available
-	if sm.isBackendAvailable(sm.config.DefaultBackend) {
-		return sm.config.DefaultBackend
-	}
-
-	// Fall back to the order specified in config
-	for _, backend := range sm.config.BackendOrder {
-		if sm.isBackendAvailable(backend) {
-			return backend
-		}
-	}
-
-	// Ultimate fallback to tmux
-	return BackendTmux
-}
-
-func (sm *SessionManager) isBackendAvailable(backend Backend) bool {
-	switch backend {
-	case BackendTmux:
-		return sm.tmuxAvailable
-	case BackendZellij:
-		return sm.zellijAvailable
-	case BackendScreen:
-		if _, err := exec.LookPath("screen"); err == nil {
-			return true
-		}
-		return false
-	default:
-		return false
-	}
 }
 
 func checkColorSupport(verbose bool) bool {
@@ -166,148 +125,37 @@ func (sm *SessionManager) logError(msg string) {
 	fmt.Printf("%s %s\n", prefix, msg)
 }
 
-func checkTmuxAvailable() bool {
-	if _, err := exec.LookPath("tmux"); err == nil {
-		return true
-	}
-
-	for _, path := range commonTmuxPaths {
-		if _, err := os.Stat(path); err == nil {
-			return true
-		}
-	}
-
-	return false
-}
-
-func preserveEnvironment(cmd *exec.Cmd) {
-	if os.Getuid() == 0 {
-		userPath := os.Getenv("SUDO_USER")
-		if userPath != "" {
-			output, err := exec.Command("getent", "passwd", userPath).Output()
-			if err == nil {
-				fields := strings.Split(string(output), ":")
-				if len(fields) > 5 {
-					homeDir := fields[5]
-					paths := []string{
-						"/usr/local/bin",
-						"/usr/bin",
-						"/bin",
-						filepath.Join(homeDir, ".local/bin"),
-						"/home/linuxbrew/.linuxbrew/bin",
-						filepath.Join(homeDir, "/.linuxbrew/bin"),
-					}
-					cmd.Env = append(os.Environ(), "PATH="+strings.Join(paths, ":"))
-				}
-			}
-		}
-	}
-}
-
-func (sm *SessionManager) newScreenWindow(session string) error {
-	return sm.runScreenCommand("-S", session, "-X", "screen")
-}
-
-func (sm *SessionManager) listScreenWindows(session string) error {
-	return sm.runScreenCommand("-S", session, "-Q", "windows")
-}
-
-func (sm *SessionManager) killScreenWindow(session string) error {
-	return sm.runScreenCommand("-S", session, "-X", "kill")
-}
-
-func (sm *SessionManager) renameScreenWindow(session, newName string) error {
-	return sm.runScreenCommand("-S", session, "-X", "title", newName)
-}
-
-func (sm *SessionManager) splitScreenWindow(session, direction string) error {
-	if direction == "v" {
-		return sm.runScreenCommand("-S", session, "-X", "split")
-	}
-	return fmt.Errorf("horizontal splitting not supported in screen")
-}
-
 func (sm *SessionManager) sessionExists(name string) bool {
 	switch sm.currentBackend {
 	case BackendTmux:
-		cmd := exec.Command("tmux", "has-session", "-t", name)
-		return cmd.Run() == nil
+		return sm.tmuxSessionExists(name)
 	case BackendZellij:
 		return sm.zellijSessionExists(name)
 	case BackendScreen:
-		cmd := exec.Command("screen", "-ls")
-		output, err := cmd.Output()
-		if err != nil {
-			return false
-		}
-		
-		outputStr := string(output)
-		// Check if the output contains "several suitable screens" which indicates multiple sessions
-		if strings.Contains(outputStr, "several suitable screens") || strings.Contains(outputStr, "Use -S to specify") {
-			// When multiple sessions exist with the same name, we can't reliably operate on them
-			// Return false to trigger proper cleanup
-			return false
-		}
-		
-		// Look for exact session name matches in the format: pid.name (status)
-		lines := strings.Split(outputStr, "\n")
-		for _, line := range lines {
-			line = strings.TrimSpace(line)
-			if strings.Contains(line, "(") && strings.Contains(line, ")") {
-				parts := strings.Fields(line)
-				if len(parts) > 0 {
-					sessionPart := parts[0]
-					if strings.Contains(sessionPart, ".") {
-						sessionName := strings.SplitN(sessionPart, ".", 2)[1]
-						if sessionName == name {
-							return true
-						}
-					}
-				}
-			}
-		}
-		return false
+		return sm.screenSessionExists(name)
 	default:
 		return false
 	}
 }
 
-func (sm *SessionManager) runTmuxCommand(args ...string) error {
-	cmd := exec.Command("tmux", args...)
-	preserveEnvironment(cmd)
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
-	cmd.Stdin = os.Stdin
-	return cmd.Run()
-}
-
-func (sm *SessionManager) runScreenCommand(args ...string) error {
-	cmd := exec.Command("screen", args...)
-	preserveEnvironment(cmd)
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
-	cmd.Stdin = os.Stdin
-	return cmd.Run()
-}
-
 func (sm *SessionManager) createSession(name string) {
 	switch sm.currentBackend {
 	case BackendTmux:
-		if err := sm.runTmuxCommand("new-session", "-d", "-s", name); err == nil {
+		if err := sm.tmuxCreateSession(name); err == nil {
 			sm.logInfo(fmt.Sprintf("Session '%s' created with tmux", name))
 			return
 		}
 		sm.logError(fmt.Sprintf("Failed to create tmux session '%s'", name))
 		return
 	case BackendZellij:
-		if err := sm.createZellijSession(name); err == nil {
+		if err := sm.zellijCreateSession(name); err == nil {
 			sm.logInfo(fmt.Sprintf("Session '%s' created with zellij", name))
 			return
 		}
 		sm.logError(fmt.Sprintf("Failed to create zellij session '%s'", name))
 		return
 	case BackendScreen:
-		if err := sm.runScreenCommand("-S", name, "-dm"); err == nil {
+		if err := sm.screenCreateSession(name); err == nil {
 			sm.logInfo(fmt.Sprintf("Session '%s' created with screen", name))
 			return
 		}
@@ -321,17 +169,17 @@ func (sm *SessionManager) createSession(name string) {
 func (sm *SessionManager) listSessions() {
 	switch sm.currentBackend {
 	case BackendTmux:
-		if err := sm.runTmuxCommand("list-sessions"); err != nil {
+		if err := sm.tmuxListSessions(); err != nil {
 			sm.logWarning("No tmux sessions found")
 		}
 		return
 	case BackendZellij:
-		if err := sm.listZellijSessions(); err != nil {
+		if err := sm.zellijListSessions(); err != nil {
 			sm.logWarning("No zellij sessions found")
 		}
 		return
 	case BackendScreen:
-		if err := sm.runScreenCommand("-ls"); err != nil {
+		if err := sm.screenListSessions(); err != nil {
 			sm.logWarning("No screen sessions found")
 		}
 		return
@@ -343,25 +191,25 @@ func (sm *SessionManager) listSessions() {
 func (sm *SessionManager) newWindow(session, name string) {
 	switch sm.currentBackend {
 	case BackendTmux:
-		if err := sm.runTmuxCommand("new-window", "-t", session, "-n", name); err != nil {
+		if err := sm.tmuxNewWindow(session, name); err != nil {
 			sm.logError(fmt.Sprintf("Failed to create window '%s' in tmux session '%s'", name, session))
 			return
 		}
 		sm.logInfo(fmt.Sprintf("Window '%s' created in tmux session '%s'", name, session))
 		return
 	case BackendZellij:
-		if err := sm.newZellijTab(session, name); err != nil {
+		if err := sm.zellijNewWindow(session, name); err != nil {
 			sm.logError(fmt.Sprintf("Failed to create tab '%s' in zellij session '%s'", name, session))
 			return
 		}
 		sm.logInfo(fmt.Sprintf("Tab '%s' created in zellij session '%s'", name, session))
 		return
 	case BackendScreen:
-		if err := sm.newScreenWindow(session); err != nil {
+		if err := sm.screenNewWindow(session, name); err != nil {
 			sm.logError(fmt.Sprintf("Failed to create window in screen session '%s'", session))
 			return
 		}
-		if err := sm.renameScreenWindow(session, name); err != nil {
+		if err := sm.screenRenameWindow(session, "", name); err != nil {
 			sm.logWarning(fmt.Sprintf("Created window but failed to rename it in screen session '%s'", session))
 			return
 		}
@@ -380,12 +228,12 @@ func (sm *SessionManager) listWindows(session string) {
 		}
 		return
 	case BackendZellij:
-		if err := sm.listZellijTabs(session); err != nil {
+		if err := sm.zellijListWindows(session); err != nil {
 			sm.logError(fmt.Sprintf("Failed to list tabs in zellij session '%s'", session))
 		}
 		return
 	case BackendScreen:
-		if err := sm.listScreenWindows(session); err != nil {
+		if err := sm.screenListWindows(session); err != nil {
 			sm.logError(fmt.Sprintf("Failed to list windows in screen session '%s'", session))
 		}
 		return
@@ -404,14 +252,14 @@ func (sm *SessionManager) killWindow(session, window string) {
 		sm.logInfo(fmt.Sprintf("Window '%s' killed in tmux session '%s'", window, session))
 		return
 	case BackendZellij:
-		if err := sm.killZellijTab(session, window); err != nil {
+		if err := sm.zellijKillWindow(session, window); err != nil {
 			sm.logError(fmt.Sprintf("Failed to kill tab '%s' in zellij session '%s'", window, session))
 			return
 		}
 		sm.logInfo(fmt.Sprintf("Tab '%s' killed in zellij session '%s'", window, session))
 		return
 	case BackendScreen:
-		if err := sm.killScreenWindow(session); err != nil {
+		if err := sm.screenKillWindow(session, window); err != nil {
 			sm.logError(fmt.Sprintf("Failed to kill window in screen session '%s'", session))
 			return
 		}
@@ -430,7 +278,7 @@ func (sm *SessionManager) nextWindow(session string) {
 			return
 		}
 	case BackendZellij:
-		if err := sm.nextZellijTab(session); err != nil {
+		if err := sm.zellijNextWindow(session); err != nil {
 			sm.logError(fmt.Sprintf("Failed to switch to next tab in zellij session '%s'", session))
 			return
 		}
@@ -454,7 +302,7 @@ func (sm *SessionManager) previousWindow(session string) {
 			return
 		}
 	case BackendZellij:
-		if err := sm.previousZellijTab(session); err != nil {
+		if err := sm.zellijPreviousWindow(session); err != nil {
 			sm.logError(fmt.Sprintf("Failed to switch to previous tab in zellij session '%s'", session))
 			return
 		}
@@ -484,7 +332,7 @@ func (sm *SessionManager) attachSession(name string) {
 		}
 		return
 	case BackendZellij:
-		if err := sm.attachZellijSession(name); err != nil {
+		if err := sm.zellijAttachSession(name); err != nil {
 			sm.logError(fmt.Sprintf("Failed to attach to zellij session '%s'", name))
 			return
 		}
@@ -510,7 +358,7 @@ func (sm *SessionManager) detachSession() {
 		sm.logInfo("Detached from tmux session")
 		return
 	case BackendZellij:
-		if err := sm.detachZellijSession(); err != nil {
+		if err := sm.zellijDetachSession(); err != nil {
 			sm.logError("Failed to detach from zellij session")
 			return
 		}
@@ -546,7 +394,7 @@ func (sm *SessionManager) killSession(name string) {
 			sm.logError(fmt.Sprintf("Session '%s' does not exist", name))
 			return
 		}
-		if err := sm.killZellijSession(name); err != nil {
+		if err := sm.zellijKillSession(name); err != nil {
 			sm.logError(fmt.Sprintf("Failed to kill zellij session '%s'", name))
 			return
 		}
@@ -636,7 +484,7 @@ func (sm *SessionManager) renameWindow(session, oldName, newName string) {
 		sm.logInfo(fmt.Sprintf("Renamed window from '%s' to '%s' in tmux session '%s'", oldName, newName, session))
 		return
 	case BackendZellij:
-		if err := sm.renameZellijTab(session, oldName, newName); err != nil {
+		if err := sm.zellijRenameWindow(session, oldName, newName); err != nil {
 			sm.logError(fmt.Sprintf("Failed to rename tab in zellij session '%s': %v", session, err))
 			return
 		}
@@ -729,7 +577,7 @@ func (sm *SessionManager) splitWindow(session, window, direction string) {
 		sm.logInfo(fmt.Sprintf("Split window '%s' %s in tmux session '%s'", window, splitDesc, session))
 		return
 	case BackendZellij:
-		if err := sm.splitZellijPane(session, direction); err != nil {
+		if err := sm.zellijSplitWindow(session, window, direction); err != nil {
 			sm.logError(fmt.Sprintf("Failed to split pane in zellij session '%s': %v", session, err))
 			return
 		}
@@ -769,7 +617,7 @@ func (sm *SessionManager) listPanes(session, window string) {
 		}
 		return
 	case BackendZellij:
-		if err := sm.listZellijPanes(session); err != nil {
+		if err := sm.zellijListPanes(session, window); err != nil {
 			sm.logError(fmt.Sprintf("Failed to list panes in zellij session '%s': %v", session, err))
 			return
 		}
@@ -797,7 +645,7 @@ func (sm *SessionManager) killPane(session, window, pane string) {
 		sm.logInfo(fmt.Sprintf("Killed pane '%s' in window '%s' of tmux session '%s'", pane, window, session))
 		return
 	case BackendZellij:
-		if err := sm.closeZellijPane(session); err != nil {
+		if err := sm.zellijKillPane(session, window, pane); err != nil {
 			sm.logError(fmt.Sprintf("Failed to close pane in zellij session '%s': %v", session, err))
 			return
 		}
@@ -835,7 +683,7 @@ func (sm *SessionManager) resizePane(session, window, pane, direction string, si
 		sm.logInfo(fmt.Sprintf("Resized pane '%s' in window '%s' of tmux session '%s'", pane, window, session))
 		return
 	case BackendZellij:
-		if err := sm.resizeZellijPane(session, direction, size); err != nil {
+		if err := sm.zellijResizePane(session, window, pane, direction, size); err != nil {
 			sm.logError(fmt.Sprintf("Failed to resize pane in zellij session '%s': %v", session, err))
 			return
 		}
@@ -864,7 +712,7 @@ func (sm *SessionManager) sendKeys(session, window, pane, keys string) {
 		sm.logInfo(fmt.Sprintf("Sent keys to pane '%s' in window '%s' of tmux session '%s'", pane, window, session))
 		return
 	case BackendZellij:
-		if err := sm.sendKeysToZellijPane(session, keys); err != nil {
+		if err := sm.zellijSendKeys(session, window, pane, keys); err != nil {
 			sm.logError(fmt.Sprintf("Failed to send keys to zellij session '%s': %v", session, err))
 			return
 		}
@@ -887,7 +735,7 @@ func (sm *SessionManager) nukeAllSessions() {
 		sm.logInfo("Killed all tmux sessions")
 		return
 	case BackendZellij:
-		if err := sm.nukeAllZellijSessions(); err != nil {
+		if err := sm.zellijNukeAllSessions(); err != nil {
 			sm.logError("Failed to kill all zellij sessions")
 			return
 		}
