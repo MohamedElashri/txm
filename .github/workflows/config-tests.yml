@@ -38,19 +38,16 @@ jobs:
       
       - name: Set up Go module
         run: |
-          cd src
           go get golang.org/x/term
           go mod tidy
       
       - name: Build txm
         run: |
-          cd src
           go build -o txm
           chmod +x txm
       
       - name: Test configuration system
         run: |
-          cd src
           # Test config commands
           ./txm config show
           
@@ -75,7 +72,6 @@ jobs:
       
       - name: Test environment variable override
         run: |
-          cd src
           # Test environment variable override
           if command -v tmux >/dev/null 2>&1; then
             TXM_DEFAULT_BACKEND=tmux ./txm config show
@@ -91,7 +87,6 @@ jobs:
       
       - name: Test backend availability detection
         run: |
-          cd src
           echo "Testing backend availability detection..."
           
           # Test with invalid backend - this should fail
@@ -109,4 +104,4 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: txm-config-${{ matrix.os }}
-          path: src/txm
+          path: txm

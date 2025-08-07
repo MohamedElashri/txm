@@ -38,19 +38,16 @@ jobs:
       
       - name: Set up Go module
         run: |
-          cd src
           go get golang.org/x/term
           go mod tidy
       
       - name: Build txm
         run: |
-          cd src
           go build -o txm
           chmod +x txm
       
       - name: Test tmux backend (if available)
         run: |
-          cd src
           if command -v tmux >/dev/null 2>&1; then
             echo "Testing tmux backend..."
             ./txm config set backend tmux
@@ -82,7 +79,6 @@ jobs:
       
       - name: Test zellij backend (if available)
         run: |
-          cd src
           if command -v zellij >/dev/null 2>&1; then
             echo "Testing zellij backend..."
             ./txm config set backend zellij
@@ -122,7 +118,6 @@ jobs:
       
       - name: Test screen backend (if available)
         run: |
-          cd src
           if command -v screen >/dev/null 2>&1; then
             echo "Testing screen backend..."
             ./txm config set backend screen
@@ -149,7 +144,6 @@ jobs:
       - name: Cleanup test sessions
         if: always()
         run: |
-          cd src
           # Clean up any remaining test sessions
           ./txm nuke
       
@@ -157,4 +151,4 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: txm-backend-${{ matrix.os }}
-          path: src/txm
+          path: txm

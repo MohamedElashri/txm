@@ -28,7 +28,7 @@ init:
 build: check-deps
 	@echo "Building txm..."
 	@mkdir -p bin
-	@go build -o bin/txm src/*.go
+	@go build -o bin/txm .
 
 clean:
 	@echo "Cleaning..."

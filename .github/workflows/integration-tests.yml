@@ -23,25 +23,21 @@ jobs:
       
       - name: Set up Go module
         run: |
-          cd src
           go get golang.org/x/term
           go mod tidy
       
       - name: Build txm
         run: |
-          cd src
           go build -o txm
           chmod +x txm
       
       - name: Test update command
         run: |
-          cd src
           # Test update command - should handle development installation properly
           ./txm update
       
       - name: Test help and verbose modes
         run: |
-          cd src
           # Test help command - should always work
           ./txm help || ./txm --help
           
@@ -59,4 +55,4 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: txm-integration-${{ matrix.os }}
-          path: src/txm
+          path: txm

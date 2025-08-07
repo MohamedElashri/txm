@@ -1,7 +1,7 @@
-module txm
+module github.com/MohamedElashri/txm
 
-go 1.23.4
+go 1.24.5
 
-require golang.org/x/term v0.30.0
+require golang.org/x/term v0.33.0
 
-require golang.org/x/sys v0.31.0 // indirect
+require golang.org/x/sys v0.34.0 // indirect

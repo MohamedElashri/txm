@@ -23,24 +23,20 @@ jobs:
       
       - name: Set up Go module
         run: |
-          cd src
           go get golang.org/x/term
           go mod tidy
       
       - name: Build txm
         run: |
-          cd src
           go build -o txm
           chmod +x txm
       
       - name: Run unit tests
         run: |
-          cd src
           go test -v
       
       - name: Test basic functionality
         run: |
-          cd src
           # Test basic commands
           ./txm version
           # List command may fail if no sessions exist, but should not error
@@ -50,4 +46,4 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: txm-unit-${{ matrix.os }}
-          path: src/txm
+          path: txm

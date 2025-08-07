@@ -2,6 +2,7 @@ package main
 
 import (
 	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 )
@@ -302,6 +303,38 @@ func TestEnvironmentVariableHandling(t *testing.T) {
 					os.Unsetenv("TXM_DEFAULT_BACKEND")
 				} else {
 					os.Setenv("TXM_DEFAULT_BACKEND", oldEnv)
+				}
+			}()
+
+			// Temporarily remove config file to test pure environment/default behavior
+			homeDir, _ := os.UserHomeDir()
+			configPaths := []string{
+				filepath.Join(homeDir, ".txm", "config"),
+				filepath.Join(homeDir, ".txm", "config.txt"),
+				filepath.Join(homeDir, ".txmrc"),
+			}
+			
+			var backupConfigs []struct {
+				path string
+				data []byte
+			}
+			
+			// Backup and remove existing config files
+			for _, path := range configPaths {
+				if data, err := os.ReadFile(path); err == nil {
+					backupConfigs = append(backupConfigs, struct {
+						path string
+						data []byte
+					}{path, data})
+					os.Remove(path)
+				}
+			}
+			
+			// Restore config files after test
+			defer func() {
+				for _, backup := range backupConfigs {
+					os.MkdirAll(filepath.Dir(backup.path), 0755)
+					os.WriteFile(backup.path, backup.data, 0644)
 				}
 			}()
 
