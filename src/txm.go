@@ -1008,7 +1008,7 @@ func main() {
 			sm.logError("Usage: txm config <set|get|show>")
 			sm.logError("  set <key> <value> - Set configuration value")
 			sm.logError("  get <key>         - Get configuration value")
-			sm.logError("  show              - Show current configuration")
+			sm.logError("  show              - Show system default, configured default, and active backend")
 			os.Exit(1)
 		}
 
@@ -1040,6 +1040,8 @@ func setConfigValue(sm *SessionManager, key, value string) error {
 			return fmt.Errorf("backend '%s' is not available on this system", value)
 		}
 		sm.config.DefaultBackend = backend
+		// Update the current backend to reflect the new configuration
+		sm.currentBackend = sm.selectBestBackend()
 		if err := SaveConfig(sm.config); err != nil {
 			return fmt.Errorf("failed to save config: %v", err)
 		}
@@ -1062,8 +1064,13 @@ func getConfigValue(sm *SessionManager, key string) error {
 
 func showCurrentConfig(sm *SessionManager) {
 	sm.logInfo("Current Configuration:")
-	fmt.Printf("  Default Backend: %s\n", sm.config.DefaultBackend)
-	fmt.Printf("  Current Backend: %s\n", sm.currentBackend)
+	
+	// Show system default (hardcoded default)
+	systemDefault := NewDefaultConfig().DefaultBackend
+	fmt.Printf("  Default Backend: %s\n", systemDefault)
+	
+	// Show current backend (what's actually being used)
+	fmt.Printf("  Active Backend: %s\n", sm.currentBackend)
 	
 	fmt.Printf("  Available Backends: ")
 	available := []string{}
@@ -1114,7 +1121,7 @@ Options:
 Configuration Commands:
   txm config set backend <tmux|zellij|screen>  Set default backend
   txm config get backend                       Show current default backend
-  txm config show                              Show all configuration
+  txm config show                              Show backend configuration details
 
 Environment Variables:
   TXM_DEFAULT_BACKEND    Set default backend (overrides config file)
