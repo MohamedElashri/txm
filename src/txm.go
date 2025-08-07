@@ -702,6 +702,14 @@ func (sm *SessionManager) nukeAllSessions() {
 func main() {
 	var verbose bool
 
+	// Check for help flags first
+	for _, arg := range os.Args {
+		if arg == "-h" || arg == "--help" {
+			displayHelp()
+			os.Exit(0)
+		}
+	}
+
 	for _, arg := range os.Args {
 		if arg == "-v" || arg == "--verbose" {
 			verbose = true
@@ -1085,37 +1093,43 @@ func showCurrentConfig(sm *SessionManager) {
 func displayHelp() {
 	helpText := `Usage: txm [command] [arguments]
 
-Commands:
-┌────────────────┬─────────────────────────────────────────────┬─────────────────────────────────────────┐
-│    Command     │               Arguments                      │              Description                 │
-├────────────────┼─────────────────────────────────────────────┼─────────────────────────────────────────┤
-│ create         │ [session_name]                              │ Create a new tmux or screen session      │
-│ list          │                                             │ List all tmux or screen sessions         │
-│ attach        │ [session_name]                              │ Attach to a tmux or screen session       │
-│ detach        │                                             │ Detach from current session              │
-│ delete        │ [session_name]                              │ Delete a tmux or screen session          │
-│ new-window    │ [session_name] [name]                       │ Create a new window in session           │
-│ list-windows  │ [session_name]                              │ List windows in a session                │
-│ kill-window   │ [session_name] [name]                       │ Kill a window in session                 │
-│ next-window   │ [session_name]                              │ Switch to next window in session         │
-│ prev-window   │ [session_name]                              │ Switch to previous window in session     │
-│ nuke          │                                             │ Kill all tmux or screen sessions         │
-│ rename-session│ [old_session_name] [new_session_name]       │ Rename a tmux session                    │
-│ rename-window │ [session_name] [old_window_name] [new_window_name]│ Rename a window in a tmux session     │
-│ move-window   │ [src_session_name] [window_name] [dst_session_name]│ Move a window to another session     │
-│ swap-window   │ [session_name] [window1_name] [window2_name] │ Swap two windows in a tmux session       │
-│ split-window  │ [session_name] [window_name] [direction]     │ Split a window in a tmux session         │
-│ list-panes    │ [session_name] [window_name]                │ List panes (tmux: by number, zellij: layout info)│
-│ kill-pane     │ [session_name] [window_name] [pane_number]   │ Kill a pane (tmux: exact pane, zellij: navigates+kills)│
-│ resize-pane   │ [session_name] [window_name] [pane_number] [direction] [size]│ Resize a pane (tmux: exact pane, zellij: navigates+resizes)│
-│ send-keys     │ [session_name] [window_name] [pane_number] [keys]│ Send keys to a pane (tmux: exact pane, zellij: navigates+sends)│
-│ config        │ [set|get|show] [key] [value]                │ Manage configuration                      │
-│ update        │                                             │ Update txm to the latest version         │
-│ uninstall     │                                             │ Uninstall txm                           │
-│ version       │ [--check-update]                           │ Show version and check for updates       │
-└────────────────┴─────────────────────────────────────────────┴─────────────────────────────────────────┘
+Basic Commands:
+  create [name]    Create a new session
+  list             List all sessions  
+  attach [name]    Attach to a session
+  detach           Detach from current session
+  delete [name]    Delete a session
+  nuke             Kill all sessions
+  help             Display this help information
+
+Window Management:
+  new-window [session] [name]                  Create a new window
+  list-windows [session]                       List windows in session
+  kill-window [session] [name]                 Kill a window
+  next-window [session]                        Switch to next window
+  prev-window [session]                        Switch to previous window
+  rename-window [session] [old] [new]          Rename a window
+  move-window [src_session] [window] [dst]     Move window to another session
+  swap-window [session] [window1] [window2]    Swap two windows
+
+Pane Operations:
+  split-window [session] [window] [direction]  Split a window
+  list-panes [session] [window]                List panes in window
+  kill-pane [session] [window] [pane]          Kill a pane
+  resize-pane [session] [window] [pane] [dir] [size]  Resize a pane
+  send-keys [session] [window] [pane] [keys]   Send keys to a pane
+
+Session Management:
+  rename-session [old] [new]                   Rename a session
+
+Configuration & System:
+  config [set|get|show] [key] [value]          Manage configuration
+  version [--check-update]                     Show version information
+  update                                       Update to latest version
+  uninstall                                    Uninstall txm
 
 Options:
+  -h, --help       Show this help message and exit
   -v, --verbose    Enable verbose output
 
 Configuration Commands:
