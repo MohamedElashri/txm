@@ -1,0 +1,107 @@
+name: Configuration Tests
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  config-tests:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macOS-latest]
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Set up Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: ^1.22.5
+      
+      - name: Install system dependencies
+        run: |
+          if [[ "${{ matrix.os }}" == "ubuntu-latest" ]]; then
+            sudo apt-get update
+            sudo apt-get install -y tmux screen
+            # Install zellij
+            curl -L https://github.com/zellij-org/zellij/releases/latest/download/zellij-x86_64-unknown-linux-musl.tar.gz | tar -xz
+            sudo mv zellij /usr/local/bin/
+          else
+            # macOS
+            brew install tmux screen
+            # Install zellij
+            brew install zellij
+          fi
+      
+      - name: Set up Go module
+        run: |
+          go get golang.org/x/term
+          go mod tidy
+      
+      - name: Build txm
+        run: |
+          go build -o txm
+          chmod +x txm
+      
+      - name: Test configuration system
+        run: |
+          # Test config commands
+          ./txm config show
+          
+          # Test setting backends
+          if command -v tmux >/dev/null 2>&1; then
+            ./txm config set backend tmux
+            echo "Backend set to tmux"
+          fi
+          
+          if command -v zellij >/dev/null 2>&1; then
+            ./txm config set backend zellij
+            echo "Backend set to zellij"
+          fi
+          
+          if command -v screen >/dev/null 2>&1; then
+            ./txm config set backend screen
+            echo "Backend set to screen"
+          fi
+          
+          # Show final config
+          ./txm config show
+      
+      - name: Test environment variable override
+        run: |
+          # Test environment variable override
+          if command -v tmux >/dev/null 2>&1; then
+            TXM_DEFAULT_BACKEND=tmux ./txm config show
+          fi
+          
+          if command -v zellij >/dev/null 2>&1; then
+            TXM_DEFAULT_BACKEND=zellij ./txm config show
+          fi
+          
+          if command -v screen >/dev/null 2>&1; then
+            TXM_DEFAULT_BACKEND=screen ./txm config show
+          fi
+      
+      - name: Test backend availability detection
+        run: |
+          echo "Testing backend availability detection..."
+          
+          # Test with invalid backend - this should fail
+          if ./txm config set backend invalid; then
+            echo "ERROR: Invalid backend was accepted (should have failed)"
+            exit 1
+          else
+            echo "Correctly rejected invalid backend"
+          fi
+          
+          # Test fallback behavior
+          ./txm config show
+      
+      - name: Archive binary artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: txm-config-${{ matrix.os }}
+          path: txm

@@ -14,7 +14,7 @@ import (
 )
 
 const (
-	Version   = "0.2.7"
+	Version   = "0.3.0"
 	githubAPI = "https://api.github.com/repos/MohamedElashri/txm/releases/latest"
 )
 
@@ -70,7 +70,16 @@ func GetInstallationType() (*InstallationType, error) {
 				LogDir:    filepath.Join(homeDir, ".local/share/txm"),
 			}
 		} else {
-			return nil, fmt.Errorf("unknown installation type")
+			// Handle development/testing scenarios where binary is compiled in place
+			inst = InstallationType{
+				Type:      "development",
+				Path:      execPath,
+				IsSystem:  false,
+				ManDir:    filepath.Join(homeDir, ".local/share/man/man1"),
+				ConfigDir: filepath.Join(homeDir, ".txm"),
+				CacheDir:  filepath.Join(homeDir, ".cache/txm"),
+				LogDir:    filepath.Join(homeDir, ".local/share/txm"),
+			}
 		}
 	}
 
@@ -135,6 +144,13 @@ func UpdateBinary(sm *SessionManager) error {
 	inst, err := GetInstallationType()
 	if err != nil {
 		return err
+	}
+
+	// Handle development installations
+	if inst.Type == "development" {
+		sm.logInfo("Development installation detected - update not supported in this mode")
+		sm.logInfo("Please update by rebuilding from source or using a proper installation")
+		return nil
 	}
 
 	if inst.IsSystem && os.Getuid() != 0 {

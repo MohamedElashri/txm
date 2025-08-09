@@ -20,6 +20,12 @@ _txm_completion() {
     local cur prev words cword
     _init_completion || return
 
+    # Handle global flags
+    if [[ "$cur" == -* ]]; then
+        COMPREPLY=($(compgen -W "-v --verbose -h --help" -- "$cur"))
+        return 0
+    fi
+
     # Handle command completion
     if [ "$cword" -eq 1 ]; then
         COMPREPLY=($(compgen -W "$(_txm_commands)" -- "$cur"))

@@ -1,0 +1,49 @@
+name: Unit Tests
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  unit-tests:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macOS-latest]
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Set up Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: ^1.22.5
+      
+      - name: Set up Go module
+        run: |
+          go get golang.org/x/term
+          go mod tidy
+      
+      - name: Build txm
+        run: |
+          go build -o txm
+          chmod +x txm
+      
+      - name: Run unit tests
+        run: |
+          go test -v
+      
+      - name: Test basic functionality
+        run: |
+          # Test basic commands
+          ./txm version
+          # List command may fail if no sessions exist, but should not error
+          ./txm list || echo "No sessions found (expected)"
+      
+      - name: Archive binary artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: txm-unit-${{ matrix.os }}
+          path: txm

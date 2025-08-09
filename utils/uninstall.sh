@@ -129,29 +129,64 @@ fi
 # Update man database
 update_man_db "$IS_SYSTEM_INSTALL"
 
-# Remove configuration files
+# Remove configuration files (with confirmation for non-interactive mode)
 echo -e "${BLUE}Removing txm configuration files...${NC}"
-rm -rf ~/.txm 2>/dev/null
+if [ -d ~/.txm ]; then
+    echo -e "${YELLOW}Configuration directory ~/.txm found.${NC}"
+    if [ -t 0 ]; then
+        read -p "Remove configuration directory ~/.txm? (y/n): " REMOVE_CONFIG
+        if [ "$REMOVE_CONFIG" == "y" ]; then
+            rm -rf ~/.txm 2>/dev/null
+            echo -e "${GREEN}Configuration directory removed.${NC}"
+        else
+            echo -e "${YELLOW}Configuration directory preserved.${NC}"
+        fi
+    else
+        rm -rf ~/.txm 2>/dev/null
+        echo -e "${GREEN}Configuration directory removed.${NC}"
+    fi
+fi
+
+# Remove legacy config files
 rm -f ~/.txmrc 2>/dev/null
 
-# Remove cache files
+# Remove cache files (with safety check)
 echo -e "${BLUE}Removing txm cache files...${NC}"
-rm -rf ~/.cache/txm 2>/dev/null
+if [ -d ~/.cache/txm ]; then
+    rm -rf ~/.cache/txm 2>/dev/null
+    echo -e "${GREEN}Cache files removed.${NC}"
+fi
 
-# Remove logs
+# Remove logs (with safety check)
 echo -e "${BLUE}Removing txm log files...${NC}"
-rm -rf ~/.local/share/txm 2>/dev/null
+if [ -d ~/.local/share/txm ]; then
+    rm -rf ~/.local/share/txm 2>/dev/null
+    echo -e "${GREEN}Log files removed.${NC}"
+fi
 
-# Remove shell completions
+# Remove shell completions (with verification they belong to txm)
 echo -e "${BLUE}Removing txm shell completions...${NC}"
-# Remove bash completion
-remove_file "$HOME/.local/share/bash-completion/completions/txm" false
 
-# Remove fish completion
-remove_file "$HOME/.config/fish/completions/txm.fish" false
+# Remove bash completion (check if it contains txm-specific content)
+BASH_COMPLETION="$HOME/.local/share/bash-completion/completions/txm"
+if [ -f "$BASH_COMPLETION" ] && grep -q "txm" "$BASH_COMPLETION" 2>/dev/null; then
+    remove_file "$BASH_COMPLETION" false
+    echo -e "${GREEN}Bash completion removed.${NC}"
+fi
 
-# Remove zsh completion
-remove_file "$HOME/.zsh/completion/_txm" false
+# Remove fish completion (check if it contains txm-specific content)
+FISH_COMPLETION="$HOME/.config/fish/completions/txm.fish"
+if [ -f "$FISH_COMPLETION" ] && grep -q "txm" "$FISH_COMPLETION" 2>/dev/null; then
+    remove_file "$FISH_COMPLETION" false
+    echo -e "${GREEN}Fish completion removed.${NC}"
+fi
+
+# Remove zsh completion (check if it contains txm-specific content)
+ZSH_COMPLETION="$HOME/.zsh/completion/_txm"
+if [ -f "$ZSH_COMPLETION" ] && grep -q "txm" "$ZSH_COMPLETION" 2>/dev/null; then
+    remove_file "$ZSH_COMPLETION" false
+    echo -e "${GREEN}Zsh completion removed.${NC}"
+fi
 
 # Remove PATH from shell configuration if it's a user installation
 if [ "$IS_SYSTEM_INSTALL" = false ]; then

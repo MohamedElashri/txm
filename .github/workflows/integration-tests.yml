@@ -1,0 +1,58 @@
+name: Integration Tests
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  integration-tests:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macOS-latest]
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Set up Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: ^1.22.5
+      
+      - name: Set up Go module
+        run: |
+          go get golang.org/x/term
+          go mod tidy
+      
+      - name: Build txm
+        run: |
+          go build -o txm
+          chmod +x txm
+      
+      - name: Test update command
+        run: |
+          # Test update command - should handle development installation properly
+          ./txm update
+      
+      - name: Test help and verbose modes
+        run: |
+          # Test help command - should always work
+          ./txm help || ./txm --help
+          
+          # Test verbose mode
+          ./txm -v list || echo "No sessions in verbose mode"
+          ./txm --verbose version
+      
+      - name: Test installation script syntax
+        run: |
+          # Test that installation script is syntactically correct
+          bash -n utils/install.sh
+          bash -n utils/uninstall.sh
+      
+      - name: Archive binary artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: txm-integration-${{ matrix.os }}
+          path: txm

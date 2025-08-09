@@ -1,11 +1,41 @@
-.TH TXM 1 "March 2025" "txm 0.2.6" "User Commands"
+.TH TXM 1 "March 2025" "txm 0.3.0" "User Commands"
 .SH NAME
-txm \- A terminal session manager for tmux and screen
+txm \- A terminal session manager with multi-backend support
 .SH SYNOPSIS
 .B txm
 [\fICOMMAND\fR] [\fIOPTIONS\fR] [\fB\-v\fR|\fB\-\-verbose\fR]
 .SH DESCRIPTION
-\fBtxm\fR is a command-line utility for managing terminal multiplexer sessions. It primarily works with tmux, with GNU Screen as a fallback option when tmux is not available.
+\fBtxm\fR is a command-line utility for managing terminal multiplexer sessions with support for multiple backends: tmux, zellij, and GNU Screen. It automatically detects available backends and provides a unified interface for session management across different terminal multiplexers.
+.SH BACKEND SUPPORT
+\fBtxm\fR supports three terminal multiplexer backends:
+.TP
+\fBtmux\fR
+Full feature set with advanced pane operations, window management, and session control.
+.TP
+\fBzellij\fR
+Modern workspace paradigm with tab-based workflow and plugin system.
+.TP
+\fBGNU Screen\fR
+Reliable fallback with basic session and window operations.
+
+Backend selection follows this priority order:
+1. \fBTXM_DEFAULT_BACKEND\fR environment variable
+2. User configuration in \fI~/.txm/config\fR
+3. Auto-detection (tmux → zellij → screen)
+.SH CONFIGURATION
+\fBtxm\fR supports configuration via:
+.TP
+\fB~/.txm/config\fR
+JSON configuration file for persistent settings.
+.TP
+\fBTXM_DEFAULT_BACKEND\fR
+Environment variable to override backend selection (values: tmux, zellij, screen).
+.TP
+Configuration commands:
+.B txm config default-backend [BACKEND]
+Set or show the default backend.
+.B txm config backend-order [BACKEND1,BACKEND2,...]
+Set the backend preference order.
 .SH COMMANDS
 .TP
 \fBcreate\fR [\fISESSION_NAME\fR]
@@ -18,7 +48,7 @@ List all sessions.
 Attach to a session.
 .TP
 \fBdetach\fR
-Detach from the current session (tmux only).
+Detach from the current session (tmux and zellij only).
 .TP
 \fBdelete\fR [\fISESSION_NAME\fR]
 Delete a session.
@@ -39,7 +69,7 @@ Switch to the next window in a session.
 Switch to the previous window in a session.
 .TP
 \fBrename-session\fR [\fIOLD_SESSION_NAME\fR] [\fINEW_SESSION_NAME\fR]
-Rename a session (tmux only).
+Rename a session (tmux and zellij only).
 .TP
 \fBrename-window\fR [\fISESSION_NAME\fR] [\fIOLD_WINDOW_NAME\fR] [\fINEW_WINDOW_NAME\fR]
 Rename a window.
@@ -51,7 +81,7 @@ Move window to another session (tmux only).
 Swap two windows in a session (tmux only).
 .TP
 \fBsplit-window\fR [\fISESSION_NAME\fR] [\fIWINDOW_NAME\fR] [\fIv|h\fR]
-Split a window vertically or horizontally (v supported in both tmux and screen, h only in tmux).
+Split a window vertically or horizontally (v supported in tmux/screen, h only in tmux).
 .TP
 \fBlist-panes\fR [\fISESSION_NAME\fR] [\fIWINDOW_NAME\fR]
 List panes in a window (tmux only).
@@ -67,6 +97,15 @@ Send keystrokes to a pane (tmux only).
 .TP
 \fBnuke\fR
 Remove all sessions.
+.TP
+\fBconfig\fR [\fIset|get|show\fR] [\fIkey\fR] [\fIvalue\fR]
+Manage configuration settings.
+.br
+\fBconfig set backend\fR [\fItmux|zellij|screen\fR] - Set default backend
+.br
+\fBconfig get backend\fR - Show current default backend
+.br
+\fBconfig show\fR - Show all configuration
 .TP
 \fBhelp\fR
 Display help information.
@@ -85,6 +124,9 @@ Show version information and optionally check for updates.
 Enable verbose output for debugging.
 .SH ENVIRONMENT
 .TP
+.B TXM_DEFAULT_BACKEND
+Set the default backend to use (tmux, zellij, or screen). Overrides configuration file settings.
+.TP
 .B NO_COLOR
 If set, disables colored output.
 .TP
@@ -97,6 +139,15 @@ Create a new session:
 .TP
 List all sessions:
 .B txm list
+.TP
+Set default backend to zellij:
+.B txm config set backend zellij
+.TP
+Show current configuration:
+.B txm config show
+.TP
+Use specific backend via environment:
+.B TXM_DEFAULT_BACKEND=tmux txm create mysession
 .TP
 Create and split a window:
 .B txm new-window mysession mywindow
@@ -124,10 +175,21 @@ Default user installation location.
 .I /usr/local/bin/txm
 System-wide installation location.
 .SH NOTES
-When tmux is not available, txm will automatically fall back to GNU Screen with reduced functionality. Window and pane operations are only available when using tmux.
+\fBtxm\fR automatically detects available backends in the following order: tmux, zellij, screen. Feature availability varies by backend:
+
+.B tmux:
+Full feature set including pane operations, window management, and advanced session control.
+
+.B zellij:
+Modern workspace paradigm with tab-based workflow. Most features supported with workspace/tab terminology.
+
+.B GNU Screen:
+Basic session and window operations. Limited feature set compared to tmux and zellij.
+
+Backend selection can be overridden via configuration or environment variables.
 .SH AUTHOR
 Written by Mohamed Elashri.
 .SH BUGS
 Report bugs at https://github.com/MohamedElashri/txm/issues
 .SH SEE ALSO
-\fBtmux\fR(1), \fBscreen\fR(1)
+\fBtmux\fR(1), \fBzellij\fR(1), \fBscreen\fR(1)

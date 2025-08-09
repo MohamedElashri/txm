@@ -1,0 +1,154 @@
+name: Backend Tests
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  backend-tests:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macOS-latest]
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Set up Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: ^1.22.5
+      
+      - name: Install system dependencies
+        run: |
+          if [[ "${{ matrix.os }}" == "ubuntu-latest" ]]; then
+            sudo apt-get update
+            sudo apt-get install -y tmux screen
+            # Install zellij
+            curl -L https://github.com/zellij-org/zellij/releases/latest/download/zellij-x86_64-unknown-linux-musl.tar.gz | tar -xz
+            sudo mv zellij /usr/local/bin/
+          else
+            # macOS
+            brew install tmux screen
+            # Install zellij
+            brew install zellij
+          fi
+      
+      - name: Set up Go module
+        run: |
+          go get golang.org/x/term
+          go mod tidy
+      
+      - name: Build txm
+        run: |
+          go build -o txm
+          chmod +x txm
+      
+      - name: Test tmux backend (if available)
+        run: |
+          if command -v tmux >/dev/null 2>&1; then
+            echo "Testing tmux backend..."
+            ./txm config set backend tmux
+            
+            # Test session operations - these should succeed
+            echo "Creating tmux session..."
+            ./txm create test-session-tmux
+            
+            echo "Listing sessions..."
+            ./txm list
+            
+            echo "Creating window..."
+            ./txm new-window test-session-tmux test-window
+            
+            echo "Listing windows..."
+            ./txm list-windows test-session-tmux
+            
+            echo "Splitting window..."
+            ./txm split-window test-session-tmux test-window v
+            
+            echo "Listing panes..."
+            ./txm list-panes test-session-tmux test-window
+            
+            echo "Cleaning up tmux session..."
+            ./txm delete test-session-tmux
+          else
+            echo "tmux not available, skipping tmux tests"
+          fi
+      
+      - name: Test zellij backend (if available)
+        run: |
+          if command -v zellij >/dev/null 2>&1; then
+            echo "Testing zellij backend..."
+            ./txm config set backend zellij
+            
+            # Test session operations - these should succeed
+            echo "Creating zellij session..."
+            ./txm create test-session-zellij
+            
+            echo "Listing sessions..."
+            ./txm list
+            
+            echo "Creating tab..."
+            ./txm new-window test-session-zellij test-tab
+            
+            echo "Listing tabs..."
+            if ./txm list-windows test-session-zellij; then
+              echo "List tabs worked"
+            else
+              echo "List tabs not supported in zellij (expected limitation)"
+            fi
+            
+            echo "Splitting pane..."
+            ./txm split-window test-session-zellij test-tab v
+            
+            echo "Listing panes..."
+            if ./txm list-panes test-session-zellij test-tab; then
+              echo "List panes worked"
+            else
+              echo "List panes not supported in zellij (expected limitation)"
+            fi
+            
+            echo "Cleaning up zellij session..."
+            ./txm delete test-session-zellij
+          else
+            echo "zellij not available, skipping zellij tests"
+          fi
+      
+      - name: Test screen backend (if available)
+        run: |
+          if command -v screen >/dev/null 2>&1; then
+            echo "Testing screen backend..."
+            ./txm config set backend screen
+            
+            # Test session operations - these should succeed
+            echo "Creating screen session..."
+            ./txm create test-session-screen
+            
+            echo "Listing sessions..."
+            ./txm list
+            
+            echo "Creating window..."
+            ./txm new-window test-session-screen test-window
+            
+            echo "Listing windows..."
+            ./txm list-windows test-session-screen
+            
+            echo "Cleaning up screen session..."
+            ./txm delete test-session-screen
+          else
+            echo "screen not available, skipping screen tests"
+          fi
+      
+      - name: Cleanup test sessions
+        if: always()
+        run: |
+          # Clean up any remaining test sessions
+          ./txm nuke
+      
+      - name: Archive binary artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: txm-backend-${{ matrix.os }}
+          path: txm

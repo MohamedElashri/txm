@@ -15,6 +15,10 @@ function __txm_get_sessions
     end
 end
 
+# Global options
+complete -c txm -s h -l help -d "Show help message and exit"
+complete -c txm -s v -l verbose -d "Enable verbose output"
+
 # Define completions for txm commands
 complete -c txm -f -n "__fish_is_first_arg" -a "(__txm_commands)"
 
