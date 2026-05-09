@@ -155,13 +155,13 @@ var installCmd = &cobra.Command{
 		fmt.Printf("Successfully installed man page to %s\n", destMan)
 
 		// Install Completions
-		installCompletions(system)
+		installCompletions(system, "")
 
 		return nil
 	},
 }
 
-func installCompletions(system bool) {
+func installCompletions(system bool, shell string) {
 	var bashPath, zshPath, fishPath string
 	if system {
 		bashPath = "/usr/share/bash-completion/completions/txm"
@@ -175,25 +175,28 @@ func installCompletions(system bool) {
 	}
 
 	// Bash
-	if err := os.MkdirAll(filepath.Dir(bashPath), 0755); err == nil {
-		if f, err := os.Create(bashPath); err == nil {
-			_ = rootCmd.GenBashCompletion(f)
-			_ = f.Close()
-			fmt.Printf("Installed bash completion to %s\n", bashPath)
-			if !system {
-				// Try to automatically source in .bashrc
-				homeDir, _ := os.UserHomeDir()
-				bashrcPath := filepath.Join(homeDir, ".bashrc")
-				if _, err := os.Stat(bashrcPath); err == nil {
-					content, _ := os.ReadFile(bashrcPath)
-					// Use a simpler match for the path
-					if !strings.Contains(string(content), "txm completion bash") && !strings.Contains(string(content), bashPath) {
-						f, err := os.OpenFile(bashrcPath, os.O_APPEND|os.O_WRONLY, 0644)
-						if err == nil {
-							_, _ = fmt.Fprintf(f, "\n# Added by txm\n[[ -f %q ]] && . %q\n", bashPath, bashPath)
-							_ = f.Close()
-							fmt.Printf("Added source line for bash completion in %s\n", bashrcPath)
-							fmt.Printf("Please run 'source %s' to activate it.\n", bashrcPath)
+	if shell == "" || shell == "bash" {
+		if err := os.MkdirAll(filepath.Dir(bashPath), 0755); err == nil {
+			if f, err := os.Create(bashPath); err == nil {
+				_ = rootCmd.GenBashCompletion(f)
+				_ = f.Close()
+				fmt.Printf("Installed bash completion to %s\n", bashPath)
+				if !system {
+					// Try to automatically source in .bashrc
+					homeDir, _ := os.UserHomeDir()
+					bashrcPath := filepath.Join(homeDir, ".bashrc")
+					if _, err := os.Stat(bashrcPath); err == nil {
+						content, _ := os.ReadFile(bashrcPath)
+						if !strings.Contains(string(content), "txm completion bash") && !strings.Contains(string(content), bashPath) {
+							f, err := os.OpenFile(bashrcPath, os.O_APPEND|os.O_WRONLY, 0644)
+							if err == nil {
+								_, _ = fmt.Fprintf(f, "\n# Added by txm\n[[ -f %q ]] && . %q\n", bashPath, bashPath)
+								_ = f.Close()
+								fmt.Printf("Added source line for bash completion in %s\n", bashrcPath)
+								if strings.Contains(os.Getenv("SHELL"), "bash") {
+									fmt.Printf("Please run 'source %s' to activate it.\n", bashrcPath)
+								}
+							}
 						}
 					}
 				}
@@ -202,40 +205,46 @@ func installCompletions(system bool) {
 	}
 
 	// Zsh
-	if err := os.MkdirAll(filepath.Dir(zshPath), 0755); err == nil {
-		if f, err := os.Create(zshPath); err == nil {
-			_ = rootCmd.GenZshCompletion(f)
-			_ = f.Close()
-			fmt.Printf("Installed zsh completion to %s\n", zshPath)
-			if !system {
-				// Try to automatically add to fpath in .zshrc
-				homeDir, _ := os.UserHomeDir()
-				zshrcPath := filepath.Join(homeDir, ".zshrc")
-				if _, err := os.Stat(zshrcPath); err == nil {
-					content, _ := os.ReadFile(zshrcPath)
-					if !strings.Contains(string(content), "fpath+=~/.zfunc") && !strings.Contains(string(content), "fpath+=(~/.zfunc)") {
-						f, err := os.OpenFile(zshrcPath, os.O_APPEND|os.O_WRONLY, 0644)
-						if err == nil {
-							_, _ = f.WriteString("\n# Added by txm\nfpath+=~/.zfunc\n")
-							_ = f.Close()
-							fmt.Printf("Added ~/.zfunc to fpath in %s\n", zshrcPath)
-							fmt.Printf("IMPORTANT: Ensure 'fpath+=~/.zfunc' is ABOVE 'compinit' in your %s\n", zshrcPath)
-							fmt.Printf("Then run: rm -f ~/.zcompdump; compinit\n")
+	if shell == "" || shell == "zsh" {
+		if err := os.MkdirAll(filepath.Dir(zshPath), 0755); err == nil {
+			if f, err := os.Create(zshPath); err == nil {
+				_ = rootCmd.GenZshCompletion(f)
+				_ = f.Close()
+				fmt.Printf("Installed zsh completion to %s\n", zshPath)
+				if !system {
+					// Try to automatically add to fpath in .zshrc
+					homeDir, _ := os.UserHomeDir()
+					zshrcPath := filepath.Join(homeDir, ".zshrc")
+					if _, err := os.Stat(zshrcPath); err == nil {
+						content, _ := os.ReadFile(zshrcPath)
+						if !strings.Contains(string(content), "fpath+=~/.zfunc") && !strings.Contains(string(content), "fpath+=(~/.zfunc)") {
+							f, err := os.OpenFile(zshrcPath, os.O_APPEND|os.O_WRONLY, 0644)
+							if err == nil {
+								_, _ = f.WriteString("\n# Added by txm\nfpath+=~/.zfunc\n")
+								_ = f.Close()
+								fmt.Printf("Added ~/.zfunc to fpath in %s\n", zshrcPath)
+								if strings.Contains(os.Getenv("SHELL"), "zsh") {
+									fmt.Printf("IMPORTANT: Ensure 'fpath+=~/.zfunc' is ABOVE 'compinit' in your %s\n", zshrcPath)
+									fmt.Printf("Then run: rm -f ~/.zcompdump; compinit\n")
+								}
+							}
 						}
+					} else {
+						fmt.Printf("  (Note: Make sure `fpath+=~/.zfunc` is in your ~/.zshrc before compinit)\n")
 					}
-				} else {
-					fmt.Printf("  (Note: Make sure `fpath+=~/.zfunc` is in your ~/.zshrc before compinit)\n")
 				}
 			}
 		}
 	}
 
 	// Fish
-	if err := os.MkdirAll(filepath.Dir(fishPath), 0755); err == nil {
-		if f, err := os.Create(fishPath); err == nil {
-			_ = rootCmd.GenFishCompletion(f, true)
-			_ = f.Close()
-			fmt.Printf("Installed fish completion to %s\n", fishPath)
+	if shell == "" || shell == "fish" {
+		if err := os.MkdirAll(filepath.Dir(fishPath), 0755); err == nil {
+			if f, err := os.Create(fishPath); err == nil {
+				_ = rootCmd.GenFishCompletion(f, true)
+				_ = f.Close()
+				fmt.Printf("Installed fish completion to %s\n", fishPath)
+			}
 		}
 	}
 }
@@ -353,7 +362,7 @@ func init() {
 		Short: "Generate bash completion script",
 		Run: func(cmd *cobra.Command, args []string) {
 			if completionInstall {
-				installCompletions(false)
+				installCompletions(false, "bash")
 				return
 			}
 			// Check if stdout is a terminal
@@ -373,7 +382,7 @@ func init() {
 		Short: "Generate zsh completion script",
 		Run: func(cmd *cobra.Command, args []string) {
 			if completionInstall {
-				installCompletions(false)
+				installCompletions(false, "zsh")
 				return
 			}
 			// Check if stdout is a terminal
@@ -393,7 +402,7 @@ func init() {
 		Short: "Generate fish completion script",
 		Run: func(cmd *cobra.Command, args []string) {
 			if completionInstall {
-				installCompletions(false)
+				installCompletions(false, "fish")
 				return
 			}
 			// Check if stdout is a terminal
