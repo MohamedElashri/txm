@@ -2,20 +2,6 @@
 
 `txm` is a unified command-line interface for managing terminal multiplexer sessions. It supports **tmux**, **zellij**, and **GNU Screen** through a single consistent set of commands, with automatic backend detection and native shell completions.
 
-## Table of Contents
-
-- [Installation](#installation)
-- [Autocompletion](#autocompletion)
-- [Quick Start](#quick-start)
-- [Configuration](#configuration)
-- [Commands](#commands)
-- [Backend Support](#backend-support)
-- [Environment Variables](#environment-variables)
-- [Documentation](#documentation)
-- [Uninstallation](#uninstallation)
-- [Contributing](#contributing)
-- [License](#license)
-
 ---
 
 ## Installation
