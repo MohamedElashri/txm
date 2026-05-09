@@ -132,13 +132,18 @@ func (b *TmuxBackend) KillPane(session, window, pane string) error {
 
 func (b *TmuxBackend) ResizePane(session, window, pane, direction string, size int) error {
 	paneTarget := fmt.Sprintf("%s:%s.%s", session, window, pane)
-	resizeFlag := "-U"
-	if direction == "D" {
+	var resizeFlag string
+	switch direction {
+	case "U":
+		resizeFlag = "-U"
+	case "D":
 		resizeFlag = "-D"
-	} else if direction == "L" {
+	case "L":
 		resizeFlag = "-L"
-	} else if direction == "R" {
+	case "R":
 		resizeFlag = "-R"
+	default:
+		resizeFlag = "-U"
 	}
 	return b.runCommand("resize-pane", resizeFlag, fmt.Sprintf("%d", size), "-t", paneTarget)
 }

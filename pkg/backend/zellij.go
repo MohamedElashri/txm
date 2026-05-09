@@ -188,20 +188,24 @@ func (b *ZellijBackend) SplitWindow(session, window, direction string) error {
 	if !b.SessionExists(session) {
 		return fmt.Errorf("session '%s' does not exist", session)
 	}
-	if direction == "v" {
+	switch direction {
+	case "v":
 		return b.runCommandWithSession(session, "action", "new-pane", "--direction", "down")
-	} else if direction == "h" {
+	case "h":
 		return b.runCommandWithSession(session, "action", "new-pane", "--direction", "right")
+	default:
+		return fmt.Errorf("invalid split direction for zellij: %s", direction)
 	}
-	return fmt.Errorf("invalid split direction for zellij: %s", direction)
 }
 
 func (b *ZellijBackend) focusPane(session, window, pane string) error {
 	if pane == "" || pane == "0" {
 		return nil
 	}
-	b.runCommandWithSession(session, "action", "move-focus-or-tab", "left")
-	b.runCommandWithSession(session, "action", "move-focus-or-tab", "up")
+	// Best-effort navigation; errors are intentionally ignored since focus
+	// operations are best-effort in zellij's focus-based model.
+	_ = b.runCommandWithSession(session, "action", "move-focus-or-tab", "left")
+	_ = b.runCommandWithSession(session, "action", "move-focus-or-tab", "up")
 	targetPane := 1
 	if p, err := strconv.Atoi(pane); err == nil && p > 0 {
 		targetPane = p
@@ -225,7 +229,9 @@ func (b *ZellijBackend) KillPane(session, window, pane string) error {
 	if !b.SessionExists(session) {
 		return fmt.Errorf("session '%s' does not exist", session)
 	}
-	b.focusPane(session, window, pane)
+	if err := b.focusPane(session, window, pane); err != nil {
+		return err
+	}
 	return b.runCommandWithSession(session, "action", "close-pane")
 }
 
@@ -233,7 +239,9 @@ func (b *ZellijBackend) ResizePane(session, window, pane, direction string, size
 	if !b.SessionExists(session) {
 		return fmt.Errorf("session '%s' does not exist", session)
 	}
-	b.focusPane(session, window, pane)
+	if err := b.focusPane(session, window, pane); err != nil {
+		return err
+	}
 	var dir string
 	switch direction {
 	case "U":
@@ -259,7 +267,9 @@ func (b *ZellijBackend) SendKeys(session, window, pane, keys string) error {
 	if !b.SessionExists(session) {
 		return fmt.Errorf("session '%s' does not exist", session)
 	}
-	b.focusPane(session, window, pane)
+	if err := b.focusPane(session, window, pane); err != nil {
+		return err
+	}
 	return b.runCommandWithSession(session, "action", "write-chars", keys)
 }
 
@@ -291,7 +301,8 @@ func (b *ZellijBackend) NukeAllSessions() error {
 		if len(parts) > 0 {
 			sessionName := parts[0]
 			if err := b.runCommand("delete-session", sessionName); err != nil {
-				b.runCommand("delete-session", "--force", sessionName)
+				// Best-effort force delete; ignore secondary error
+				_ = b.runCommand("delete-session", "--force", sessionName)
 			}
 			killCount++
 		}

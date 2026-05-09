@@ -80,7 +80,8 @@ func (b *ScreenBackend) KillSession(name string) error {
 			if len(parts) > 0 {
 				sessionID := parts[0]
 				if strings.Contains(sessionID, ".") {
-					exec.Command("screen", "-S", sessionID, "-X", "quit").Run()
+					// Best-effort kill; ignore error since screen may have already exited
+					_ = exec.Command("screen", "-S", sessionID, "-X", "quit").Run()
 				}
 			}
 		}
@@ -163,8 +164,8 @@ func (b *ScreenBackend) NukeAllSessions() error {
 				if strings.Contains(sessionID, ".") {
 					colorCodeRegex := regexp.MustCompile(`\x1b\[[0-9;]*m`)
 					sessionID = colorCodeRegex.ReplaceAllString(sessionID, "")
-
-					exec.Command("screen", "-S", sessionID, "-X", "quit").Run()
+					// Best-effort kill; ignore error since screen may have already exited
+					_ = exec.Command("screen", "-S", sessionID, "-X", "quit").Run()
 				}
 			}
 		}

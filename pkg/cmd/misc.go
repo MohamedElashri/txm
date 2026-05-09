@@ -126,7 +126,9 @@ var installCmd = &cobra.Command{
 		if err := copyFile(execPath, destBin); err != nil {
 			return fmt.Errorf("failed to install binary: %v", err)
 		}
-		os.Chmod(destBin, 0755)
+		if err := os.Chmod(destBin, 0755); err != nil {
+			return fmt.Errorf("failed to set binary permissions: %v", err)
+		}
 
 		// Install Man Page
 		destMan := filepath.Join(manDir, "txm.1")
@@ -158,43 +160,48 @@ func installCompletions(system bool) {
 	}
 
 	// Bash
-	os.MkdirAll(filepath.Dir(bashPath), 0755)
-	if f, err := os.Create(bashPath); err == nil {
-		rootCmd.GenBashCompletion(f)
-		f.Close()
-		fmt.Printf("Installed bash completion to %s\n", bashPath)
+	if err := os.MkdirAll(filepath.Dir(bashPath), 0755); err == nil {
+		if f, err := os.Create(bashPath); err == nil {
+			_ = rootCmd.GenBashCompletion(f)
+			_ = f.Close()
+			fmt.Printf("Installed bash completion to %s\n", bashPath)
+		}
 	}
 
 	// Zsh
-	os.MkdirAll(filepath.Dir(zshPath), 0755)
-	if f, err := os.Create(zshPath); err == nil {
-		rootCmd.GenZshCompletion(f)
-		f.Close()
-		fmt.Printf("Installed zsh completion to %s\n", zshPath)
-		if !system {
-			fmt.Printf("  (Note: Make sure `fpath+=~/.zfunc` is in your ~/.zshrc before compinit)\n")
+	if err := os.MkdirAll(filepath.Dir(zshPath), 0755); err == nil {
+		if f, err := os.Create(zshPath); err == nil {
+			_ = rootCmd.GenZshCompletion(f)
+			_ = f.Close()
+			fmt.Printf("Installed zsh completion to %s\n", zshPath)
+			if !system {
+				fmt.Printf("  (Note: Make sure `fpath+=~/.zfunc` is in your ~/.zshrc before compinit)\n")
+			}
 		}
 	}
 
 	// Fish
-	os.MkdirAll(filepath.Dir(fishPath), 0755)
-	if f, err := os.Create(fishPath); err == nil {
-		rootCmd.GenFishCompletion(f, true)
-		f.Close()
-		fmt.Printf("Installed fish completion to %s\n", fishPath)
+	if err := os.MkdirAll(filepath.Dir(fishPath), 0755); err == nil {
+		if f, err := os.Create(fishPath); err == nil {
+			_ = rootCmd.GenFishCompletion(f, true)
+			_ = f.Close()
+			fmt.Printf("Installed fish completion to %s\n", fishPath)
+		}
 	}
 }
 
 func copyFile(src, dst string) error {
 	in, err := os.Open(src)
 	if err != nil { return err }
-	defer in.Close()
+	defer func() { _ = in.Close() }()
 
 	out, err := os.Create(dst)
 	if err != nil { return err }
-	defer out.Close()
 
 	_, err = io.Copy(out, in)
+	if closeErr := out.Close(); closeErr != nil && err == nil {
+		err = closeErr
+	}
 	return err
 }
 
