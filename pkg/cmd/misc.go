@@ -190,7 +190,7 @@ func installCompletions(system bool) {
 					if !strings.Contains(string(content), "txm completion bash") && !strings.Contains(string(content), bashPath) {
 						f, err := os.OpenFile(bashrcPath, os.O_APPEND|os.O_WRONLY, 0644)
 						if err == nil {
-							_, _ = f.WriteString(fmt.Sprintf("\n# Added by txm\n[[ -f %q ]] && . %q\n", bashPath, bashPath))
+							_, _ = fmt.Fprintf(f, "\n# Added by txm\n[[ -f %q ]] && . %q\n", bashPath, bashPath)
 							_ = f.Close()
 							fmt.Printf("Added source line for bash completion in %s\n", bashrcPath)
 							fmt.Printf("Please run 'source %s' to activate it.\n", bashrcPath)
@@ -242,11 +242,15 @@ func installCompletions(system bool) {
 
 func copyFile(src, dst string) error {
 	in, err := os.Open(src)
-	if err != nil { return err }
+	if err != nil {
+		return err
+	}
 	defer func() { _ = in.Close() }()
 
 	out, err := os.Create(dst)
-	if err != nil { return err }
+	if err != nil {
+		return err
+	}
 
 	_, err = io.Copy(out, in)
 	if closeErr := out.Close(); closeErr != nil && err == nil {
@@ -343,7 +347,7 @@ var completionInstall bool
 
 func init() {
 	completionCmd.PersistentFlags().BoolVar(&completionInstall, "install", false, "Install completion script to standard location")
-	
+
 	completionCmd.AddCommand(&cobra.Command{
 		Use:   "bash",
 		Short: "Generate bash completion script",
@@ -406,7 +410,7 @@ func init() {
 }
 
 // Version is set at build time via ldflags: -X github.com/MohamedElashri/txm/pkg/cmd.Version=<tag>
-var Version = "1.0.4"
+var Version = "1.0.5"
 
 var versionCmd = &cobra.Command{
 	Use:   "version",
