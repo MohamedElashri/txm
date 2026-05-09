@@ -190,9 +190,10 @@ func installCompletions(system bool) {
 					if !strings.Contains(string(content), "txm completion bash") && !strings.Contains(string(content), bashPath) {
 						f, err := os.OpenFile(bashrcPath, os.O_APPEND|os.O_WRONLY, 0644)
 						if err == nil {
-							_, _ = f.WriteString(fmt.Sprintf("\n# Added by txm\n[[ -f %s ]] && . %s\n", bashPath, bashPath))
+							_, _ = f.WriteString(fmt.Sprintf("\n# Added by txm\n[[ -f %q ]] && . %q\n", bashPath, bashPath))
 							_ = f.Close()
 							fmt.Printf("Added source line for bash completion in %s\n", bashrcPath)
+							fmt.Printf("Please run 'source %s' to activate it.\n", bashrcPath)
 						}
 					}
 				}
@@ -218,6 +219,8 @@ func installCompletions(system bool) {
 							_, _ = f.WriteString("\n# Added by txm\nfpath+=~/.zfunc\n")
 							_ = f.Close()
 							fmt.Printf("Added ~/.zfunc to fpath in %s\n", zshrcPath)
+							fmt.Printf("IMPORTANT: Ensure 'fpath+=~/.zfunc' is ABOVE 'compinit' in your %s\n", zshrcPath)
+							fmt.Printf("Then run: rm -f ~/.zcompdump; compinit\n")
 						}
 					}
 				} else {
@@ -349,6 +352,14 @@ func init() {
 				installCompletions(false)
 				return
 			}
+			// Check if stdout is a terminal
+			if stat, _ := os.Stdout.Stat(); (stat.Mode() & os.ModeCharDevice) != 0 {
+				fmt.Fprintln(os.Stderr, "Error: You are running this in a terminal. To install completion, use:")
+				fmt.Fprintln(os.Stderr, "  txm completion bash --install")
+				fmt.Fprintln(os.Stderr, "\nOr to test in current session:")
+				fmt.Fprintln(os.Stderr, "  source <(txm completion bash)")
+				return
+			}
 			_ = rootCmd.GenBashCompletion(os.Stdout)
 		},
 	})
@@ -361,6 +372,14 @@ func init() {
 				installCompletions(false)
 				return
 			}
+			// Check if stdout is a terminal
+			if stat, _ := os.Stdout.Stat(); (stat.Mode() & os.ModeCharDevice) != 0 {
+				fmt.Fprintln(os.Stderr, "Error: You are running this in a terminal. To install completion, use:")
+				fmt.Fprintln(os.Stderr, "  txm completion zsh --install")
+				fmt.Fprintln(os.Stderr, "\nOr to test in current session:")
+				fmt.Fprintln(os.Stderr, "  source <(txm completion zsh)")
+				return
+			}
 			_ = rootCmd.GenZshCompletion(os.Stdout)
 		},
 	})
@@ -371,6 +390,14 @@ func init() {
 		Run: func(cmd *cobra.Command, args []string) {
 			if completionInstall {
 				installCompletions(false)
+				return
+			}
+			// Check if stdout is a terminal
+			if stat, _ := os.Stdout.Stat(); (stat.Mode() & os.ModeCharDevice) != 0 {
+				fmt.Fprintln(os.Stderr, "Error: You are running this in a terminal. To install completion, use:")
+				fmt.Fprintln(os.Stderr, "  txm completion fish --install")
+				fmt.Fprintln(os.Stderr, "\nOr to test in current session:")
+				fmt.Fprintln(os.Stderr, "  txm completion fish | source")
 				return
 			}
 			_ = rootCmd.GenFishCompletion(os.Stdout, true)
