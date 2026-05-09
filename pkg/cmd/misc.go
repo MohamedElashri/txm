@@ -308,8 +308,61 @@ var uninstallCmd = &cobra.Command{
 	},
 }
 
+var completionCmd = &cobra.Command{
+	Use:   "completion [bash|zsh|fish|powershell]",
+	Short: "Generate shell completion scripts",
+	Long: `To load completions for your current session:
+$ source <(txm completion bash)
+$ source <(txm completion zsh)
+
+To install them permanently, use the --install flag:
+$ txm completion zsh --install`,
+}
+
+var completionInstall bool
+
+func init() {
+	completionCmd.PersistentFlags().BoolVar(&completionInstall, "install", false, "Install completion script to standard location")
+	
+	completionCmd.AddCommand(&cobra.Command{
+		Use:   "bash",
+		Short: "Generate bash completion script",
+		Run: func(cmd *cobra.Command, args []string) {
+			if completionInstall {
+				installCompletions(false)
+				return
+			}
+			_ = rootCmd.GenBashCompletion(os.Stdout)
+		},
+	})
+
+	completionCmd.AddCommand(&cobra.Command{
+		Use:   "zsh",
+		Short: "Generate zsh completion script",
+		Run: func(cmd *cobra.Command, args []string) {
+			if completionInstall {
+				installCompletions(false)
+				return
+			}
+			_ = rootCmd.GenZshCompletion(os.Stdout)
+		},
+	})
+
+	completionCmd.AddCommand(&cobra.Command{
+		Use:   "fish",
+		Short: "Generate fish completion script",
+		Run: func(cmd *cobra.Command, args []string) {
+			if completionInstall {
+				installCompletions(false)
+				return
+			}
+			_ = rootCmd.GenFishCompletion(os.Stdout, true)
+		},
+	})
+}
+
 // Version is set at build time via ldflags: -X github.com/MohamedElashri/txm/pkg/cmd.Version=<tag>
-var Version = "1.0.2"
+var Version = "1.0.3"
 
 var versionCmd = &cobra.Command{
 	Use:   "version",

@@ -115,4 +115,5 @@ func init() {
 	rootCmd.AddCommand(updateCmd)
 	rootCmd.AddCommand(uninstallCmd)
 	rootCmd.AddCommand(versionCmd)
+	rootCmd.AddCommand(completionCmd)
 }
