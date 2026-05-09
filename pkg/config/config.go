@@ -1,4 +1,4 @@
-package main
+package config
 
 import (
 	"fmt"
@@ -7,31 +7,17 @@ import (
 	"strings"
 )
 
-// Backend represents the type of terminal multiplexer backend
-type Backend int
+// BackendType represents the type of terminal multiplexer backend
+type BackendType string
 
 const (
-	BackendTmux Backend = iota
-	BackendZellij
-	BackendScreen
+	BackendTmux   BackendType = "tmux"
+	BackendZellij BackendType = "zellij"
+	BackendScreen BackendType = "screen"
 )
 
-// String returns the string representation of the backend
-func (b Backend) String() string {
-	switch b {
-	case BackendTmux:
-		return "tmux"
-	case BackendZellij:
-		return "zellij"
-	case BackendScreen:
-		return "screen"
-	default:
-		return "unknown"
-	}
-}
-
-// ParseBackend parses a string into a Backend type
-func ParseBackend(s string) (Backend, error) {
+// ParseBackend parses a string into a BackendType
+func ParseBackend(s string) (BackendType, error) {
 	switch strings.ToLower(s) {
 	case "tmux":
 		return BackendTmux, nil
@@ -46,15 +32,15 @@ func ParseBackend(s string) (Backend, error) {
 
 // Config represents the configuration for txm
 type Config struct {
-	DefaultBackend Backend `json:"default_backend"`
-	BackendOrder   []Backend `json:"backend_order"`
+	DefaultBackend BackendType
+	BackendOrder   []BackendType
 }
 
 // NewDefaultConfig creates a new default configuration
 func NewDefaultConfig() *Config {
 	return &Config{
 		DefaultBackend: BackendTmux,
-		BackendOrder:   []Backend{BackendTmux, BackendScreen, BackendZellij},
+		BackendOrder:   []BackendType{BackendTmux, BackendScreen, BackendZellij},
 	}
 }
 
@@ -66,8 +52,6 @@ func LoadConfig() (*Config, error) {
 	configFile := getConfigFilePath()
 	if configFile != "" {
 		if err := loadConfigFile(config, configFile); err != nil {
-			// If config file exists but has errors, return the error
-			// If config file doesn't exist, continue with defaults
 			if !os.IsNotExist(err) {
 				return nil, fmt.Errorf("error loading config file: %v", err)
 			}
@@ -79,7 +63,6 @@ func LoadConfig() (*Config, error) {
 		if backend, err := ParseBackend(envBackend); err == nil {
 			config.DefaultBackend = backend
 		}
-		// If invalid, silently ignore and use existing config/default
 	}
 
 	return config, nil
@@ -92,7 +75,6 @@ func getConfigFilePath() string {
 		return ""
 	}
 
-	// Check for various config file formats
 	configPaths := []string{
 		filepath.Join(homeDir, ".txm", "config"),
 		filepath.Join(homeDir, ".txm", "config.txt"),
@@ -108,7 +90,6 @@ func getConfigFilePath() string {
 	return ""
 }
 
-// loadConfigFile loads configuration from a simple text file
 func loadConfigFile(config *Config, filePath string) error {
 	data, err := os.ReadFile(filePath)
 	if err != nil {
@@ -122,7 +103,6 @@ func loadConfigFile(config *Config, filePath string) error {
 			continue
 		}
 
-		// Parse simple key=value format
 		if strings.Contains(line, "=") {
 			parts := strings.SplitN(line, "=", 2)
 			if len(parts) == 2 {
@@ -134,7 +114,6 @@ func loadConfigFile(config *Config, filePath string) error {
 					if backend, err := ParseBackend(value); err == nil {
 						config.DefaultBackend = backend
 					}
-					// If invalid, silently ignore and use default
 				}
 			}
 		}
@@ -156,7 +135,7 @@ func SaveConfig(config *Config) error {
 	}
 
 	configFile := filepath.Join(configDir, "config")
-	content := fmt.Sprintf("# txm configuration file\n# Set the default backend (tmux, zellij, screen)\ndefault_backend=%s\n", config.DefaultBackend.String())
+	content := fmt.Sprintf("# txm configuration file\n# Set the default backend (tmux, zellij, screen)\ndefault_backend=%s\n", config.DefaultBackend)
 
 	if err := os.WriteFile(configFile, []byte(content), 0644); err != nil {
 		return fmt.Errorf("failed to write config file: %v", err)

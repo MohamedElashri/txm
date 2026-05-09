@@ -63,6 +63,16 @@ txm [command] [arguments] [-v|--verbose]
 
 The `-v` or `--verbose` flag enables detailed logging, useful for debugging or learning how commands work.
 
+## Autocompletion
+
+`txm` automatically installs native shell autocompletion for `bash`, `zsh`, and `fish` when you run `txm install`. The installer places the generated completion scripts into standard locations dynamically:
+
+- **Bash**: `~/.local/share/bash-completion/completions/txm` (or `/usr/share/bash-completion/` for system installs)
+- **Zsh**: `~/.zfunc/_txm` (You must add `fpath+=~/.zfunc` to your `.zshrc`)
+- **Fish**: `~/.config/fish/completions/txm.fish`
+
+When you uninstall the app using `txm uninstall`, these autocompletion files are automatically purged from your system.
+
 ### Backend Override
 
 ```bash

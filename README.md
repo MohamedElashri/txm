@@ -137,7 +137,7 @@ Installation steps:
    sudo mv txm /usr/local/bin/
    ```
 
-Quick install using the installation script:
+Quick install using the installation script (Downloads the latest release):
 
 For user-local installation (default)
 
@@ -155,7 +155,7 @@ curl -s https://raw.githubusercontent.com/MohamedElashri/txm/main/utils/install.
 ### Building from Source
 
 Requirements:
-- Go 1.17 or later
+- Go 1.24 or later
 - At least one terminal multiplexer: tmux, zellij, or GNU Screen
 
 Steps:
@@ -170,16 +170,32 @@ Steps:
    cd txm
    ```
 
-3. Build the binary:
+3. Build the binary using Make:
    ```bash
-   cd src
-   go build -o txm
+   make build
    ```
 
-4. (Optional) Move to PATH:
+4. (Optional) Install to PATH:
    ```bash
-   sudo mv txm /usr/local/bin/
+   sudo make install
    ```
+
+## Autocompletion
+
+`txm` automatically configures shell autocompletion for `bash`, `zsh`, and `fish` when you run `txm install`. 
+
+The installer places the generated completion scripts in the standard locations for your operating system automatically. 
+
+If you use **Zsh**, the installer will place the completion file in `~/.zfunc/_txm`. You must ensure that this directory is added to your `$fpath` in your `~/.zshrc` file before calling `compinit`:
+```zsh
+fpath+=~/.zfunc
+compinit
+```
+
+If you ever need to manually source completions for a temporary session, or if you use PowerShell, you can still generate them on the fly:
+```bash
+source <(txm completion bash)
+```
 
 ## Usage Examples
 
@@ -243,20 +259,7 @@ txm resize-pane my-project tab-name 0 R 10  # Resizes focused pane
 txm send-keys my-project tab-name 0 "npm start"  # Sends to focused pane
 ```
 
-3. Initialize module:
-   ```bash
-   go mod init github.com/MohamedElashri/txm
-   ```
 
-4. Build:
-   ```bash
-   go build -o txm
-   ```
-
-5. Install (optional):
-   ```bash
-   sudo mv txm /usr/local/bin/
-   ```
 
 ## Basic Usage
 
@@ -303,7 +306,7 @@ txm send-keys my-project tab-name 0 "npm start"  # Sends to focused pane
   txm resize-pane mysession 0 1 "-D 10"  # resize down 10 units
   ```
 
-For complete documentation, see [docs.md](docs.md). Or you can run `txm help` to see the available commands. There is an old fashioned `man` page available as well, run `man txm` to see
+For complete documentation, see [docs/user-guide.md](docs/user-guide.md). Or you can run `txm help` to see the available commands. There is an old fashioned `man` page available as well, run `man txm` to see
 
 ## Environment Variables
 
@@ -329,22 +332,19 @@ sudo txm update
 
 Remove txm and its configurations:
 
-There is `uninstall` option to uninstall txm that can be used to uninstall txm .
+There is an `uninstall` command built directly into `txm`. 
 
-If something went wrong during the this process, you can uninstall txm using the following script:
-
-For user-local uninstallation
+For user-local uninstallation:
 ```bash
-curl -s https://raw.githubusercontent.com/MohamedElashri/txm/main/utils/uninstall.sh | bash
+txm uninstall
 ```
 
-For system-wide uninstallation
-
+For system-wide uninstallation (requires root):
 ```bash
-curl -s https://raw.githubusercontent.com/MohamedElashri/txm/main/utils/uninstall.sh | sudo bash
+sudo txm uninstall
 ```
 
-
+The command will automatically detect where it was installed and remove the executable along with the man page.
 ## Contributing
 
 Contributions welcome! Please submit issues and pull requests on GitHub.
