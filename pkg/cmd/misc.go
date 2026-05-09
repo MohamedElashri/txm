@@ -302,7 +302,7 @@ var updateCmd = &cobra.Command{
 		if err != nil {
 			return fmt.Errorf("failed to fetch latest release: %v", err)
 		}
-		defer resp.Body.Close()
+		defer func() { _ = resp.Body.Close() }()
 
 		if resp.StatusCode != http.StatusOK {
 			return fmt.Errorf("GitHub API returned status: %v", resp.Status)
@@ -364,7 +364,7 @@ var updateCmd = &cobra.Command{
 		if err != nil {
 			return fmt.Errorf("failed to create temp directory: %v", err)
 		}
-		defer os.RemoveAll(tmpDir)
+		defer func() { _ = os.RemoveAll(tmpDir) }()
 
 		zipPath := filepath.Join(tmpDir, expectedAssetName)
 		out, err := os.Create(zipPath)
@@ -374,18 +374,18 @@ var updateCmd = &cobra.Command{
 
 		dlResp, err := http.Get(downloadURL)
 		if err != nil {
-			out.Close()
+			_ = out.Close()
 			return fmt.Errorf("failed to download update: %v", err)
 		}
-		defer dlResp.Body.Close()
+		defer func() { _ = dlResp.Body.Close() }()
 
 		if dlResp.StatusCode != http.StatusOK {
-			out.Close()
+			_ = out.Close()
 			return fmt.Errorf("failed to download update, status: %v", dlResp.Status)
 		}
 
 		_, err = io.Copy(out, dlResp.Body)
-		out.Close()
+		_ = out.Close()
 		if err != nil {
 			return fmt.Errorf("failed to write update file: %v", err)
 		}
@@ -395,7 +395,7 @@ var updateCmd = &cobra.Command{
 		if err != nil {
 			return fmt.Errorf("failed to open zip file: %v", err)
 		}
-		defer r.Close()
+		defer func() { _ = r.Close() }()
 
 		var binFile *zip.File
 		for _, f := range r.File {
@@ -413,7 +413,7 @@ var updateCmd = &cobra.Command{
 		if err != nil {
 			return fmt.Errorf("failed to read binary from archive: %v", err)
 		}
-		defer binRc.Close()
+		defer func() { _ = binRc.Close() }()
 
 		extractedBinPath := filepath.Join(tmpDir, "txm-new")
 		extractedBin, err := os.OpenFile(extractedBinPath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, binFile.Mode())
@@ -422,7 +422,7 @@ var updateCmd = &cobra.Command{
 		}
 
 		_, err = io.Copy(extractedBin, binRc)
-		extractedBin.Close()
+		_ = extractedBin.Close()
 		if err != nil {
 			return fmt.Errorf("failed to extract binary: %v", err)
 		}
@@ -444,13 +444,13 @@ var updateCmd = &cobra.Command{
 		fmt.Println("Installing new version...")
 		
 		oldPath := execPath + ".old"
-		os.Remove(oldPath)
+		_ = os.Remove(oldPath)
 		if err := os.Rename(execPath, oldPath); err != nil {
 			return fmt.Errorf("failed to rename current binary: %v", err)
 		}
 
 		if err := copyFile(extractedBinPath, execPath); err != nil {
-			os.Rename(oldPath, execPath)
+			_ = os.Rename(oldPath, execPath)
 			return fmt.Errorf("failed to install new binary: %v", err)
 		}
 
@@ -458,7 +458,7 @@ var updateCmd = &cobra.Command{
 			fmt.Printf("Warning: failed to set executable permissions: %v\n", err)
 		}
 
-		os.Remove(oldPath)
+		_ = os.Remove(oldPath)
 
 		fmt.Printf("Successfully updated txm to %s\n", release.TagName)
 		return nil
@@ -479,8 +479,8 @@ func hasWritePermission(dir string) bool {
 	if err != nil {
 		return false
 	}
-	tmpFile.Close()
-	os.Remove(tmpFile.Name())
+	_ = tmpFile.Close()
+	_ = os.Remove(tmpFile.Name())
 	return true
 }
 
