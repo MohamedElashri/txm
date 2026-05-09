@@ -1,10 +1,14 @@
 package cmd
 
 import (
+	"archive/zip"
+	"encoding/json"
 	"fmt"
 	"io"
+	"net/http"
 	"os"
 	"path/filepath"
+	"runtime"
 	"strings"
 
 	"github.com/MohamedElashri/txm/docs"
@@ -279,15 +283,205 @@ func copyFile(src, dst string) error {
 	return err
 }
 
+type GitHubRelease struct {
+	TagName string `json:"tag_name"`
+	Assets  []struct {
+		Name               string `json:"name"`
+		BrowserDownloadUrl string `json:"browser_download_url"`
+	} `json:"assets"`
+}
+
 var updateCmd = &cobra.Command{
 	Use:   "update",
 	Short: "Update txm to the latest version",
 	Args:  cobra.NoArgs,
 	RunE: func(cmd *cobra.Command, args []string) error {
-		fmt.Println("Updating txm...")
-		fmt.Println("For installations managed by GoReleaser, please update via your package manager or download the latest release from GitHub.")
+		fmt.Println("Checking for updates...")
+		
+		resp, err := http.Get("https://api.github.com/repos/MohamedElashri/txm/releases/latest")
+		if err != nil {
+			return fmt.Errorf("failed to fetch latest release: %v", err)
+		}
+		defer resp.Body.Close()
+
+		if resp.StatusCode != http.StatusOK {
+			return fmt.Errorf("GitHub API returned status: %v", resp.Status)
+		}
+
+		var release GitHubRelease
+		if err := json.NewDecoder(resp.Body).Decode(&release); err != nil {
+			return fmt.Errorf("failed to parse GitHub response: %v", err)
+		}
+
+		latestVersion := strings.TrimPrefix(release.TagName, "v")
+		currentVersion := strings.TrimPrefix(Version, "v")
+
+		if latestVersion == currentVersion {
+			fmt.Printf("txm is already up to date (version %s)\n", Version)
+			return nil
+		}
+
+		fmt.Printf("A new version of txm is available: %s -> %s\n", Version, release.TagName)
+
+		osStr := ""
+		switch runtime.GOOS {
+		case "linux":
+			osStr = "Linux"
+		case "darwin":
+			osStr = "Darwin"
+		case "windows":
+			osStr = "Windows"
+		default:
+			return fmt.Errorf("unsupported OS for auto-update: %s", runtime.GOOS)
+		}
+
+		archStr := ""
+		switch runtime.GOARCH {
+		case "amd64":
+			archStr = "x86_64"
+		case "386":
+			archStr = "i386"
+		default:
+			archStr = runtime.GOARCH
+		}
+
+		expectedAssetName := fmt.Sprintf("txm_%s_%s.zip", osStr, archStr)
+		
+		var downloadURL string
+		for _, asset := range release.Assets {
+			if asset.Name == expectedAssetName {
+				downloadURL = asset.BrowserDownloadUrl
+				break
+			}
+		}
+
+		if downloadURL == "" {
+			return fmt.Errorf("no suitable binary found for %s/%s in release %s", runtime.GOOS, runtime.GOARCH, release.TagName)
+		}
+
+		fmt.Printf("Downloading %s...\n", expectedAssetName)
+		tmpDir, err := os.MkdirTemp("", "txm-update-*")
+		if err != nil {
+			return fmt.Errorf("failed to create temp directory: %v", err)
+		}
+		defer os.RemoveAll(tmpDir)
+
+		zipPath := filepath.Join(tmpDir, expectedAssetName)
+		out, err := os.Create(zipPath)
+		if err != nil {
+			return fmt.Errorf("failed to create temp file: %v", err)
+		}
+
+		dlResp, err := http.Get(downloadURL)
+		if err != nil {
+			out.Close()
+			return fmt.Errorf("failed to download update: %v", err)
+		}
+		defer dlResp.Body.Close()
+
+		if dlResp.StatusCode != http.StatusOK {
+			out.Close()
+			return fmt.Errorf("failed to download update, status: %v", dlResp.Status)
+		}
+
+		_, err = io.Copy(out, dlResp.Body)
+		out.Close()
+		if err != nil {
+			return fmt.Errorf("failed to write update file: %v", err)
+		}
+
+		fmt.Println("Extracting binary...")
+		r, err := zip.OpenReader(zipPath)
+		if err != nil {
+			return fmt.Errorf("failed to open zip file: %v", err)
+		}
+		defer r.Close()
+
+		var binFile *zip.File
+		for _, f := range r.File {
+			if f.Name == "txm" || f.Name == "txm.exe" {
+				binFile = f
+				break
+			}
+		}
+
+		if binFile == nil {
+			return fmt.Errorf("could not find txm binary in the downloaded archive")
+		}
+
+		binRc, err := binFile.Open()
+		if err != nil {
+			return fmt.Errorf("failed to read binary from archive: %v", err)
+		}
+		defer binRc.Close()
+
+		extractedBinPath := filepath.Join(tmpDir, "txm-new")
+		extractedBin, err := os.OpenFile(extractedBinPath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, binFile.Mode())
+		if err != nil {
+			return fmt.Errorf("failed to create extracted binary file: %v", err)
+		}
+
+		_, err = io.Copy(extractedBin, binRc)
+		extractedBin.Close()
+		if err != nil {
+			return fmt.Errorf("failed to extract binary: %v", err)
+		}
+
+		execPath, err := os.Executable()
+		if err != nil {
+			return fmt.Errorf("failed to determine current executable path: %v", err)
+		}
+
+		realExecPath, err := filepath.EvalSymlinks(execPath)
+		if err == nil {
+			execPath = realExecPath
+		}
+
+		if !hasWritePermission(filepath.Dir(execPath)) {
+			return fmt.Errorf("no write permission to %s. Please run with sudo", filepath.Dir(execPath))
+		}
+
+		fmt.Println("Installing new version...")
+		
+		oldPath := execPath + ".old"
+		os.Remove(oldPath)
+		if err := os.Rename(execPath, oldPath); err != nil {
+			return fmt.Errorf("failed to rename current binary: %v", err)
+		}
+
+		if err := copyFile(extractedBinPath, execPath); err != nil {
+			os.Rename(oldPath, execPath)
+			return fmt.Errorf("failed to install new binary: %v", err)
+		}
+
+		if err := os.Chmod(execPath, 0755); err != nil {
+			fmt.Printf("Warning: failed to set executable permissions: %v\n", err)
+		}
+
+		os.Remove(oldPath)
+
+		fmt.Printf("Successfully updated txm to %s\n", release.TagName)
 		return nil
 	},
+}
+
+func hasWritePermission(dir string) bool {
+	info, err := os.Stat(dir)
+	if err != nil {
+		return false
+	}
+	
+	if !info.IsDir() {
+		return false
+	}
+	
+	tmpFile, err := os.CreateTemp(dir, "txm-write-check-*")
+	if err != nil {
+		return false
+	}
+	tmpFile.Close()
+	os.Remove(tmpFile.Name())
+	return true
 }
 
 var uninstallCmd = &cobra.Command{
