@@ -12,11 +12,13 @@ REPO_OWNER="MohamedElashri"
 REPO_NAME="txm"
 LATEST_RELEASE_URL="https://api.github.com/repos/$REPO_OWNER/$REPO_NAME/releases/latest"
 
-# Detect the operating system
+# Detect the operating system and architecture
 OS=""
+ARCH=""
+
 case "$(uname -s)" in
     Darwin*)
-        OS="macOS"
+        OS="Darwin"
         SYS_MAN_DIR="/usr/local/share/man/man1"
         ;;
     Linux*)
@@ -29,9 +31,24 @@ case "$(uname -s)" in
         ;;
 esac
 
+case "$(uname -m)" in
+    x86_64|amd64)
+        ARCH="x86_64"
+        ;;
+    arm64|aarch64)
+        ARCH="arm64"
+        ;;
+    *)
+        echo -e "${RED}Unsupported architecture: $(uname -m). Only x86_64 and arm64 are supported.${NC}"
+        exit 1
+        ;;
+esac
+
+# The archive name as produced by GoReleaser, e.g. txm_Linux_x86_64.zip
+ARCHIVE_NAME="txm_${OS}_${ARCH}.zip"
+
 # Set up installation directories
 USER_BIN_DIR="$HOME/.local/bin"
-USER_MAN_DIR="$HOME/.local/share/man/man1"
 SYSTEM_BIN_DIR="/usr/local/bin"
 
 # Function to print error messages and exit
@@ -47,14 +64,13 @@ create_dir_if_needed() {
     fi
 }
 
-# Check if curl is installed
+# Check dependencies
 if ! command -v curl &> /dev/null; then
     error_exit "curl is not installed. Please install curl and try again."
 fi
 
-# Check if jq is installed
-if ! command -v jq &> /dev/null; then
-    error_exit "jq is not installed. Please install jq and try again."
+if ! command -v unzip &> /dev/null; then
+    error_exit "unzip is not installed. Please install unzip and try again."
 fi
 
 # Parse command line arguments
@@ -77,22 +93,16 @@ if [ "$SYSTEM_INSTALL" = true ]; then
         error_exit "System-wide installation requires root privileges. Please run with sudo."
     fi
     INSTALL_BIN_DIR="$SYSTEM_BIN_DIR"
-    INSTALL_MAN_DIR="$SYS_MAN_DIR"
     echo -e "${BLUE}Performing system-wide installation...${NC}"
 else
     INSTALL_BIN_DIR="$USER_BIN_DIR"
-    INSTALL_MAN_DIR="$USER_MAN_DIR"
     echo -e "${BLUE}Performing user-local installation...${NC}"
 fi
 
 # Create necessary directories
 create_dir_if_needed "$INSTALL_BIN_DIR"
-create_dir_if_needed "$INSTALL_MAN_DIR"
 
-# Ensure we're in a valid directory before proceeding
-cd "$HOME" || exit 1
-
-# Add ~/.local/bin to PATH if it's not already there and doing user installation
+# Add ~/.local/bin to PATH if needed
 if [ "$SYSTEM_INSTALL" = false ]; then
     if [[ ":$PATH:" != *":$USER_BIN_DIR:"* ]]; then
         echo -e "${YELLOW}Adding $USER_BIN_DIR to your PATH...${NC}"
@@ -102,131 +112,85 @@ if [ "$SYSTEM_INSTALL" = false ]; then
     fi
 fi
 
-# Check if txm is already installed
+# Fetch the latest release information
+echo -e "${BLUE}Fetching the latest release information...${NC}"
+RELEASE_INFO=$(curl -sf "$LATEST_RELEASE_URL") || error_exit "Failed to fetch release information from GitHub."
+
+LATEST_VERSION=$(echo "$RELEASE_INFO" | grep '"tag_name"' | head -1 | sed 's/.*"tag_name": *"\([^"]*\)".*/\1/')
+
+if [ -z "$LATEST_VERSION" ]; then
+    error_exit "Could not determine the latest release version."
+fi
+
+echo -e "${BLUE}Latest version: ${LATEST_VERSION}${NC}"
+
+# Check if already installed
 if command -v txm &> /dev/null; then
-    CURRENT_VERSION=$(txm version 2>/dev/null | grep -o 'txm version [0-9]\+\.[0-9]\+\.[0-9]\+' | cut -d' ' -f3 || echo "unknown")
-    echo -e "${BLUE}Fetching the latest release information...${NC}"
-    LATEST_VERSION=$(curl -s "$LATEST_RELEASE_URL" | jq -r ".tag_name" 2>/dev/null || echo "unknown")
-    
-    if [ "$LATEST_VERSION" == "unknown" ] || [ "$LATEST_VERSION" == "null" ]; then
-        echo -e "${RED}Failed to fetch latest version information. Proceeding with installation...${NC}"
-    elif [ "$CURRENT_VERSION" == "$LATEST_VERSION" ]; then
-        echo -e "${YELLOW}txm is already installed and up to date (version $CURRENT_VERSION).${NC}"
-        read -p "Do you want to re-install txm? (y/n): " REINSTALL
+    CURRENT_VERSION=$(txm version 2>/dev/null | grep -o '[0-9]\+\.[0-9]\+\.[0-9]\+' | head -1 || echo "unknown")
+    if [ "$CURRENT_VERSION" = "$(echo "$LATEST_VERSION" | sed 's/^v//')" ]; then
+        echo -e "${YELLOW}txm $CURRENT_VERSION is already installed and up to date.${NC}"
+        read -rp "Do you want to re-install txm? (y/n): " REINSTALL
         if [ "$REINSTALL" != "y" ]; then
-            echo -e "${BLUE}Installation aborted. Exiting.${NC}"
-            exit 0
-        fi
-    elif [ "$CURRENT_VERSION" != "unknown" ]; then
-        echo -e "${YELLOW}txm is already installed (version $CURRENT_VERSION), but a newer version ($LATEST_VERSION) is available.${NC}"
-        read -p "Do you want to upgrade txm? (y/n): " UPGRADE
-        if [ "$UPGRADE" != "y" ]; then
-            echo -e "${BLUE}Upgrade aborted. Exiting.${NC}"
+            echo -e "${BLUE}Installation aborted.${NC}"
             exit 0
         fi
     fi
-else
-    echo -e "${BLUE}Fetching the latest release information...${NC}"
-    LATEST_VERSION=$(curl -s "$LATEST_RELEASE_URL" | jq -r ".tag_name" 2>/dev/null || echo "unknown")
 fi
 
-# Fetch the latest release information if not already done
-if [ -z "$RELEASE_INFO" ]; then
-    RELEASE_INFO=$(curl -s "$LATEST_RELEASE_URL" || error_exit "Failed to fetch release information")
-fi
-
-# Extract the download URL for the current platform
-DOWNLOAD_URL=$(echo "$RELEASE_INFO" | jq -r ".assets[] | select(.name | contains(\"$OS.zip\")) | .browser_download_url")
+# Find the download URL for the platform archive
+DOWNLOAD_URL=$(echo "$RELEASE_INFO" | grep '"browser_download_url"' | grep "$ARCHIVE_NAME" | sed 's/.*"browser_download_url": *"\([^"]*\)".*/\1/')
 
 if [ -z "$DOWNLOAD_URL" ]; then
-    error_exit "No compatible binary found for $OS in the latest release."
+    error_exit "No compatible binary found for ${OS} ${ARCH} (looking for ${ARCHIVE_NAME}) in release ${LATEST_VERSION}."
 fi
 
-# Create temporary directory for downloads
+echo -e "${BLUE}Downloading ${ARCHIVE_NAME}...${NC}"
+
+# Create temporary directory
 TMP_DIR=$(mktemp -d)
+trap 'rm -rf "$TMP_DIR"' EXIT
 cd "$TMP_DIR" || error_exit "Failed to create temporary directory"
 
-# Download the binary
-echo -e "${BLUE}Downloading the txm binary...${NC}"
-curl -LO "$DOWNLOAD_URL" || error_exit "Failed to download the txm binary."
+curl -Lf "$DOWNLOAD_URL" -o "$ARCHIVE_NAME" || error_exit "Failed to download $ARCHIVE_NAME."
 
-# Extract the downloaded ZIP file
-echo -e "${BLUE}Extracting the downloaded ZIP file...${NC}"
-unzip -o "txm-$OS.zip" || error_exit "Failed to extract the downloaded ZIP file."
+echo -e "${BLUE}Extracting archive...${NC}"
+unzip -q "$ARCHIVE_NAME" || error_exit "Failed to extract $ARCHIVE_NAME."
 
-# Move the binary to installation directory
-echo -e "${BLUE}Moving the txm binary to $INSTALL_BIN_DIR...${NC}"
+# The binary inside the archive is named 'txm' (or 'txm.exe' on Windows)
+if [ ! -f "txm" ]; then
+    error_exit "Extracted archive does not contain a 'txm' binary. Contents: $(ls)"
+fi
+
+echo -e "${BLUE}Installing binary to $INSTALL_BIN_DIR/txm...${NC}"
 if [ "$SYSTEM_INSTALL" = true ]; then
-    sudo mv "txm-$OS" "$INSTALL_BIN_DIR/txm" || error_exit "Failed to move the txm binary"
+    sudo mv txm "$INSTALL_BIN_DIR/txm" || error_exit "Failed to install binary."
     sudo chmod 755 "$INSTALL_BIN_DIR/txm"
 else
-    mv "txm-$OS" "$INSTALL_BIN_DIR/txm" || error_exit "Failed to move the txm binary"
+    mv txm "$INSTALL_BIN_DIR/txm" || error_exit "Failed to install binary."
     chmod 755 "$INSTALL_BIN_DIR/txm"
 fi
 
-# Download and install man page
-echo -e "${BLUE}Downloading the txm man page...${NC}"
-curl -LO "https://raw.githubusercontent.com/$REPO_OWNER/$REPO_NAME/main/txm.1" || error_exit "Failed to download the txm man page."
-
-if [ "$SYSTEM_INSTALL" = true ]; then
-    sudo mv "txm.1" "$INSTALL_MAN_DIR/txm.1" || error_exit "Failed to move the txm man page"
-    sudo chmod 644 "$INSTALL_MAN_DIR/txm.1"
-else
-    mv "txm.1" "$INSTALL_MAN_DIR/txm.1" || error_exit "Failed to move the txm man page"
-    chmod 644 "$INSTALL_MAN_DIR/txm.1"
-fi
-
-# Verify binary installation and functionality
-echo -e "${BLUE}Verifying txm installation...${NC}"
-if [ "$SYSTEM_INSTALL" = true ]; then
-    INSTALLED_TXM="$INSTALL_BIN_DIR/txm"
-else
-    INSTALLED_TXM="$INSTALL_BIN_DIR/txm"
-fi
-
-if [ ! -f "$INSTALLED_TXM" ]; then
-    error_exit "Binary was not installed correctly at $INSTALLED_TXM"
-fi
-
-if [ ! -x "$INSTALLED_TXM" ]; then
-    error_exit "Binary is not executable at $INSTALLED_TXM"
-fi
-
-# Test that the binary works
-if ! "$INSTALLED_TXM" version >/dev/null 2>&1; then
-    error_exit "Installed binary failed to execute properly"
+# Verify the binary works
+echo -e "${BLUE}Verifying installation...${NC}"
+if ! "$INSTALL_BIN_DIR/txm" version > /dev/null 2>&1; then
+    error_exit "Installed binary failed to execute. Please check your system."
 fi
 
 echo -e "${GREEN}Binary verification successful!${NC}"
 
-# Install shell completion after successful binary installation
-echo -e "${BLUE}Installing shell completion...${NC}"
-curl -fsSL "https://raw.githubusercontent.com/$REPO_OWNER/$REPO_NAME/main/utils/install_completion.sh" | bash || echo -e "${YELLOW}Warning: Shell completion installation failed, but txm is installed successfully.${NC}"
-
-# Update the man page index
-echo -e "${BLUE}Updating the man page index...${NC}"
-if [ "$OS" == "macOS" ]; then
-    if [ "$SYSTEM_INSTALL" = true ]; then
-        sudo /usr/libexec/makewhatis "$INSTALL_MAN_DIR"
-    else
-        /usr/libexec/makewhatis "$INSTALL_MAN_DIR" 2>/dev/null || true
-    fi
+# Use the binary's native install for man page and completions
+echo -e "${BLUE}Installing man page and shell completions...${NC}"
+if [ "$SYSTEM_INSTALL" = true ]; then
+    sudo "$INSTALL_BIN_DIR/txm" install --system || echo -e "${YELLOW}Warning: man page/completion install failed (binary already installed).${NC}"
 else
-    if [ "$SYSTEM_INSTALL" = true ]; then
-        sudo mandb
-    else
-        mandb --user-db "$HOME/.local/share/man" 2>/dev/null || true
-    fi
+    "$INSTALL_BIN_DIR/txm" install || echo -e "${YELLOW}Warning: man page/completion install failed (binary already installed).${NC}"
 fi
 
-# Clean up
-cd - >/dev/null
-rm -rf "$TMP_DIR"
-
-echo -e "${GREEN}Installation completed successfully!${NC}"
+echo ""
+echo -e "${GREEN}✓ txm ${LATEST_VERSION} installed successfully!${NC}"
 if [ "$SYSTEM_INSTALL" = false ]; then
-    echo -e "${GREEN}txm has been installed to $INSTALL_BIN_DIR/txm${NC}"
-    echo -e "${YELLOW}Make sure $USER_BIN_DIR is in your PATH.${NC}"
-    echo -e "${YELLOW}If not, restart your shell or run: source ~/.bashrc${NC}"
+    echo -e "${GREEN}  Binary:       $INSTALL_BIN_DIR/txm${NC}"
+    echo -e "${YELLOW}  Ensure $USER_BIN_DIR is in your PATH.${NC}"
+    echo -e "${YELLOW}  If not, run: source ~/.bashrc${NC}"
 fi
-echo -e "${GREEN}You can now run 'txm' from the command line and access its man page with 'man txm'.${NC}"
+echo -e "${GREEN}  Run 'txm --help' to get started, or 'man txm' for the manual.${NC}"
