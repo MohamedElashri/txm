@@ -154,8 +154,19 @@ var installCmd = &cobra.Command{
 		fmt.Printf("Successfully installed txm to %s\n", destBin)
 		fmt.Printf("Successfully installed man page to %s\n", destMan)
 
+		// Detect current shell to only install what's needed
+		shellEnv := os.Getenv("SHELL")
+		detectedShell := ""
+		if strings.Contains(shellEnv, "zsh") {
+			detectedShell = "zsh"
+		} else if strings.Contains(shellEnv, "bash") {
+			detectedShell = "bash"
+		} else if strings.Contains(shellEnv, "fish") {
+			detectedShell = "fish"
+		}
+
 		// Install Completions
-		installCompletions(system, "")
+		installCompletions(system, detectedShell)
 
 		return nil
 	},
