@@ -278,12 +278,15 @@ var uninstallCmd = &cobra.Command{
 	},
 }
 
+// Version is set at build time via ldflags: -X github.com/MohamedElashri/txm/pkg/cmd.Version=<tag>
+var Version = "1.0.0"
+
 var versionCmd = &cobra.Command{
 	Use:   "version",
 	Short: "Show version and check for updates",
 	Args:  cobra.NoArgs,
 	RunE: func(cmd *cobra.Command, args []string) error {
-		fmt.Println("txm version 1.0.0") // Ideally injected at build time via ldflags
+		fmt.Printf("txm version %s\n", Version)
 		return nil
 	},
 }
