@@ -10,6 +10,7 @@ var listPanesCmd = &cobra.Command{
 	Use:   "list-panes [session_name] [window_name]",
 	Short: "List panes in a window",
 	Args:  cobra.ExactArgs(2),
+	ValidArgsFunction: getSingleSessionCompletion,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		session := args[0]
 		window := args[1]
@@ -31,6 +32,7 @@ var killPaneCmd = &cobra.Command{
 	Use:   "kill-pane [session_name] [window_name] [pane_id]",
 	Short: "Remove a pane",
 	Args:  cobra.ExactArgs(3),
+	ValidArgsFunction: getSingleSessionCompletion,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		session := args[0]
 		window := args[1]
@@ -55,6 +57,7 @@ var resizePaneCmd = &cobra.Command{
 	Use:   "resize-pane [session_name] [window_name] [pane_id] [direction(U|D|L|R)] [size]",
 	Short: "Resize a pane",
 	Args:  cobra.ExactArgs(5),
+	ValidArgsFunction: getSingleSessionCompletion,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		session := args[0]
 		window := args[1]
@@ -90,6 +93,7 @@ var sendKeysCmd = &cobra.Command{
 	Use:   "send-keys [session_name] [window_name] [pane_id] [keys]",
 	Short: "Send keystrokes to a pane",
 	Args:  cobra.ExactArgs(4),
+	ValidArgsFunction: getSingleSessionCompletion,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		session := args[0]
 		window := args[1]

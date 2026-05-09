@@ -9,6 +9,7 @@ var newWindowCmd = &cobra.Command{
 	Use:   "new-window [session_name] [window_name]",
 	Short: "Create a new window/tab",
 	Args:  cobra.RangeArgs(1, 2),
+	ValidArgsFunction: getSingleSessionCompletion,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		session := args[0]
 		if err := validateName(session); err != nil {
@@ -36,6 +37,7 @@ var listWindowsCmd = &cobra.Command{
 	Use:   "list-windows [session_name]",
 	Short: "List windows in a session",
 	Args:  cobra.ExactArgs(1),
+	ValidArgsFunction: getSingleSessionCompletion,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		session := args[0]
 		if err := validateName(session); err != nil {
@@ -53,6 +55,7 @@ var killWindowCmd = &cobra.Command{
 	Use:   "kill-window [session_name] [window_name]",
 	Short: "Remove a window",
 	Args:  cobra.ExactArgs(2),
+	ValidArgsFunction: getSingleSessionCompletion,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		session := args[0]
 		window := args[1]
@@ -76,6 +79,7 @@ var nextWindowCmd = &cobra.Command{
 	Use:   "next-window [session_name]",
 	Short: "Switch to next window",
 	Args:  cobra.ExactArgs(1),
+	ValidArgsFunction: getSingleSessionCompletion,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		session := args[0]
 		if err := validateName(session); err != nil {
@@ -95,6 +99,7 @@ var prevWindowCmd = &cobra.Command{
 	Use:   "prev-window [session_name]",
 	Short: "Switch to previous window",
 	Args:  cobra.ExactArgs(1),
+	ValidArgsFunction: getSingleSessionCompletion,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		session := args[0]
 		if err := validateName(session); err != nil {
@@ -114,6 +119,7 @@ var renameWindowCmd = &cobra.Command{
 	Use:   "rename-window [session_name] [old_name] [new_name]",
 	Short: "Rename a window",
 	Args:  cobra.ExactArgs(3),
+	ValidArgsFunction: getSingleSessionCompletion,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		session := args[0]
 		oldName := args[1]
@@ -141,6 +147,12 @@ var moveWindowCmd = &cobra.Command{
 	Use:   "move-window [src_session] [window_name] [dst_session]",
 	Short: "Move window between sessions",
 	Args:  cobra.ExactArgs(3),
+	ValidArgsFunction: func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+		if len(args) == 0 || len(args) == 2 {
+			return getSessionCompletions(cmd, args, toComplete)
+		}
+		return nil, cobra.ShellCompDirectiveNoFileComp
+	},
 	RunE: func(cmd *cobra.Command, args []string) error {
 		srcSession := args[0]
 		windowName := args[1]
@@ -168,6 +180,7 @@ var swapWindowCmd = &cobra.Command{
 	Use:   "swap-window [session_name] [window1] [window2]",
 	Short: "Swap window positions",
 	Args:  cobra.ExactArgs(3),
+	ValidArgsFunction: getSingleSessionCompletion,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		session := args[0]
 		window1 := args[1]
@@ -195,6 +208,7 @@ var splitWindowCmd = &cobra.Command{
 	Use:   "split-window [session_name] [window_name] [direction(v|h)]",
 	Short: "Split a window into panes",
 	Args:  cobra.ExactArgs(3),
+	ValidArgsFunction: getSingleSessionCompletion,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		session := args[0]
 		window := args[1]

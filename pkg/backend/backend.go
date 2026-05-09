@@ -18,6 +18,7 @@ type TerminalMultiplexer interface {
 	SessionExists(name string) bool
 	CreateSession(name string) error
 	ListSessions() error
+	GetSessions() ([]string, error)
 	AttachSession(name string) error
 	DetachSession() error
 	KillSession(name string) error

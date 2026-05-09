@@ -101,6 +101,31 @@ func (b *ZellijBackend) ListSessions() error {
 	return b.runCommand("list-sessions")
 }
 
+func (b *ZellijBackend) GetSessions() ([]string, error) {
+	output, err := b.runCommandOutput("list-sessions")
+	if err != nil {
+		return nil, err
+	}
+
+	var sessions []string
+	lines := strings.Split(string(output), "\n")
+	re := regexp.MustCompile(`\x1b\[[0-9;]*[a-zA-Z]`)
+
+	for _, line := range lines {
+		line = strings.TrimSpace(line)
+		if line == "" {
+			continue
+		}
+		cleanLine := re.ReplaceAllString(line, "")
+		parts := strings.Fields(cleanLine)
+		if len(parts) > 0 {
+			sessions = append(sessions, parts[0])
+		}
+	}
+
+	return sessions, nil
+}
+
 func (b *ZellijBackend) AttachSession(name string) error {
 	return b.runCommand("attach", name)
 }

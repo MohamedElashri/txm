@@ -9,6 +9,9 @@ var createCmd = &cobra.Command{
 	Use:   "create [session_name]",
 	Short: "Create a new session",
 	Args:  cobra.ExactArgs(1),
+	ValidArgsFunction: func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+		return nil, cobra.ShellCompDirectiveNoFileComp
+	},
 	RunE: func(cmd *cobra.Command, args []string) error {
 		name := args[0]
 		if err := validateName(name); err != nil {
@@ -40,6 +43,7 @@ var attachCmd = &cobra.Command{
 	Use:   "attach [session_name]",
 	Short: "Attach to an existing session",
 	Args:  cobra.ExactArgs(1),
+	ValidArgsFunction: getSingleSessionCompletion,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		name := args[0]
 		if err := validateName(name); err != nil {
@@ -76,6 +80,7 @@ var deleteCmd = &cobra.Command{
 	Use:   "delete [session_name]",
 	Short: "Delete a session",
 	Args:  cobra.ExactArgs(1),
+	ValidArgsFunction: getSingleSessionCompletion,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		name := args[0]
 		if err := validateName(name); err != nil {
@@ -95,6 +100,7 @@ var renameSessionCmd = &cobra.Command{
 	Use:   "rename-session [old_name] [new_name]",
 	Short: "Rename an existing session",
 	Args:  cobra.ExactArgs(2),
+	ValidArgsFunction: getSingleSessionCompletion,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		oldName := args[0]
 		newName := args[1]

@@ -58,6 +58,29 @@ func (b *ScreenBackend) ListSessions() error {
 	return b.runCommand("-ls")
 }
 
+func (b *ScreenBackend) GetSessions() ([]string, error) {
+	cmd := exec.Command("screen", "-ls")
+	output, _ := cmd.Output() // screen -ls returns 1 if no sessions exist, so we ignore error if output is valid
+
+	var sessions []string
+	lines := strings.Split(string(output), "\n")
+	for _, line := range lines {
+		if strings.Contains(line, "(Attached)") || strings.Contains(line, "(Detached)") {
+			parts := strings.Fields(strings.TrimSpace(line))
+			if len(parts) > 0 {
+				sessionID := parts[0]
+				dotIndex := strings.Index(sessionID, ".")
+				if dotIndex != -1 && len(sessionID) > dotIndex+1 {
+					sessions = append(sessions, sessionID[dotIndex+1:])
+				} else {
+					sessions = append(sessions, sessionID)
+				}
+			}
+		}
+	}
+	return sessions, nil
+}
+
 func (b *ScreenBackend) AttachSession(name string) error {
 	return b.runCommand("-r", name)
 }

@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"strings"
 )
 
 var commonTmuxPaths = []string{
@@ -57,6 +58,25 @@ func (b *TmuxBackend) CreateSession(name string) error {
 
 func (b *TmuxBackend) ListSessions() error {
 	return b.runCommand("list-sessions")
+}
+
+func (b *TmuxBackend) GetSessions() ([]string, error) {
+	cmd := exec.Command("tmux", "list-sessions", "-F", "#{session_name}")
+	preserveEnvironment(cmd)
+	output, err := cmd.Output()
+	if err != nil {
+		return nil, err
+	}
+	
+	var sessions []string
+	lines := strings.Split(string(output), "\n")
+	for _, line := range lines {
+		line = strings.TrimSpace(line)
+		if line != "" {
+			sessions = append(sessions, line)
+		}
+	}
+	return sessions, nil
 }
 
 func (b *TmuxBackend) AttachSession(name string) error {

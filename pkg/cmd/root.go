@@ -52,6 +52,25 @@ func getManager() (*backend.Manager, error) {
 	return manager, nil
 }
 
+func getSessionCompletions(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+	mgr, err := getManager()
+	if err != nil {
+		return nil, cobra.ShellCompDirectiveError
+	}
+	sessions, err := mgr.Backend.GetSessions()
+	if err != nil {
+		return nil, cobra.ShellCompDirectiveError
+	}
+	return sessions, cobra.ShellCompDirectiveNoFileComp
+}
+
+func getSingleSessionCompletion(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+	if len(args) != 0 {
+		return nil, cobra.ShellCompDirectiveNoFileComp
+	}
+	return getSessionCompletions(cmd, args, toComplete)
+}
+
 var rootCmd = &cobra.Command{
 	Use:   "txm",
 	Short: "A Terminal Session Manager",
