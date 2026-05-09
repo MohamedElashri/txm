@@ -430,7 +430,7 @@ func init() {
 }
 
 // Version is set at build time via ldflags: -X github.com/MohamedElashri/txm/pkg/cmd.Version=<tag>
-var Version = "1.0.5"
+var Version = "1.0.7"
 
 var versionCmd = &cobra.Command{
 	Use:   "version",
