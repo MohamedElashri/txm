@@ -190,7 +190,22 @@ func installCompletions(system bool) {
 			_ = f.Close()
 			fmt.Printf("Installed zsh completion to %s\n", zshPath)
 			if !system {
-				fmt.Printf("  (Note: Make sure `fpath+=~/.zfunc` is in your ~/.zshrc before compinit)\n")
+				// Try to automatically add to fpath in .zshrc
+				homeDir, _ := os.UserHomeDir()
+				zshrcPath := filepath.Join(homeDir, ".zshrc")
+				if _, err := os.Stat(zshrcPath); err == nil {
+					content, _ := os.ReadFile(zshrcPath)
+					if !strings.Contains(string(content), "fpath+=~/.zfunc") && !strings.Contains(string(content), "fpath+=(~/.zfunc)") {
+						f, err := os.OpenFile(zshrcPath, os.O_APPEND|os.O_WRONLY, 0644)
+						if err == nil {
+							_, _ = f.WriteString("\n# Added by txm\nfpath+=~/.zfunc\n")
+							_ = f.Close()
+							fmt.Printf("Added ~/.zfunc to fpath in %s\n", zshrcPath)
+						}
+					}
+				} else {
+					fmt.Printf("  (Note: Make sure `fpath+=~/.zfunc` is in your ~/.zshrc before compinit)\n")
+				}
 			}
 		}
 	}
@@ -294,7 +309,7 @@ var uninstallCmd = &cobra.Command{
 }
 
 // Version is set at build time via ldflags: -X github.com/MohamedElashri/txm/pkg/cmd.Version=<tag>
-var Version = "1.0.1"
+var Version = "1.0.2"
 
 var versionCmd = &cobra.Command{
 	Use:   "version",
