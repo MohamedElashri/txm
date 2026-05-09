@@ -121,13 +121,28 @@ var installCmd = &cobra.Command{
 		if err != nil {
 			return fmt.Errorf("failed to find executable: %v", err)
 		}
-		
-		destBin := filepath.Join(binDir, "txm")
-		if err := copyFile(execPath, destBin); err != nil {
-			return fmt.Errorf("failed to install binary: %v", err)
+
+		// Resolve symlinks to compare actual paths
+		realExecPath, err := filepath.EvalSymlinks(execPath)
+		if err != nil {
+			realExecPath = execPath
 		}
-		if err := os.Chmod(destBin, 0755); err != nil {
-			return fmt.Errorf("failed to set binary permissions: %v", err)
+
+		destBin := filepath.Join(binDir, "txm")
+		realDestBin, err := filepath.EvalSymlinks(destBin)
+		if err != nil {
+			realDestBin = destBin
+		}
+
+		if realExecPath != realDestBin {
+			if err := copyFile(execPath, destBin); err != nil {
+				return fmt.Errorf("failed to install binary: %v", err)
+			}
+			if err := os.Chmod(destBin, 0755); err != nil {
+				return fmt.Errorf("failed to set binary permissions: %v", err)
+			}
+		} else {
+			fmt.Printf("Binary already at %s, skipping copy\n", destBin)
 		}
 
 		// Install Man Page
@@ -279,7 +294,7 @@ var uninstallCmd = &cobra.Command{
 }
 
 // Version is set at build time via ldflags: -X github.com/MohamedElashri/txm/pkg/cmd.Version=<tag>
-var Version = "1.0.0"
+var Version = "1.0.1"
 
 var versionCmd = &cobra.Command{
 	Use:   "version",
