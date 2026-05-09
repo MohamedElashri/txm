@@ -180,6 +180,23 @@ func installCompletions(system bool) {
 			_ = rootCmd.GenBashCompletion(f)
 			_ = f.Close()
 			fmt.Printf("Installed bash completion to %s\n", bashPath)
+			if !system {
+				// Try to automatically source in .bashrc
+				homeDir, _ := os.UserHomeDir()
+				bashrcPath := filepath.Join(homeDir, ".bashrc")
+				if _, err := os.Stat(bashrcPath); err == nil {
+					content, _ := os.ReadFile(bashrcPath)
+					// Use a simpler match for the path
+					if !strings.Contains(string(content), "txm completion bash") && !strings.Contains(string(content), bashPath) {
+						f, err := os.OpenFile(bashrcPath, os.O_APPEND|os.O_WRONLY, 0644)
+						if err == nil {
+							_, _ = f.WriteString(fmt.Sprintf("\n# Added by txm\n[[ -f %s ]] && . %s\n", bashPath, bashPath))
+							_ = f.Close()
+							fmt.Printf("Added source line for bash completion in %s\n", bashrcPath)
+						}
+					}
+				}
+			}
 		}
 	}
 
@@ -362,7 +379,7 @@ func init() {
 }
 
 // Version is set at build time via ldflags: -X github.com/MohamedElashri/txm/pkg/cmd.Version=<tag>
-var Version = "1.0.3"
+var Version = "1.0.4"
 
 var versionCmd = &cobra.Command{
 	Use:   "version",
