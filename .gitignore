@@ -27,4 +27,5 @@ go.work
 .vscode/
 .vscode/*
 
-# Note: go.sum is intentionally tracked (it is Go's security checksum lockfile)
+# releases
+dist/*
