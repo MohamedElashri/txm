@@ -1,4 +1,4 @@
-# txm — Terminal Session Manager
+# txm: Terminal Session Manager
 
 `txm` is a unified command-line interface for managing terminal multiplexer sessions. It supports **tmux**, **zellij**, and **GNU Screen** through a single consistent set of commands, with automatic backend detection and native shell completions.
 
