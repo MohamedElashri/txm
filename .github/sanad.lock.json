@@ -1,0 +1,110 @@
+{
+  "version": 1,
+  "generated_by": "sanad",
+  "entries": [
+    {
+      "file": ".github/workflows/ci.yml",
+      "node": "jobs.build-and-test.steps[0].uses",
+      "owner": "actions",
+      "repo": "checkout",
+      "path": "",
+      "kind": "github-action",
+      "logical_ref": "v6",
+      "pinned_sha": "de0fac2e4500dabe0009e67214ff5f5447ce83dd",
+      "resolved_at": "2026-05-19T12:33:59Z",
+      "timestamp": "2026-01-09T19:42:23Z",
+      "timestamp_source": "commit"
+    },
+    {
+      "file": ".github/workflows/ci.yml",
+      "node": "jobs.build-and-test.steps[1].uses",
+      "owner": "actions",
+      "repo": "setup-go",
+      "path": "",
+      "kind": "github-action",
+      "logical_ref": "v5",
+      "pinned_sha": "40f1582b2485089dde7abd97c1529aa768e1baff",
+      "resolved_at": "2026-05-19T12:33:59Z",
+      "timestamp": "2025-12-15T18:14:51Z",
+      "timestamp_source": "commit"
+    },
+    {
+      "file": ".github/workflows/ci.yml",
+      "node": "jobs.lint.steps[0].uses",
+      "owner": "actions",
+      "repo": "checkout",
+      "path": "",
+      "kind": "github-action",
+      "logical_ref": "v6",
+      "pinned_sha": "de0fac2e4500dabe0009e67214ff5f5447ce83dd",
+      "resolved_at": "2026-05-19T12:33:59Z",
+      "timestamp": "2026-01-09T19:42:23Z",
+      "timestamp_source": "commit"
+    },
+    {
+      "file": ".github/workflows/ci.yml",
+      "node": "jobs.lint.steps[1].uses",
+      "owner": "actions",
+      "repo": "setup-go",
+      "path": "",
+      "kind": "github-action",
+      "logical_ref": "v6",
+      "pinned_sha": "4a3601121dd01d1626a1e23e37211e3254c1c06c",
+      "resolved_at": "2026-05-19T12:33:59Z",
+      "timestamp": "2026-03-17T19:02:21Z",
+      "timestamp_source": "commit"
+    },
+    {
+      "file": ".github/workflows/ci.yml",
+      "node": "jobs.lint.steps[2].uses",
+      "owner": "golangci",
+      "repo": "golangci-lint-action",
+      "path": "",
+      "kind": "github-action",
+      "logical_ref": "v8",
+      "pinned_sha": "4afd733a84b1f43292c63897423277bb7f4313a9",
+      "resolved_at": "2026-05-19T12:33:59Z",
+      "timestamp": "2025-05-04T20:04:19Z",
+      "timestamp_source": "commit"
+    },
+    {
+      "file": ".github/workflows/release.yml",
+      "node": "jobs.goreleaser.steps[0].uses",
+      "owner": "actions",
+      "repo": "checkout",
+      "path": "",
+      "kind": "github-action",
+      "logical_ref": "v6",
+      "pinned_sha": "de0fac2e4500dabe0009e67214ff5f5447ce83dd",
+      "resolved_at": "2026-05-19T12:33:59Z",
+      "timestamp": "2026-01-09T19:42:23Z",
+      "timestamp_source": "commit"
+    },
+    {
+      "file": ".github/workflows/release.yml",
+      "node": "jobs.goreleaser.steps[1].uses",
+      "owner": "actions",
+      "repo": "setup-go",
+      "path": "",
+      "kind": "github-action",
+      "logical_ref": "v6",
+      "pinned_sha": "4a3601121dd01d1626a1e23e37211e3254c1c06c",
+      "resolved_at": "2026-05-19T12:33:59Z",
+      "timestamp": "2026-03-17T19:02:21Z",
+      "timestamp_source": "commit"
+    },
+    {
+      "file": ".github/workflows/release.yml",
+      "node": "jobs.goreleaser.steps[2].uses",
+      "owner": "goreleaser",
+      "repo": "goreleaser-action",
+      "path": "",
+      "kind": "github-action",
+      "logical_ref": "v6",
+      "pinned_sha": "e435ccd777264be153ace6237001ef4d979d3a7a",
+      "resolved_at": "2026-05-19T12:33:59Z",
+      "timestamp": "2025-08-07T01:28:41Z",
+      "timestamp_source": "commit"
+    }
+  ]
+}
