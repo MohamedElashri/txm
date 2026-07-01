@@ -43,7 +43,7 @@ unzip txm_Linux_x86_64.zip
 
 ### Build from Source
 
-Requirements: Go 1.24+, and at least one multiplexer installed.
+Requirements: Go 1.25.11+, and at least one multiplexer installed.
 
 ```bash
 git clone https://github.com/MohamedElashri/txm

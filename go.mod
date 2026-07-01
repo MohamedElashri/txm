@@ -1,6 +1,6 @@
 module github.com/MohamedElashri/txm
 
-go 1.24.5
+go 1.25.11
 
 require (
 	github.com/spf13/cobra v1.10.2
