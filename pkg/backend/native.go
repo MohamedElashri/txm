@@ -6,10 +6,8 @@ import (
 	"net"
 	"os"
 	"os/exec"
-	"os/signal"
 	"path/filepath"
 	"strings"
-	"syscall"
 	"time"
 
 	"golang.org/x/term"
@@ -54,7 +52,7 @@ func (b *NativeBackend) CreateSession(name string, command ...string) error {
 	}
 
 	cmd := exec.Command(exe, args...)
-	cmd.SysProcAttr = &syscall.SysProcAttr{Setsid: true}
+	setSysProcAttr(cmd)
 	cmd.Stdin = nil
 	cmd.Stdout = nil
 	cmd.Stderr = nil
@@ -150,20 +148,7 @@ func (b *NativeBackend) AttachSession(name string) error {
 	defer func() { _ = term.Restore(fd, oldState) }()
 
 	// Handle window resize
-	sigwinch := make(chan os.Signal, 1)
-	signal.Notify(sigwinch, syscall.SIGWINCH)
-	go func() {
-		for range sigwinch {
-			w, h, err := term.GetSize(fd)
-			if err == nil {
-				// Send resize packet: [0x02, w(hi), w(lo), h(hi), h(lo)]
-				resizePacket := []byte{0x02, byte(w >> 8), byte(w), byte(h >> 8), byte(h)}
-				_, _ = conn.Write(resizePacket)
-			}
-		}
-	}()
-	// Trigger initial resize
-	sigwinch <- syscall.SIGWINCH
+	watchWindowSize(fd, conn)
 
 	errChan := make(chan error, 1)
 
