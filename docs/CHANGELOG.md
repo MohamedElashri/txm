@@ -5,6 +5,29 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.0] - 2026-07-09
+
+### Added
+- **Native Backend**: Implemented a built-in lightweight native backend for persistent terminal sessions without relying on external dependencies like `tmux` or `zellij`.
+- **Auto-Attach**: Automatically attaches to the only available session when running `txm attach` without arguments, or creates a default session if none exist.
+- **Remote Execution**: Added `txm exec` to remotely execute commands inside background panes.
+- **Native State & Scrollback Restoration**: The native backend now maintains a configurable scrollback ring buffer (default 64KB) to instantly restore terminal state and history upon reattachment.
+- **Graceful Detach Keybinding**: Added `Ctrl+\` as a native detach sequence, allowing users to safely disconnect from a native session without terminating it.
+- **Custom Startup Commands**: `txm create` and `txm attach` now accept custom commands to run upon session initialization instead of defaulting to the system shell.
+- **Interactive Session Picker**: Running `txm` without arguments now brings up a native interactive fuzzy-finder to preview and select sessions.
+- **Session Prefixing**: Added support for the `TXM_SESSION_PREFIX` environment variable to automatically namespace session names across all commands.
+- **Read-Only Attach Mode**: Added `-r` / `--read-only` flag to `txm attach` to allow safe, interference-free session monitoring.
+- **Session Output Logging**: Added `--log` flag to `txm create` to mirror PTY output to a persistent file, complete with automatic size-based log rotation.
+- **Active Client Tracking**: `txm list` now natively pings background sessions and actively displays the number of attached clients.
+- **SSH Workflow Helper**: Added the `txm generate-ssh-config` command to automatically generate zmx-style `ControlMaster` SSH configurations.
+
+### Changed
+- **CLI Reorganization**: Grouped window and pane commands into intuitive subcommands (`txm window <cmd>` and `txm pane <cmd>`).
+- Renamed `send-keys` to `exec` to better reflect remote command execution capabilities.
+
+### Removed
+- **Layout Commands Deprecated**: Dropped support for backend-specific window layout commands (`move-window`, `swap-window`, `resize-pane`) to align with a more minimalist session persistence philosophy.
+
 ## [1.1.1] - 2026-05-09
 
 ### Added

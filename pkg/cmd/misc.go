@@ -297,7 +297,7 @@ var updateCmd = &cobra.Command{
 	Args:  cobra.NoArgs,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		fmt.Println("Checking for updates...")
-		
+
 		resp, err := http.Get("https://api.github.com/repos/MohamedElashri/txm/releases/latest")
 		if err != nil {
 			return fmt.Errorf("failed to fetch latest release: %v", err)
@@ -346,7 +346,7 @@ var updateCmd = &cobra.Command{
 		}
 
 		expectedAssetName := fmt.Sprintf("txm_%s_%s.zip", osStr, archStr)
-		
+
 		var downloadURL string
 		for _, asset := range release.Assets {
 			if asset.Name == expectedAssetName {
@@ -442,7 +442,7 @@ var updateCmd = &cobra.Command{
 		}
 
 		fmt.Println("Installing new version...")
-		
+
 		oldPath := execPath + ".old"
 		_ = os.Remove(oldPath)
 		if err := os.Rename(execPath, oldPath); err != nil {
@@ -470,11 +470,11 @@ func hasWritePermission(dir string) bool {
 	if err != nil {
 		return false
 	}
-	
+
 	if !info.IsDir() {
 		return false
 	}
-	
+
 	tmpFile, err := os.CreateTemp(dir, "txm-write-check-*")
 	if err != nil {
 		return false
@@ -624,7 +624,7 @@ func init() {
 }
 
 // Version is set at build time via ldflags: -X github.com/MohamedElashri/txm/pkg/cmd.Version=<tag>
-var Version = "1.0.7"
+var Version = "1.2.0"
 
 var versionCmd = &cobra.Command{
 	Use:   "version",

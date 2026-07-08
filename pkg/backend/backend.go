@@ -16,9 +16,10 @@ type TerminalMultiplexer interface {
 
 	// Session Management
 	SessionExists(name string) bool
-	CreateSession(name string) error
+	CreateSession(name string, command ...string) error
 	ListSessions() error
 	GetSessions() ([]string, error)
+	DumpSession(name string) (string, error)
 	AttachSession(name string) error
 	DetachSession() error
 	KillSession(name string) error
@@ -32,15 +33,12 @@ type TerminalMultiplexer interface {
 	NextWindow(session string) error
 	PreviousWindow(session string) error
 	RenameWindow(session, oldName, newName string) error
-	MoveWindow(srcSession, windowName, dstSession string) error
-	SwapWindow(session, windowName1, windowName2 string) error
 	SplitWindow(session, window, direction string) error
 
 	// Pane Management
 	ListPanes(session, window string) error
 	KillPane(session, window, pane string) error
-	ResizePane(session, window, pane, direction string, size int) error
-	SendKeys(session, window, pane, keys string) error
+	Exec(session, window, pane, command string) error
 }
 
 // preserveEnvironment ensures proper environment variables are passed to subprocess
@@ -85,6 +83,7 @@ func NewManager(cfg *config.Config, log *logger.Logger) *Manager {
 		config.BackendTmux:   NewTmuxBackend(),
 		config.BackendZellij: NewZellijBackend(),
 		config.BackendScreen: NewScreenBackend(),
+		config.BackendNative: NewNativeBackend(),
 	}
 
 	var selectedBackend TerminalMultiplexer
@@ -110,6 +109,8 @@ func NewManager(cfg *config.Config, log *logger.Logger) *Manager {
 			selectedBackend = backends[config.BackendZellij]
 		} else if backends[config.BackendScreen].IsAvailable() {
 			selectedBackend = backends[config.BackendScreen]
+		} else {
+			selectedBackend = backends[config.BackendNative]
 		}
 	}
 
