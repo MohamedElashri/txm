@@ -4,7 +4,9 @@ import (
 	"fmt"
 	"os"
 	"regexp"
+	"strings"
 
+	"github.com/ktr0731/go-fuzzyfinder"
 	"github.com/spf13/cobra"
 
 	"github.com/MohamedElashri/txm/pkg/backend"
@@ -29,6 +31,14 @@ func validateName(name string) error {
 		return fmt.Errorf("invalid name '%s': only alphanumeric characters, dashes, and underscores are allowed", name)
 	}
 	return nil
+}
+
+func getSessionName(name string) string {
+	prefix := os.Getenv("TXM_SESSION_PREFIX")
+	if prefix != "" && !strings.HasPrefix(name, prefix) {
+		return prefix + name
+	}
+	return name
 }
 
 func getManager() (*backend.Manager, error) {
@@ -77,11 +87,44 @@ var rootCmd = &cobra.Command{
 	Long:  `txm is a powerful command-line utility designed to manage terminal multiplexer sessions efficiently. It supports tmux, zellij, and GNU Screen.`,
 	PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
 		// Just validate that we can get a manager before running any subcommands (except help/completion)
-		if cmd.Name() == "help" || cmd.Name() == "completion" {
+		if cmd.Name() == "help" || cmd.Name() == "completion" || cmd.Name() == "txm" {
 			return nil
 		}
 		_, err := getManager()
 		return err
+	},
+	RunE: func(cmd *cobra.Command, args []string) error {
+		mgr, err := getManager()
+		if err != nil {
+			return err
+		}
+
+		sessions, err := mgr.Backend.GetSessions()
+		if err != nil || len(sessions) == 0 {
+			return cmd.Help()
+		}
+
+		idx, err := fuzzyfinder.Find(
+			sessions,
+			func(i int) string {
+				return sessions[i]
+			},
+			fuzzyfinder.WithPreviewWindow(func(i, w, h int) string {
+				if i == -1 {
+					return ""
+				}
+				out, _ := mgr.Backend.DumpSession(sessions[i])
+				return out
+			}),
+		)
+		if err != nil {
+			if err == fuzzyfinder.ErrAbort {
+				return nil
+			}
+			return err
+		}
+
+		return mgr.Backend.AttachSession(sessions[idx])
 	},
 }
 
@@ -98,29 +141,44 @@ func init() {
 
 	// Session Management
 	rootCmd.AddCommand(createCmd)
+	createCmd.Flags().SetInterspersed(false)
+	createCmd.Flags().StringVarP(&createLogFile, "log", "l", "", "Log session output to a file")
 	rootCmd.AddCommand(listCmd)
 	rootCmd.AddCommand(attachCmd)
+	attachCmd.Flags().SetInterspersed(false)
+	attachCmd.Flags().BoolVarP(&attachReadOnly, "read-only", "r", false, "Attach in read-only mode")
 	rootCmd.AddCommand(detachCmd)
 	rootCmd.AddCommand(deleteCmd)
 	rootCmd.AddCommand(renameSessionCmd)
 	rootCmd.AddCommand(nukeCmd)
+	rootCmd.AddCommand(serverCmd)
+	serverCmd.Flags().SetInterspersed(false)
+	rootCmd.AddCommand(execCmd)
+	rootCmd.AddCommand(dumpCmd)
+	rootCmd.AddCommand(generateSshConfigCmd)
 
 	// Window Management
-	rootCmd.AddCommand(newWindowCmd)
-	rootCmd.AddCommand(listWindowsCmd)
-	rootCmd.AddCommand(killWindowCmd)
-	rootCmd.AddCommand(nextWindowCmd)
-	rootCmd.AddCommand(prevWindowCmd)
-	rootCmd.AddCommand(renameWindowCmd)
-	rootCmd.AddCommand(moveWindowCmd)
-	rootCmd.AddCommand(swapWindowCmd)
-	rootCmd.AddCommand(splitWindowCmd)
+	var windowCmd = &cobra.Command{
+		Use:   "window",
+		Short: "Manage windows within a session",
+	}
+	rootCmd.AddCommand(windowCmd)
+	windowCmd.AddCommand(newWindowCmd)
+	windowCmd.AddCommand(listWindowsCmd)
+	windowCmd.AddCommand(killWindowCmd)
+	windowCmd.AddCommand(nextWindowCmd)
+	windowCmd.AddCommand(prevWindowCmd)
+	windowCmd.AddCommand(renameWindowCmd)
+	windowCmd.AddCommand(splitWindowCmd)
 
 	// Pane Management
-	rootCmd.AddCommand(listPanesCmd)
-	rootCmd.AddCommand(killPaneCmd)
-	rootCmd.AddCommand(resizePaneCmd)
-	rootCmd.AddCommand(sendKeysCmd)
+	var paneCmd = &cobra.Command{
+		Use:   "pane",
+		Short: "Manage panes within a window",
+	}
+	rootCmd.AddCommand(paneCmd)
+	paneCmd.AddCommand(listPanesCmd)
+	paneCmd.AddCommand(killPaneCmd)
 
 	// Misc
 	rootCmd.AddCommand(configCmd)

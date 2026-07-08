@@ -73,12 +73,18 @@ func (b *ZellijBackend) SessionExists(name string) bool {
 	return strings.Contains(string(output), name)
 }
 
-func (b *ZellijBackend) CreateSession(name string) error {
+func (b *ZellijBackend) CreateSession(name string, command ...string) error {
 	if b.SessionExists(name) {
 		return fmt.Errorf("session with name \"%s\" already exists", name)
 	}
 
-	cmd := exec.Command("zellij", "attach", "--create-background", name)
+	args := []string{"attach", "--create-background", name}
+	if len(command) > 0 {
+		args = append(args, "--")
+		args = append(args, command...)
+	}
+
+	cmd := exec.Command("zellij", args...)
 	preserveEnvironment(cmd)
 
 	cmd.Stdout = nil
@@ -99,6 +105,10 @@ func (b *ZellijBackend) CreateSession(name string) error {
 
 func (b *ZellijBackend) ListSessions() error {
 	return b.runCommand("list-sessions")
+}
+
+func (b *ZellijBackend) DumpSession(name string) (string, error) {
+	return "<preview not supported for zellij>", nil
 }
 
 func (b *ZellijBackend) GetSessions() ([]string, error) {
@@ -201,14 +211,6 @@ func (b *ZellijBackend) RenameWindow(session, oldName, newName string) error {
 	return fmt.Errorf("renaming tabs not directly supported in zellij")
 }
 
-func (b *ZellijBackend) MoveWindow(srcSession, windowName, dstSession string) error {
-	return fmt.Errorf("zellij does not support moving windows between sessions")
-}
-
-func (b *ZellijBackend) SwapWindow(session, windowName1, windowName2 string) error {
-	return fmt.Errorf("zellij does not support swapping windows")
-}
-
 func (b *ZellijBackend) SplitWindow(session, window, direction string) error {
 	if !b.SessionExists(session) {
 		return fmt.Errorf("session '%s' does not exist", session)
@@ -260,42 +262,18 @@ func (b *ZellijBackend) KillPane(session, window, pane string) error {
 	return b.runCommandWithSession(session, "action", "close-pane")
 }
 
-func (b *ZellijBackend) ResizePane(session, window, pane, direction string, size int) error {
+func (b *ZellijBackend) Exec(session, window, pane, command string) error {
 	if !b.SessionExists(session) {
 		return fmt.Errorf("session '%s' does not exist", session)
 	}
 	if err := b.focusPane(session, window, pane); err != nil {
 		return err
 	}
-	var dir string
-	switch direction {
-	case "U":
-		dir = "up"
-	case "D":
-		dir = "down"
-	case "L":
-		dir = "left"
-	case "R":
-		dir = "right"
-	default:
-		return fmt.Errorf("invalid resize direction for zellij: %s", direction)
-	}
-	for i := 0; i < size; i++ {
-		if err := b.runCommandWithSession(session, "action", "resize", dir); err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
-func (b *ZellijBackend) SendKeys(session, window, pane, keys string) error {
-	if !b.SessionExists(session) {
-		return fmt.Errorf("session '%s' does not exist", session)
-	}
-	if err := b.focusPane(session, window, pane); err != nil {
+	// Write command and then an enter key (newline)
+	if err := b.runCommandWithSession(session, "action", "write-chars", command); err != nil {
 		return err
 	}
-	return b.runCommandWithSession(session, "action", "write-chars", keys)
+	return b.runCommandWithSession(session, "action", "write", "10") // 10 is newline
 }
 
 func (b *ZellijBackend) DetachSession() error {

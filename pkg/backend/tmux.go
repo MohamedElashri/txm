@@ -52,12 +52,24 @@ func (b *TmuxBackend) SessionExists(name string) bool {
 	return cmd.Run() == nil
 }
 
-func (b *TmuxBackend) CreateSession(name string) error {
-	return b.runCommand("new-session", "-d", "-s", name)
+func (b *TmuxBackend) CreateSession(name string, command ...string) error {
+	args := []string{"new-session", "-d", "-s", name}
+	if len(command) > 0 {
+		args = append(args, command...)
+	}
+	return b.runCommand(args...)
 }
 
 func (b *TmuxBackend) ListSessions() error {
 	return b.runCommand("list-sessions")
+}
+
+func (b *TmuxBackend) DumpSession(name string) (string, error) {
+	out, err := exec.Command("tmux", "capture-pane", "-p", "-t", name).Output()
+	if err != nil {
+		return "", err
+	}
+	return string(out), nil
 }
 
 func (b *TmuxBackend) GetSessions() ([]string, error) {
@@ -120,17 +132,6 @@ func (b *TmuxBackend) RenameWindow(session, oldName, newName string) error {
 	return b.runCommand("rename-window", "-t", windowTarget, newName)
 }
 
-func (b *TmuxBackend) MoveWindow(srcSession, windowName, dstSession string) error {
-	windowTarget := fmt.Sprintf("%s:%s", srcSession, windowName)
-	return b.runCommand("move-window", "-s", windowTarget, "-t", dstSession)
-}
-
-func (b *TmuxBackend) SwapWindow(session, windowName1, windowName2 string) error {
-	windowTarget1 := fmt.Sprintf("%s:%s", session, windowName1)
-	windowTarget2 := fmt.Sprintf("%s:%s", session, windowName2)
-	return b.runCommand("swap-window", "-s", windowTarget1, "-t", windowTarget2)
-}
-
 func (b *TmuxBackend) SplitWindow(session, window, direction string) error {
 	windowTarget := fmt.Sprintf("%s:%s", session, window)
 	splitFlag := "-v"
@@ -150,27 +151,10 @@ func (b *TmuxBackend) KillPane(session, window, pane string) error {
 	return b.runCommand("kill-pane", "-t", paneTarget)
 }
 
-func (b *TmuxBackend) ResizePane(session, window, pane, direction string, size int) error {
+func (b *TmuxBackend) Exec(session, window, pane, command string) error {
 	paneTarget := fmt.Sprintf("%s:%s.%s", session, window, pane)
-	var resizeFlag string
-	switch direction {
-	case "U":
-		resizeFlag = "-U"
-	case "D":
-		resizeFlag = "-D"
-	case "L":
-		resizeFlag = "-L"
-	case "R":
-		resizeFlag = "-R"
-	default:
-		resizeFlag = "-U"
-	}
-	return b.runCommand("resize-pane", resizeFlag, fmt.Sprintf("%d", size), "-t", paneTarget)
-}
-
-func (b *TmuxBackend) SendKeys(session, window, pane, keys string) error {
-	paneTarget := fmt.Sprintf("%s:%s.%s", session, window, pane)
-	return b.runCommand("send-keys", "-t", paneTarget, keys)
+	// For execution, we pass the command and append an enter key
+	return b.runCommand("send-keys", "-t", paneTarget, command, "Enter")
 }
 
 func (b *TmuxBackend) NukeAllSessions() error {

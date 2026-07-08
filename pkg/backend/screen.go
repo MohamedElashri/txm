@@ -50,12 +50,20 @@ func (b *ScreenBackend) SessionExists(name string) bool {
 	return false
 }
 
-func (b *ScreenBackend) CreateSession(name string) error {
-	return b.runCommand("-dmS", name)
+func (b *ScreenBackend) CreateSession(name string, command ...string) error {
+	args := []string{"-dmS", name}
+	if len(command) > 0 {
+		args = append(args, command...)
+	}
+	return b.runCommand(args...)
 }
 
 func (b *ScreenBackend) ListSessions() error {
 	return b.runCommand("-ls")
+}
+
+func (b *ScreenBackend) DumpSession(name string) (string, error) {
+	return "<preview not supported for screen>", nil
 }
 
 func (b *ScreenBackend) GetSessions() ([]string, error) {
@@ -140,14 +148,6 @@ func (b *ScreenBackend) RenameWindow(session, oldName, newName string) error {
 	return b.runCommand("-S", session, "-X", "title", newName)
 }
 
-func (b *ScreenBackend) MoveWindow(srcSession, windowName, dstSession string) error {
-	return fmt.Errorf("screen does not support moving windows between sessions")
-}
-
-func (b *ScreenBackend) SwapWindow(session, windowName1, windowName2 string) error {
-	return fmt.Errorf("screen does not support swapping windows")
-}
-
 func (b *ScreenBackend) SplitWindow(session, window, direction string) error {
 	if direction == "v" {
 		return b.runCommand("-S", session, "-X", "split", "-v")
@@ -163,12 +163,11 @@ func (b *ScreenBackend) KillPane(session, window, pane string) error {
 	return fmt.Errorf("screen does not support killing individual panes")
 }
 
-func (b *ScreenBackend) ResizePane(session, window, pane, direction string, size int) error {
-	return fmt.Errorf("screen does not support resizing panes")
-}
-
-func (b *ScreenBackend) SendKeys(session, window, pane, keys string) error {
-	return fmt.Errorf("screen does not support sending keys to specific panes")
+func (b *ScreenBackend) Exec(session, window, pane, command string) error {
+	// Screen doesn't support specific panes, but we can stuff characters into the current window
+	// For screen, -X stuff executes in the current window.
+	// Add \r for enter
+	return b.runCommand("-S", session, "-X", "stuff", command+"\r")
 }
 
 func (b *ScreenBackend) NukeAllSessions() error {
