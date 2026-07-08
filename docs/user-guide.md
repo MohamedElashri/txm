@@ -1,6 +1,6 @@
 # txm Documentation
 
-`txm` is a powerful terminal session manager that supports multiple backends: **tmux**, **zellij**, and **GNU Screen**. This documentation covers all available commands, configuration options, and backend-specific features.
+`txm` is a powerful terminal session manager that supports a built-in **native** backend, as well as **tmux**, **zellij**, and **GNU Screen**. This documentation covers all available commands, configuration options, and backend-specific features.
 
 ## Table of Contents
 
@@ -13,8 +13,9 @@
 - [Configuration Commands](#configuration-commands)
 - [Advanced Operations](#advanced-operations)
 - [Environment Variables](#environment-variables)
+- [Seamless SSH Workflow](#seamless-ssh-workflow)
 - [Backend-Specific Notes](#backend-specific-notes)
-- [Verbose Mode](#verbose-mode)
+- [Troubleshooting](#troubleshooting)
 
 ## Configuration System
 
@@ -25,20 +26,21 @@ txm includes a comprehensive configuration system that allows you to set your pr
 Configuration is stored in `~/.txm/config` using a simple `key=value` format:
 
 ```
-backend=zellij
+backend=native
+scrollback_size=131072
 ```
 
 ### Backend Selection Priority
 
 1. **Environment Variable**: `TXM_DEFAULT_BACKEND` (highest priority)
 2. **Config File**: `~/.txm/config` (persistent setting)
-3. **Default**: tmux (if available, otherwise first available backend)
+3. **Default**: Auto-detection (tmux → screen → zellij → native)
 
 ### Configuration Commands
 
 ```bash
 # Set default backend
-txm config set backend zellij
+txm config set backend native
 
 # Get specific configuration
 txm config get backend
@@ -51,6 +53,7 @@ txm config show
 
 | Backend | Session Mgmt | Window/Tab Mgmt | Pane/Panel Ops | Advanced Features |
 |---------|--------------|-----------------|----------------|-------------------|
+| **native** | ✓ | ✗ | ✗ | Built-in, lightweight, zero dependencies |
 | **tmux** | ✓ | ✓ | ✓ | Full feature set |
 | **zellij** | ✓ | ✓ | ✓ | Modern workspace |
 | **screen** | ✓ | ✓ | Basic | Fallback support |
@@ -71,62 +74,46 @@ The `-v` or `--verbose` flag enables detailed logging, useful for debugging or l
 - **Zsh**: `~/.zfunc/_txm` (You must add `fpath+=~/.zfunc` to your `.zshrc`)
 - **Fish**: `~/.config/fish/completions/txm.fish`
 
+For a temporary session, or for PowerShell, you can generate it on the fly:
+```bash
+source <(txm completion bash)   # bash
+source <(txm completion zsh)    # zsh
+txm completion fish | source    # fish
+txm completion powershell       # powershell
+```
+
 When you uninstall the app using `txm uninstall`, these autocompletion files are automatically purged from your system.
-
-### Backend Override
-
-```bash
-# Temporarily use specific backend
-TXM_DEFAULT_BACKEND=zellij txm create my-session
-
-# Use with verbose mode
-TXM_DEFAULT_BACKEND=tmux txm -v list
-```
-
-## Configuration Commands
-
-### config set
-Set a configuration value
-```bash
-txm config set backend zellij
-txm config set backend tmux
-txm config set backend screen
-```
-
-### config get
-Get a configuration value
-```bash
-txm config get backend
-```
-
-### config show
-Show all configuration
-```bash
-txm config show
-```
 
 ## Basic Commands
 
-### create
-Create a new session
+### Interactive picker
+Launch interactive fuzzy-finder picker to select and preview sessions
 ```bash
-txm create [session_name]
+txm
 ```
 
+### create
+Create a new session (optionally run a specific command)
+```bash
+txm create [session_name] [command...]
+```
+- `--log`: Mirror PTY output to a persistent file with automatic size-based log rotation.
+
 ### list
-List all active sessions
+List all active sessions and display the number of active clients attached
 ```bash
 txm list
 ```
 
 ### attach
-Attach to an existing session
+Attach to an existing session. If no name is provided, it automatically attaches to the only available session or creates a default one. Can also accept custom startup commands.
 ```bash
-txm attach [session_name]
+txm attach [session_name] [command...]
 ```
+- `-r`, `--read-only`: Attach in read-only mode for safe, interference-free session monitoring.
 
 ### detach
-Detach from current session
+Detach from current session. (Alternatively, use `Ctrl+\` when in a native session to gracefully detach).
 ```bash
 txm detach
 ```
@@ -135,6 +122,18 @@ txm detach
 Delete a session
 ```bash
 txm delete [session_name]
+```
+
+### exec
+Remotely execute commands inside background sessions/panes.
+```bash
+txm exec [session] [window] [pane] [cmd]
+```
+
+### generate-ssh-config
+Automatically generate zmx-style `ControlMaster` SSH configurations for seamless SSH workflows.
+```bash
+txm generate-ssh-config
 ```
 
 ### nuke
@@ -161,103 +160,66 @@ Show version and check for updates
 txm version [--check-update]
 ```
 
-## Window Management
+## Window Management (`txm window`)
 
-### new-window
-Create a new window (supported across all backends)
+### new
+Create a new window (supported across most backends except native)
 ```bash
-txm new-window [session_name] [window_name]
+txm window new [session_name] [window_name]
 ```
 
-### list-windows
-List windows in a session (supported across all backends)
+### list
+List windows in a session
 ```bash
-txm list-windows [session_name]
+txm window list [session_name]
 ```
 
-### kill-window
-Remove a window (supported across all backends)
+### kill
+Remove a window
 ```bash
-txm kill-window [session_name] [window_name]
+txm window kill [session_name] [window_name]
 ```
 
-### next-window
-Switch to next window in session (supported across all backends)
+### next
+Switch to next window in session
 ```bash
-txm next-window [session_name]
+txm window next [session_name]
 ```
 
-### prev-window
-Switch to previous window in session (supported across all backends)
+### prev
+Switch to previous window in session
 ```bash
-txm prev-window [session_name]
+txm window prev [session_name]
 ```
 
-### rename-session
-Rename an existing session (tmux and zellij only)
+### rename
+Rename a window
 ```bash
-txm rename-session [old_name] [new_name]
+txm window rename [session_name] [old_window_name] [new_window_name]
 ```
 
-### rename-window
-Rename a window (supported across all backends)
+### split
+Split a window into panes
 ```bash
-txm rename-window [session_name] [old_window_name] [new_window_name]
+txm window split [session_name] [window_name] [v|h]
 ```
+- `v`: vertical split
+- `h`: horizontal split
 
-### move-window
-Move window between sessions (tmux and zellij only)
-```bash
-txm move-window [source_session] [window_name] [target_session]
-```
-
-### swap-window
-Swap window positions (tmux only)
-```bash
-txm swap-window [session_name] [window1_name] [window2_name]
-```
-
-## Pane Operations
+## Pane Operations (`txm pane`)
 
 Note: These commands are available in tmux and zellij, with limited support in screen.
 
-### split-window
-Split a window into panes
+### list
+List panes in a window
 ```bash
-txm split-window [session_name] [window_name] [v|h]
-```
-- `v`: vertical split (supported in tmux, zellij, and screen)
-- `h`: horizontal split (tmux and zellij only)
-
-### list-panes
-List panes in a window (tmux and zellij only)
-```bash
-txm list-panes [session_name] [window_name]
+txm pane list [session_name] [window_name]
 ```
 
-### kill-pane
-Remove a pane (tmux and zellij only)
+### kill
+Remove a pane
 ```bash
-txm kill-pane [session_name] [window_name] [pane_number]
-```
-
-### resize-pane
-Resize a pane (tmux and zellij only)
-```bash
-txm resize-pane [session_name] [window_name] [pane_number] [direction] [size]
-```
-Directions:
-- `U`: Resize up
-- `D`: Resize down
-- `L`: Resize left
-- `R`: Resize right
-
-The size parameter is optional and defaults to 5 cells.
-
-### send-keys
-Send keystrokes to a pane (tmux and zellij only)
-```bash
-txm send-keys [session_name] [window_name] [pane_number] [keys]
+txm pane kill [session_name] [window_name] [pane_number]
 ```
 
 ## Environment Variables
@@ -265,15 +227,16 @@ txm send-keys [session_name] [window_name] [pane_number] [keys]
 ### TXM_DEFAULT_BACKEND
 Override the default backend temporarily:
 ```bash
-export TXM_DEFAULT_BACKEND=zellij
+export TXM_DEFAULT_BACKEND=native
 # or
 TXM_DEFAULT_BACKEND=tmux txm create my-session
 ```
 
-Supported values:
-- `tmux`: Use tmux backend
-- `zellij`: Use zellij backend  
-- `screen`: Use GNU Screen backend
+### TXM_SESSION_PREFIX
+Automatically prefixes all session names globally.
+```bash
+export TXM_SESSION_PREFIX=my_env_
+```
 
 ### NO_COLOR
 Disable colored output:
@@ -291,124 +254,61 @@ Terminal type for capability detection. Common values:
 - tmux-256color
 - linux
 
-## Examples
+## Seamless SSH Workflow
 
-### Backend Configuration Examples
+Using `txm` with SSH is a first-class citizen. Instead of using SSH to remote into a system with a single terminal and managing `n` `tmux` panes remotely, we can open `n` local terminal tabs and run `ssh` for all of them. This allows us to leverage our local terminal emulator's native tabs, splits, and scrollback, while perfectly preserving the sessions remotely.
 
-1. Set up your preferred backend:
+To make this a delightful workflow, we can add an SSH config entry for our remote dev server. Generate the recommended setup block instantly by running:
 ```bash
-# Set zellij as default
-txm config set backend zellij
-
-# Verify configuration
-txm config show
-
-# Create session with default backend
-txm create my-project
+txm generate-ssh-config
 ```
 
-2. Temporarily use different backend:
+The output will look something like this. Add it to our `~/.ssh/config`:
 ```bash
-# Use tmux for this session only
-TXM_DEFAULT_BACKEND=tmux txm create tmux-session
+Host d.*
+    HostName 192.168.1.xxx
+    
+    # Automatically attach to a txm session on the remote server
+    # named after the remote host we're connecting to (%h).
+    RemoteCommand txm attach %h
+    RequestTTY yes
 
-# Use zellij with verbose output
-TXM_DEFAULT_BACKEND=zellij txm -v create zellij-session
+    # Multiplex multiple PTY sessions to a single server over one connection
+    ControlMaster auto
+    ControlPath ~/.ssh/cm-%r@%h:%p
+    ControlPersist 10m
 ```
 
-### Multi-Backend Workflow
+Architecturally, SSH supports multiplexing multiple channels of communication within a single TCP connection to a server. `ControlMaster` is the setting that tells SSH to multiplex multiple PTY sessions over that one connection.
 
+Now we can spawn as many terminal sessions as we'd like:
 ```bash
-# Set up development environment with different backends
-txm config set backend tmux
-txm create main-dev
-
-# Create specialized environments
-TXM_DEFAULT_BACKEND=zellij txm create ui-work
-TXM_DEFAULT_BACKEND=screen txm create legacy-work
-
-# List all sessions (regardless of backend)
-txm list
+ssh d.term
+ssh d.irc
+ssh d.dotfiles
 ```
 
-1. Create and attach to a new session:
+Because `txm attach` is an "upsert" command, the first `ssh` command will automatically create the session on the remote host, and subsequent commands to the same host will attach to it (or create entirely new sessions if connecting to different hosts). 
+
+### Auto-Reconnection
+We can use the `autossh` tool to make SSH connections auto-reconnect. If we close our laptop lid, it will automatically reconnect all our SSH connections when we reopen it:
 ```bash
-txm create mysession
-txm attach mysession
+autossh -M 0 -q d.term
 ```
+*(Tip: create an alias/abbr for this, e.g., `alias ash="autossh -M 0 -q"`)*
 
-2. Create and navigate windows (works in both tmux and screen):
-```bash
-txm new-window mysession mywindow
-txm next-window mysession
-txm prev-window mysession
-```
-
-3. Split window (vertical split works in both, horizontal in tmux only):
-```bash
-txm split-window mysession mywindow v  # works in both
-txm split-window mysession mywindow h  # tmux only
-```
-
-4. Complex window management (tmux only):
-```bash
-# Create two sessions
-txm create session1
-txm create session2
-
-# Create windows in session1
-txm new-window session1 window1
-txm new-window session1 window2
-
-# Move window2 to session2
-txm move-window session1 window2 session2
-```
-
-5. Manage panes (tmux only):
-```bash
-# Create a new window and split it horizontally
-txm new-window mysession mywindow
-txm split-window mysession mywindow h
-
-# List panes in the window
-txm list-panes mysession mywindow
-
-# Resize a pane
-txm resize-pane mysession mywindow 0 U 10  # Resize pane 0 up by 10 cells
-
-# Send a command to a pane
-txm send-keys mysession mywindow 0 "echo hello"  # Send command to pane
-```
-
-## Troubleshooting
-
-1. Enable verbose mode to see detailed logs:
-```bash
-txm -v list
-```
-
-2. Check terminal capabilities:
-```bash
-echo $TERM
-```
-
-3. Verify tmux/screen installation:
-```bash
-which tmux
-which screen
-```
-
-4. Color support issues:
-- Check if NO_COLOR is set
-- Verify TERM setting
-- Ensure terminal supports colors
+Now we can set up our OS tiling windows how we like them for our project and have as many windows as we'd like, replicating exactly what `tmux` does but with native windows, tabs, splits, and scrollback!
 
 ## Backend-Specific Notes
 
+### native
+- **Zero dependencies**: No external multiplexer needed
+- **State & Scrollback**: Maintains configurable scrollback ring buffer
+- **Lightweight**: Optimized for simple persistent single-pane sessions
+- **Graceful Detach**: Keybinding `Ctrl+\` to detach cleanly
+
 ### tmux
 - **Full feature support**: Complete implementation of all window and pane operations
-- **Advanced window management**: Move, swap, and complex window operations
-- **Flexible pane splitting**: Both vertical and horizontal splitting with full control
 - **Session persistence**: Robust session management with server/client architecture
 - **Configuration**: Extensive customization via `.tmux.conf`
 
@@ -416,25 +316,10 @@ which screen
 - **Modern workspace paradigm**: Tab-based workflow with floating panes
 - **Built-in layouts**: Predefined and custom layouts
 - **Session management**: Contemporary approach to terminal multiplexing
-- **Plugin system**: Extensible via WebAssembly plugins
-- **Configuration**: YAML-based configuration system
 
 ### GNU Screen
 - **Legacy compatibility**: Reliable fallback for older systems
 - **Basic session management**: Core session operations
-- **Limited pane support**: Only vertical splitting supported
-- **Simple window operations**: Basic window navigation and management
-- **Wide availability**: Usually pre-installed on most Unix systems
-- **Configuration**: Classic `.screenrc` configuration
-
-### Command Behavior Differences
-
-| Operation | tmux | zellij | screen |
-|-----------|------|--------|--------|
-| Window/Tab naming | Window names | Tab names | Window names |
-| Pane splitting | H/V + advanced | Floating + tiled | V only |
-| Session listing | Detailed status | Workspace info | Basic list |
-| Attach behavior | Multiple clients | Single session | Single attach |
 
 ## Troubleshooting
 
@@ -448,9 +333,9 @@ which tmux zellij screen
 2. **Test backend functionality**:
 ```bash
 # Test each backend individually
+TXM_DEFAULT_BACKEND=native txm -v list
 TXM_DEFAULT_BACKEND=tmux txm -v list
 TXM_DEFAULT_BACKEND=zellij txm -v list
-TXM_DEFAULT_BACKEND=screen txm -v list
 ```
 
 3. **Reset configuration**:
@@ -458,17 +343,3 @@ TXM_DEFAULT_BACKEND=screen txm -v list
 rm -rf ~/.txm
 txm config show  # Will recreate with defaults
 ```
-
-### Backend-Specific Issues
-
-1. **tmux not starting**:
-   - Check tmux server status: `tmux info`
-   - Verify tmux configuration: `tmux -f /dev/null list-sessions`
-
-2. **zellij session problems**:
-   - Check zellij version: `zellij --version`
-   - Verify zellij config: `zellij setup --check`
-
-3. **screen compatibility**:
-   - Enable verbose mode: `txm -v create test-session`
-   - Check screen version: `screen -version`
