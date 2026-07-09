@@ -21,7 +21,7 @@ jobs:
     - name: Set up Zig
       uses: mlugg/setup-zig@v1
       with:
-        version: latest
+        version: master
 
     - name: Verify dependencies
       run: go mod verify
