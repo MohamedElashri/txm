@@ -21,10 +21,11 @@ jobs:
     - name: Set up Zig
       run: |
         ZIG_URL=$(curl -s https://ziglang.org/download/index.json | jq -r '.master."x86_64-linux".tarball')
+        cd /tmp
         wget $ZIG_URL -O zig.tar.xz
         tar xf zig.tar.xz
         DIR=$(ls -d zig-x86_64-linux-* | head -n 1)
-        echo "$PWD/$DIR" >> $GITHUB_PATH
+        echo "/tmp/$DIR" >> $GITHUB_PATH
 
     - name: Verify dependencies
       run: go mod verify
@@ -48,10 +49,11 @@ jobs:
     - name: Set up Zig
       run: |
         ZIG_URL=$(curl -s https://ziglang.org/download/index.json | jq -r '.master."x86_64-linux".tarball')
+        cd /tmp
         wget $ZIG_URL -O zig.tar.xz
         tar xf zig.tar.xz
         DIR=$(ls -d zig-x86_64-linux-* | head -n 1)
-        echo "$PWD/$DIR" >> $GITHUB_PATH
+        echo "/tmp/$DIR" >> $GITHUB_PATH
 
     - name: Build dependencies
       run: make build-deps
