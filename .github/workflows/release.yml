@@ -31,6 +31,13 @@ jobs:
           DIR=$(ls -d zig-x86_64-linux-* | head -n 1)
           echo "/tmp/$DIR" >> $GITHUB_PATH
           
+      - name: Download macOS SDK
+        run: |
+          cd /tmp
+          wget https://github.com/joseluisq/macosx-sdks/releases/download/14.4/MacOSX14.4.sdk.tar.xz
+          tar xf MacOSX14.4.sdk.tar.xz
+          echo "MACOS_SDK_PATH=/tmp/MacOSX14.4.sdk" >> $GITHUB_ENV
+          
       - name: Run GoReleaser
         uses: goreleaser/goreleaser-action@5daf1e915a5f0af01ddbcd89a43b8061ff4f1a89 # sanad: ref=v7.2.2
         with:
