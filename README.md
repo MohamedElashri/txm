@@ -22,9 +22,10 @@ curl -s https://raw.githubusercontent.com/MohamedElashri/txm/main/utils/install.
 
 ### Pre-built Binaries
 
-Download the appropriate archive for your platform from the [releases page](https://github.com/MohamedElashri/txm/releases) and extract.
+Download the appropriate archive for your platform from the [releases page](https://github.com/MohamedElashri/txm/releases) and extract. For maximum portability on Alpine Linux or minimal Docker containers, use the `-musl` binaries which are 100% statically linked.
 ```bash
 unzip txm_Linux_x86_64.zip
+# or unzip txm_Linux_x86_64-musl.zip for fully static binary
 ./txm install          # user-local (~/.local/bin)
 # or
 ./txm install --system # system-wide (/usr/local/bin) — requires sudo

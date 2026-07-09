@@ -302,10 +302,11 @@ Now we can set up our OS tiling windows how we like them for our project and hav
 ## Backend-Specific Notes
 
 ### native
-- **Zero dependencies**: No external multiplexer needed
-- **State & Scrollback**: Maintains configurable scrollback ring buffer
+- **Zero dependencies**: No external multiplexer needed (statically compiled with `txm`)
+- **State & Scrollback**: Powered by the cutting-edge **Ghostty** (`libghostty-vt`) terminal emulator core, maintaining a highly accurate VT state and configurable scrollback ring buffer.
 - **Lightweight**: Optimized for simple persistent single-pane sessions
 - **Graceful Detach**: Keybinding `Ctrl+\` to detach cleanly
+- **Portability**: Available as a 100% statically linked `linux-musl` distribution for drop-in use on Alpine Linux and minimal containers without `glibc`.
 
 ### tmux
 - **Full feature support**: Complete implementation of all window and pane operations

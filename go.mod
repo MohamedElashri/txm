@@ -1,6 +1,6 @@
 module github.com/MohamedElashri/txm
 
-go 1.25.11
+go 1.26.0
 
 require (
 	github.com/creack/pty v1.1.24
@@ -20,6 +20,7 @@ require (
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/rivo/uniseg v0.4.7 // indirect
 	github.com/spf13/pflag v1.0.9 // indirect
+	go.mitchellh.com/libghostty v0.0.0-20260528200934-790a3ff6e9f6 // indirect
 	golang.org/x/sys v0.46.0 // indirect
 	golang.org/x/text v0.24.0 // indirect
 )

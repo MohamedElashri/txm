@@ -5,6 +5,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.1] - 2026-07-09
+
+### Added
+- **libghostty Integration**: Supercharged the `native` backend by replacing the naive byte-ring buffer with Ghostty's highly-performant C/Zig terminal emulator core (`libghostty-vt`). This guarantees 100% accurate VT terminal state parsing, resizing, and rendering for native sessions.
+- **Fully Static Musl Builds**: Added dedicated `linux-musl` static cross-compilation targets (`txm_Linux_x86_64-musl.zip`) to the automated GitHub release pipeline, providing drop-in compatibility for Alpine Linux and minimal Docker containers without requiring `glibc`.
+
 ## [1.2.0] - 2026-07-09
 
 ### Added

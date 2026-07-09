@@ -1,4 +1,4 @@
-.PHONY: build clean test lint init all
+.PHONY: build clean test lint init all build-deps
 
 BINARY_NAME=txm
 
@@ -8,16 +8,20 @@ init:
 	go mod download
 	go mod tidy
 
-build:
+build-deps:
+	@if [ ! -d "ghostty" ]; then git clone https://github.com/ghostty-org/ghostty.git ghostty; fi
+	cd ghostty && zig build -Demit-lib-vt --prefix /tmp/ghostty-host
+
+build: build-deps
 	mkdir -p bin
-	go build -o bin/$(BINARY_NAME) .
+	PKG_CONFIG_PATH=/tmp/ghostty-host/share/pkgconfig CGO_ENABLED=1 go build -o bin/$(BINARY_NAME) .
 
 clean:
 	rm -rf bin
 	rm -rf dist
 
-test:
-	go test -v ./...
+test: build-deps
+	PKG_CONFIG_PATH=/tmp/ghostty-host/share/pkgconfig CGO_ENABLED=1 go test -v ./...
 
 lint:
 	golangci-lint run

@@ -29,3 +29,7 @@ go.work
 
 # releases
 dist/*
+
+# Ghostty
+zmx*
+*ghostty*

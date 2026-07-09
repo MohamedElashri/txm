@@ -2,9 +2,17 @@ version: 2
 
 project_name: txm
 
+before:
+  hooks:
+    - ./.github/scripts/build-ghostty.sh
+
 builds:
-  - env:
-      - CGO_ENABLED=0
+  - id: default
+    env:
+      - CGO_ENABLED=1
+      - CC=zig cc -target {{ if eq .Os "linux" }}{{ if eq .Arch "amd64" }}x86_64-linux-gnu{{ else }}aarch64-linux-gnu{{ end }}{{ else if eq .Os "darwin" }}{{ if eq .Arch "amd64" }}x86_64-macos{{ else }}aarch64-macos{{ end }}{{ else if eq .Os "windows" }}{{ if eq .Arch "amd64" }}x86_64-windows-gnu{{ else }}aarch64-windows-gnu{{ end }}{{ end }}
+      - CXX=zig c++ -target {{ if eq .Os "linux" }}{{ if eq .Arch "amd64" }}x86_64-linux-gnu{{ else }}aarch64-linux-gnu{{ end }}{{ else if eq .Os "darwin" }}{{ if eq .Arch "amd64" }}x86_64-macos{{ else }}aarch64-macos{{ end }}{{ else if eq .Os "windows" }}{{ if eq .Arch "amd64" }}x86_64-windows-gnu{{ else }}aarch64-windows-gnu{{ end }}{{ end }}
+      - PKG_CONFIG_PATH=/tmp/ghostty-{{ .Os }}-{{ .Arch }}/share/pkgconfig
     goos:
       - linux
       - darwin
@@ -15,6 +23,20 @@ builds:
     ldflags:
       - -s -w -X github.com/MohamedElashri/txm/pkg/cmd.Version={{.Version}}
 
+  - id: musl
+    env:
+      - CGO_ENABLED=1
+      - CC=zig cc -target {{ if eq .Arch "amd64" }}x86_64-linux-musl{{ else }}aarch64-linux-musl{{ end }}
+      - CXX=zig c++ -target {{ if eq .Arch "amd64" }}x86_64-linux-musl{{ else }}aarch64-linux-musl{{ end }}
+      - PKG_CONFIG_PATH=/tmp/ghostty-linux-musl-{{ .Arch }}/share/pkgconfig
+    goos:
+      - linux
+    goarch:
+      - amd64
+      - arm64
+    ldflags:
+      - -s -w -extldflags "-static" -X github.com/MohamedElashri/txm/pkg/cmd.Version={{.Version}}
+
 archives:
   - format: zip
     name_template: >-
@@ -23,6 +45,7 @@ archives:
       {{- if eq .Arch "amd64" }}x86_64
       {{- else if eq .Arch "386" }}i386
       {{- else }}{{ .Arch }}{{ end }}
+      {{- if eq .ID "musl" }}-musl{{ end }}
 
 checksum:
   name_template: 'checksums.txt'

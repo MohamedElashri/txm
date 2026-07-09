@@ -10,6 +10,7 @@ import (
 
 	"github.com/creack/pty"
 	"github.com/spf13/cobra"
+	"go.mitchellh.com/libghostty"
 )
 
 var serverCmd = &cobra.Command{
@@ -29,7 +30,15 @@ var serverCmd = &cobra.Command{
 				logRotationSize = mgr.Config.LogRotationSize
 			}
 		}
-		rb := newRingBuffer(scrollbackSize)
+
+		term, err := libghostty.NewTerminal(
+			libghostty.WithSize(80, 24),
+			libghostty.WithMaxScrollback(uint(scrollbackSize)),
+		)
+		if err != nil {
+			return fmt.Errorf("failed to create libghostty terminal: %v", err)
+		}
+		defer term.Close()
 
 		logFile := os.Getenv("TXM_LOG_FILE")
 		var logWriter *rotatingFileWriter
@@ -85,7 +94,7 @@ var serverCmd = &cobra.Command{
 					break
 				}
 				
-				_, _ = rb.Write(buf[:n])
+				_, _ = term.Write(buf[:n])
 				if logWriter != nil {
 					_, _ = logWriter.Write(buf[:n])
 				}
@@ -121,12 +130,22 @@ var serverCmd = &cobra.Command{
 					_ = c.Close()
 					return
 				} else if buf[0] == 0x05 {
-					_, _ = c.Write(rb.ReadAll())
+					f, err := libghostty.NewFormatter(term, libghostty.WithFormatterFormat(libghostty.FormatterFormatVT))
+					if err == nil {
+						output, _ := f.FormatString()
+						_, _ = c.Write([]byte(output))
+						f.Close()
+					}
 					_ = c.Close()
 					return
 				} else if buf[0] == 0x00 {
 					connsMutex.Lock()
-					_, _ = c.Write(rb.ReadAll())
+					f, err := libghostty.NewFormatter(term, libghostty.WithFormatterFormat(libghostty.FormatterFormatVT))
+					if err == nil {
+						output, _ := f.FormatString()
+						_, _ = c.Write([]byte(output))
+						f.Close()
+					}
 					conns = append(conns, c)
 					connsMutex.Unlock()
 
@@ -184,47 +203,6 @@ var serverCmd = &cobra.Command{
 func init() {
 	rootCmd.AddCommand(serverCmd)
 	serverCmd.Flags().SetInterspersed(false)
-}
-
-type ringBuffer struct {
-	buf  []byte
-	pos  int
-	full bool
-	mu   sync.Mutex
-}
-
-func newRingBuffer(size int) *ringBuffer {
-	return &ringBuffer{
-		buf: make([]byte, size),
-	}
-}
-
-func (r *ringBuffer) Write(p []byte) (n int, err error) {
-	r.mu.Lock()
-	defer r.mu.Unlock()
-	for _, b := range p {
-		r.buf[r.pos] = b
-		r.pos++
-		if r.pos >= len(r.buf) {
-			r.pos = 0
-			r.full = true
-		}
-	}
-	return len(p), nil
-}
-
-func (r *ringBuffer) ReadAll() []byte {
-	r.mu.Lock()
-	defer r.mu.Unlock()
-	if !r.full {
-		res := make([]byte, r.pos)
-		copy(res, r.buf[:r.pos])
-		return res
-	}
-	res := make([]byte, len(r.buf))
-	copy(res, r.buf[r.pos:])
-	copy(res[len(r.buf)-r.pos:], r.buf[:r.pos])
-	return res
 }
 
 type rotatingFileWriter struct {

@@ -18,6 +18,11 @@ jobs:
         go-version: '1.25.11'
         check-latest: true
 
+    - name: Set up Zig
+      uses: mlugg/setup-zig@v1
+      with:
+        version: latest
+
     - name: Verify dependencies
       run: go mod verify
 
