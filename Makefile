@@ -23,8 +23,8 @@ clean:
 test: build-deps
 	PKG_CONFIG_PATH=/tmp/ghostty-host/share/pkgconfig CGO_ENABLED=1 go test -v ./...
 
-lint:
-	golangci-lint run
+lint: build-deps
+	PKG_CONFIG_PATH=/tmp/ghostty-host/share/pkgconfig CGO_ENABLED=1 golangci-lint run
 
 install: build
 	sudo ./bin/$(BINARY_NAME) install --system

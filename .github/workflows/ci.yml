@@ -19,9 +19,12 @@ jobs:
         check-latest: true
 
     - name: Set up Zig
-      uses: mlugg/setup-zig@v1
-      with:
-        version: master
+      run: |
+        ZIG_URL=$(curl -s https://ziglang.org/download/index.json | jq -r '.master."x86_64-linux".tarball')
+        wget $ZIG_URL -O zig.tar.xz
+        tar xf zig.tar.xz
+        DIR=$(tar tf zig.tar.xz | head -n1 | cut -d/ -f1)
+        echo "$PWD/$DIR" >> $GITHUB_PATH
 
     - name: Verify dependencies
       run: go mod verify
@@ -41,9 +44,23 @@ jobs:
       uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # sanad: ref=v6.5.0
       with:
         go-version: '1.25.11'
+
+    - name: Set up Zig
+      run: |
+        ZIG_URL=$(curl -s https://ziglang.org/download/index.json | jq -r '.master."x86_64-linux".tarball')
+        wget $ZIG_URL -O zig.tar.xz
+        tar xf zig.tar.xz
+        DIR=$(tar tf zig.tar.xz | head -n1 | cut -d/ -f1)
+        echo "$PWD/$DIR" >> $GITHUB_PATH
+
+    - name: Build dependencies
+      run: make build-deps
         
     - name: golangci-lint
       uses: golangci/golangci-lint-action@82606bf257cbaff209d206a39f5134f0cfbfd2ee # sanad: ref=v9.2.1
       with:
         version: latest
         args: --timeout=5m
+      env:
+        PKG_CONFIG_PATH: /tmp/ghostty-host/share/pkgconfig
+        CGO_ENABLED: 1
