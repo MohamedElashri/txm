@@ -24,7 +24,7 @@ jobs:
           
       - name: Set up Zig
         run: |
-          ZIG_URL=$(curl -s https://ziglang.org/download/index.json | jq -r '.master."x86_64-linux".tarball')
+          ZIG_URL=$(curl -s https://ziglang.org/download/index.json | jq -r '.["0.15.2"]."x86_64-linux".tarball')
           cd /tmp
           wget $ZIG_URL -O zig.tar.xz
           tar xf zig.tar.xz
