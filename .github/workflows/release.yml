@@ -20,14 +20,14 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # sanad: ref=v6.5.0
         with:
-          go-version: '1.25.11'
+          go-version: '1.26.0'
           
       - name: Set up Zig
         run: |
           ZIG_URL=$(curl -s https://ziglang.org/download/index.json | jq -r '.master."x86_64-linux".tarball')
           wget $ZIG_URL -O zig.tar.xz
           tar xf zig.tar.xz
-          DIR=$(tar tf zig.tar.xz | head -n1 | cut -d/ -f1)
+          DIR=$(ls -d zig-x86_64-linux-* | head -n 1)
           echo "$PWD/$DIR" >> $GITHUB_PATH
           
       - name: Run GoReleaser
