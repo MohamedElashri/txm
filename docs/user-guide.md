@@ -34,7 +34,7 @@ scrollback_size=131072
 
 1. **Environment Variable**: `TXM_DEFAULT_BACKEND` (highest priority)
 2. **Config File**: `~/.txm/config` (persistent setting)
-3. **Default**: Auto-detection (tmux → screen → zellij → native)
+3. **Default**: Auto-detection (tmux → zellij → screen → native)
 
 ### Configuration Commands
 
@@ -53,7 +53,7 @@ txm config show
 
 | Backend | Session Mgmt | Window/Tab Mgmt | Pane/Panel Ops | Advanced Features |
 |---------|--------------|-----------------|----------------|-------------------|
-| **native** | ✓ | ✗ | ✗ | Built-in, lightweight, zero dependencies |
+| **native** | ✓ | ✗ | ✗ | Built-in, libghostty-vt core, scrollback restoration |
 | **tmux** | ✓ | ✓ | ✓ | Full feature set |
 | **zellij** | ✓ | ✓ | ✓ | Modern workspace |
 | **screen** | ✓ | ✓ | Basic | Fallback support |

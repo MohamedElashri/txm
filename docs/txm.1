@@ -1,13 +1,16 @@
-.TH TXM 1 "March 2025" "txm 1.0.0" "User Commands"
+.TH TXM 1 "July 2026" "txm 1.2.2" "User Commands"
 .SH NAME
 txm \- A terminal session manager with multi-backend support
 .SH SYNOPSIS
 .B txm
 [\fICOMMAND\fR] [\fIOPTIONS\fR] [\fB\-v\fR|\fB\-\-verbose\fR]
 .SH DESCRIPTION
-\fBtxm\fR is a command-line utility for managing terminal multiplexer sessions with support for multiple backends: tmux, zellij, and GNU Screen. It automatically detects available backends and provides a unified interface for session management across different terminal multiplexers.
+\fBtxm\fR is a command-line utility for managing terminal multiplexer sessions with support for multiple backends: native, tmux, zellij, and GNU Screen. It automatically detects available backends and provides a unified interface for session management.
 .SH BACKEND SUPPORT
-\fBtxm\fR supports three terminal multiplexer backends:
+\fBtxm\fR supports four terminal multiplexer backends:
+.TP
+\fBnative\fR
+Built-in lightweight backend using libghostty for high-performance accurate VT terminal emulation with session persistence and scrollback restoration.
 .TP
 \fBtmux\fR
 Full feature set with advanced pane operations, window management, and session control.
@@ -21,7 +24,7 @@ Reliable fallback with basic session and window operations.
 Backend selection follows this priority order:
 1. \fBTXM_DEFAULT_BACKEND\fR environment variable
 2. User configuration in \fI~/.txm/config\fR
-3. Auto-detection (tmux → zellij → screen)
+3. Auto-detection (native → tmux → zellij → screen)
 .SH CONFIGURATION
 \fBtxm\fR supports configuration via:
 .TP
@@ -38,89 +41,65 @@ Set or show the default backend.
 Set the backend preference order.
 .SH COMMANDS
 .TP
-\fBcreate\fR [\fISESSION_NAME\fR]
-Create a new session.
+\fBattach\fR [\fISESSION_NAME\fR] [\fB\-r\fR|\fB\-\-read-only\fR]
+Attach to a session. Automatically attaches to the only available session or creates one if none exist. Use \fB\-r\fR for read-only mode.
 .TP
-\fBlist\fR
-List all sessions.
-.TP
-\fBattach\fR [\fISESSION_NAME\fR]
-Attach to a session.
-.TP
-\fBdetach\fR
-Detach from the current session (tmux and zellij only).
-.TP
-\fBdelete\fR [\fISESSION_NAME\fR]
-Delete a session.
-.TP
-\fBnew-window\fR [\fISESSION_NAME\fR] [\fINAME\fR]
-Create a new window in a session.
-.TP
-\fBlist-windows\fR [\fISESSION_NAME\fR]
-List windows in a session.
-.TP
-\fBkill-window\fR [\fISESSION_NAME\fR] [\fINAME\fR]
-Kill a window in a session.
-.TP
-\fBnext-window\fR [\fISESSION_NAME\fR]
-Switch to the next window in a session.
-.TP
-\fBprev-window\fR [\fISESSION_NAME\fR]
-Switch to the previous window in a session.
-.TP
-\fBrename-session\fR [\fIOLD_SESSION_NAME\fR] [\fINEW_SESSION_NAME\fR]
-Rename a session (tmux and zellij only).
-.TP
-\fBrename-window\fR [\fISESSION_NAME\fR] [\fIOLD_WINDOW_NAME\fR] [\fINEW_WINDOW_NAME\fR]
-Rename a window.
-.TP
-\fBmove-window\fR [\fISOURCE_SESSION\fR] [\fIWINDOW_NAME\fR] [\fIDESTINATION_SESSION\fR]
-Move window to another session (tmux only).
-.TP
-\fBswap-window\fR [\fISESSION_NAME\fR] [\fIWINDOW1_NAME\fR] [\fIWINDOW2_NAME\fR]
-Swap two windows in a session (tmux only).
-.TP
-\fBsplit-window\fR [\fISESSION_NAME\fR] [\fIWINDOW_NAME\fR] [\fIv|h\fR]
-Split a window vertically or horizontally (v supported in tmux/screen, h only in tmux).
-.TP
-\fBlist-panes\fR [\fISESSION_NAME\fR] [\fIWINDOW_NAME\fR]
-List panes in a window (tmux only).
-.TP
-\fBkill-pane\fR [\fISESSION_NAME\fR] [\fIWINDOW_NAME\fR] [\fIPANE_NUMBER\fR]
-Kill a specific pane (tmux only).
-.TP
-\fBresize-pane\fR [\fISESSION_NAME\fR] [\fIWINDOW_NAME\fR] [\fIPANE_NUMBER\fR] [\fIDIRECTION\fR] [\fISIZE\fR]
-Resize a pane (tmux only). Direction can be U (up), D (down), L (left), or R (right). Size is optional and defaults to 5.
-.TP
-\fBsend-keys\fR [\fISESSION_NAME\fR] [\fIWINDOW_NAME\fR] [\fIPANE_NUMBER\fR] [\fIKEYS\fR]
-Send keystrokes to a pane (tmux only).
-.TP
-\fBnuke\fR
-Remove all sessions.
+\fBcompletion\fR [\fIbash|zsh|fish|powershell\fR] [\fB\-\-install\fR]
+Generate the autocompletion script for the specified shell. Use \fB\-\-install\fR to automatically configure your RC files.
 .TP
 \fBconfig\fR [\fIset|get|show\fR] [\fIkey\fR] [\fIvalue\fR]
 Manage configuration settings.
 .br
-\fBconfig set backend\fR [\fItmux|zellij|screen\fR] - Set default backend
+\fBconfig set backend\fR [\fInative|tmux|zellij|screen\fR] - Set default backend
 .br
 \fBconfig get backend\fR - Show current default backend
 .br
 \fBconfig show\fR - Show all configuration
 .TP
-\fBcompletion\fR [\fIbash|zsh|fish|powershell\fR]
-Generate the autocompletion script for the specified shell.
+\fBcreate\fR [\fISESSION_NAME\fR] [\fB\-\-log\fR]
+Create a new session. Use \fB\-\-log\fR to mirror PTY output to a persistent file.
+.TP
+\fBdelete\fR [\fISESSION_NAME\fR]
+Delete a session.
+.TP
+\fBdetach\fR
+Detach from the current session. For native backend, you can also use \fBCtrl+\\\fR.
+.TP
+\fBexec\fR [\fISESSION_NAME\fR] [\fIWINDOW_NAME\fR] [\fIPANE_NUMBER\fR] [\fICOMMAND\fR]
+Execute a command remotely inside a background pane.
+.TP
+\fBgenerate-ssh-config\fR
+Generate an SSH config snippet for seamless remote workflows.
 .TP
 \fBhelp\fR
 Display help information.
 .TP
-\fBupdate\fR
-Update txm to the latest version.
+\fBinstall\fR
+Install txm binary and man page.
+.TP
+\fBlist\fR
+List all active sessions and display the number of attached clients.
+.TP
+\fBnuke\fR
+Remove all sessions.
+.TP
+\fBpane\fR [\fIkill|list\fR]
+Manage panes within a window.
+.TP
+\fBrename-session\fR [\fIOLD_SESSION_NAME\fR] [\fINEW_SESSION_NAME\fR]
+Rename a session.
 .TP
 \fBuninstall\fR
-Uninstall txm from your system.
+Uninstall txm cleanly from your system.
 .TP
-\fBversion\fR [\fI--check-update\fR]
+\fBupdate\fR
+Update txm to the latest version directly from GitHub Releases.
+.TP
+\fBversion\fR [\fB\-\-check-update\fR]
 Show version information and optionally check for updates.
+.TP
+\fBwindow\fR [\fIkill|list|new|next|prev|rename|split\fR]
+Manage windows within a session.
 .SH OPTIONS
 .TP
 \fB\-v\fR, \fB\-\-verbose\fR
@@ -128,7 +107,10 @@ Enable verbose output for debugging.
 .SH ENVIRONMENT
 .TP
 .B TXM_DEFAULT_BACKEND
-Set the default backend to use (tmux, zellij, or screen). Overrides configuration file settings.
+Set the default backend to use (native, tmux, zellij, or screen). Overrides configuration file settings.
+.TP
+.B TXM_SESSION_PREFIX
+Automatically namespaces session names across all commands.
 .TP
 .B NO_COLOR
 If set, disables colored output.
@@ -153,17 +135,14 @@ Use specific backend via environment:
 .B TXM_DEFAULT_BACKEND=tmux txm create mysession
 .TP
 Create and split a window:
-.B txm new-window mysession mywindow
-.B txm split-window mysession mywindow v
+.B txm window new mysession mywindow
+.B txm window split mysession mywindow v
 .TP
-Send commands to a pane:
-.B txm send-keys mysession mywindow 0 "ls -la"
+Execute a command in a pane:
+.B txm exec mysession mywindow 0 "ls -la"
 .TP
 Rename a window:
-.B txm rename-window mysession mywindow newname
-.TP
-Move a window to another session:
-.B txm move-window mysession mywindow othersession
+.B txm window rename mysession mywindow newname
 .TP
 Enable verbose output:
 .B txm -v list
@@ -178,7 +157,10 @@ Default user installation location.
 .I /usr/local/bin/txm
 System-wide installation location.
 .SH NOTES
-\fBtxm\fR automatically detects available backends in the following order: tmux, zellij, screen. Feature availability varies by backend:
+\fBtxm\fR automatically detects available backends in the following order: native, tmux, zellij, screen. Feature availability varies by backend:
+
+.B native:
+Built-in lightweight backend using libghostty. Provides high-performance accurate VT terminal emulation with a configurable scrollback ring buffer for session persistence and instant restoration.
 
 .B tmux:
 Full feature set including pane operations, window management, and advanced session control.
