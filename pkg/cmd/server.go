@@ -85,6 +85,7 @@ var serverCmd = &cobra.Command{
 
 		var connsMutex sync.Mutex
 		var conns []net.Conn
+		var termMutex sync.Mutex
 
 		go func() {
 			buf := make([]byte, 4096)
@@ -94,7 +95,10 @@ var serverCmd = &cobra.Command{
 					break
 				}
 				
+				termMutex.Lock()
 				_, _ = term.Write(buf[:n])
+				termMutex.Unlock()
+				
 				if logWriter != nil {
 					_, _ = logWriter.Write(buf[:n])
 				}
@@ -130,22 +134,34 @@ var serverCmd = &cobra.Command{
 					_ = c.Close()
 					return
 				} else if buf[0] == 0x05 {
+					termMutex.Lock()
 					f, err := libghostty.NewFormatter(term, libghostty.WithFormatterFormat(libghostty.FormatterFormatVT))
+					var output string
 					if err == nil {
-						output, _ := f.FormatString()
-						_, _ = c.Write([]byte(output))
+						output, _ = f.FormatString()
 						f.Close()
+					}
+					termMutex.Unlock()
+					if err == nil {
+						_, _ = c.Write([]byte(output))
 					}
 					_ = c.Close()
 					return
 				} else if buf[0] == 0x00 {
-					connsMutex.Lock()
+					termMutex.Lock()
 					f, err := libghostty.NewFormatter(term, libghostty.WithFormatterFormat(libghostty.FormatterFormatVT))
+					var output string
 					if err == nil {
-						output, _ := f.FormatString()
-						_, _ = c.Write([]byte(output))
+						output, _ = f.FormatString()
 						f.Close()
 					}
+					termMutex.Unlock()
+					
+					if err == nil {
+						_, _ = c.Write([]byte(output))
+					}
+					
+					connsMutex.Lock()
 					conns = append(conns, c)
 					connsMutex.Unlock()
 
@@ -171,6 +187,10 @@ var serverCmd = &cobra.Command{
 								Rows: uint16(h),
 								Cols: uint16(w),
 							})
+							
+							termMutex.Lock()
+							_ = term.Resize(w, h, 0, 0)
+							termMutex.Unlock()
 						} else if data[0] == 0x03 {
 							_ = shellCmd.Process.Kill()
 						}
