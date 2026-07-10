@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **libghostty Thread Safety**: Fixed a critical race condition in the native backend where concurrent connections could cause segmentation faults when accessing the VT terminal state.
 - **Scrollback Layout Restoration**: Fixed a bug where attaching to a native session from a window with a different size would restore scrollback text using the default 80x24 layout, causing text garbling. PTY resize events are now properly propagated to the internal VT core.
 - **Server Broadcast Freezing**: Fixed a severe head-of-line blocking vulnerability where a single frozen or maliciously paused client could permanently hang the native background daemon and all other attached users.
+- **Unix Socket Hijacking**: Fixed a local privilege escalation (LPE) vulnerability where the native backend's IPC Unix socket in `/tmp` inherited default OS umask permissions, potentially allowing other local users to connect, sniff terminal output, and inject arbitrary commands into the session. Sockets are now strictly locked down to `0600` permissions.
 
 ### Changed
 - **man page**: Update the man page to accompany changes since 1.2.0 releases.

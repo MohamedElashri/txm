@@ -62,6 +62,11 @@ var serverCmd = &cobra.Command{
 		if err != nil {
 			return err
 		}
+		
+		if err := os.Chmod(socketPath, 0600); err != nil {
+			_ = listener.Close()
+			return err
+		}
 		defer func() { _ = listener.Close() }()
 		defer func() { _ = os.Remove(socketPath) }()
 
