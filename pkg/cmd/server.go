@@ -7,6 +7,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"sync"
+	"time"
 
 	"github.com/creack/pty"
 	"github.com/spf13/cobra"
@@ -104,8 +105,11 @@ var serverCmd = &cobra.Command{
 				}
 
 				connsMutex.Lock()
-				for _, conn := range conns {
-					_, _ = conn.Write(buf[:n])
+				for _, c := range conns {
+					_ = c.SetWriteDeadline(time.Now().Add(50 * time.Millisecond))
+					if _, err := c.Write(buf[:n]); err != nil {
+						_ = c.Close()
+					}
 				}
 				connsMutex.Unlock()
 			}
