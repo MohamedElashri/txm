@@ -31,7 +31,9 @@ jobs:
       run: go mod verify
 
     - name: Build
-      run: make build
+      run: |
+        go clean -cache
+        make build
 
     - name: Run Tests
       run: make test
@@ -64,5 +66,5 @@ jobs:
         version: latest
         args: --timeout=5m
       env:
-        PKG_CONFIG_PATH: /tmp/ghostty-host/share/pkgconfig
+        PKG_CONFIG_PATH: ${{ github.workspace }}/.ghostty-host/share/pkgconfig
         CGO_ENABLED: 1
