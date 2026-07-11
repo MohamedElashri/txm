@@ -252,7 +252,7 @@ func newRotatingFileWriter(filename string, maxSize int) (*rotatingFileWriter, e
 		size = int(info.Size())
 	}
 
-	f, err := os.OpenFile(filename, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	f, err := os.OpenFile(filename, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0600)
 	if err != nil {
 		return nil, err
 	}
@@ -284,7 +284,7 @@ func (r *rotatingFileWriter) Write(p []byte) (n int, err error) {
 func (r *rotatingFileWriter) rotate() {
 	_ = r.file.Close()
 	_ = os.Rename(r.filename, r.filename+".1")
-	f, err := os.OpenFile(r.filename, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0644)
+	f, err := os.OpenFile(r.filename, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0600)
 	if err == nil {
 		r.file = f
 		r.size = 0
