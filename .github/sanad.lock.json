@@ -11,8 +11,8 @@
       "kind": "github-action",
       "logical_ref": "v7.0.0",
       "pinned_sha": "9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0",
-      "resolved_at": "2026-07-08T23:59:01Z",
-      "timestamp": "2026-06-18T13:53:05Z",
+      "resolved_at": "2026-07-22T07:55:55Z",
+      "timestamp": "2026-07-20T15:10:05Z",
       "timestamp_source": "release"
     },
     {
@@ -24,8 +24,8 @@
       "kind": "github-action",
       "logical_ref": "v6.5.0",
       "pinned_sha": "924ae3a1cded613372ab5595356fb5720e22ba16",
-      "resolved_at": "2026-07-08T23:59:01Z",
-      "timestamp": "2026-06-24T02:49:39Z",
+      "resolved_at": "2026-07-22T07:55:55Z",
+      "timestamp": "2026-07-16T02:50:50Z",
       "timestamp_source": "release"
     },
     {
@@ -37,8 +37,8 @@
       "kind": "github-action",
       "logical_ref": "v7.0.0",
       "pinned_sha": "9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0",
-      "resolved_at": "2026-07-08T23:59:01Z",
-      "timestamp": "2026-06-18T13:53:05Z",
+      "resolved_at": "2026-07-22T07:55:55Z",
+      "timestamp": "2026-07-20T15:10:05Z",
       "timestamp_source": "release"
     },
     {
@@ -50,8 +50,8 @@
       "kind": "github-action",
       "logical_ref": "v6.5.0",
       "pinned_sha": "924ae3a1cded613372ab5595356fb5720e22ba16",
-      "resolved_at": "2026-07-08T23:59:01Z",
-      "timestamp": "2026-06-24T02:49:39Z",
+      "resolved_at": "2026-07-22T07:55:55Z",
+      "timestamp": "2026-07-16T02:50:50Z",
       "timestamp_source": "release"
     },
     {
@@ -68,6 +68,19 @@
       "timestamp_source": "release"
     },
     {
+      "file": ".github/workflows/ci.yml",
+      "node": "jobs.lint.steps[4].uses",
+      "owner": "golangci",
+      "repo": "golangci-lint-action",
+      "path": "",
+      "kind": "github-action",
+      "logical_ref": "v9.3.0",
+      "pinned_sha": "ba0d7d2ec06a0ea1cb5fa41b2e4a3ab91d21278a",
+      "resolved_at": "2026-07-22T07:55:55Z",
+      "timestamp": "2026-06-29T15:52:49Z",
+      "timestamp_source": "release"
+    },
+    {
       "file": ".github/workflows/release.yml",
       "node": "jobs.goreleaser.steps[0].uses",
       "owner": "actions",
@@ -76,8 +89,8 @@
       "kind": "github-action",
       "logical_ref": "v7.0.0",
       "pinned_sha": "9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0",
-      "resolved_at": "2026-07-08T23:59:01Z",
-      "timestamp": "2026-06-18T13:53:05Z",
+      "resolved_at": "2026-07-22T07:55:55Z",
+      "timestamp": "2026-07-20T15:10:05Z",
       "timestamp_source": "release"
     },
     {
@@ -89,8 +102,8 @@
       "kind": "github-action",
       "logical_ref": "v6.5.0",
       "pinned_sha": "924ae3a1cded613372ab5595356fb5720e22ba16",
-      "resolved_at": "2026-07-08T23:59:01Z",
-      "timestamp": "2026-06-24T02:49:39Z",
+      "resolved_at": "2026-07-22T07:55:55Z",
+      "timestamp": "2026-07-16T02:50:50Z",
       "timestamp_source": "release"
     },
     {
@@ -103,6 +116,19 @@
       "logical_ref": "v7.2.2",
       "pinned_sha": "5daf1e915a5f0af01ddbcd89a43b8061ff4f1a89",
       "resolved_at": "2026-07-08T23:59:01Z",
+      "timestamp": "2026-06-29T11:37:51Z",
+      "timestamp_source": "release"
+    },
+    {
+      "file": ".github/workflows/release.yml",
+      "node": "jobs.goreleaser.steps[4].uses",
+      "owner": "goreleaser",
+      "repo": "goreleaser-action",
+      "path": "",
+      "kind": "github-action",
+      "logical_ref": "v7.2.3",
+      "pinned_sha": "f06c13b6b1a9625abc9e6e439d9c05a8f2190e94",
+      "resolved_at": "2026-07-22T07:55:55Z",
       "timestamp": "2026-06-29T11:37:51Z",
       "timestamp_source": "release"
     }
