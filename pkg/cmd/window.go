@@ -2,26 +2,30 @@ package cmd
 
 import (
 	"fmt"
+
 	"github.com/spf13/cobra"
 )
 
-var newWindowCmd = &cobra.Command{
-	Use:   "new [session_name] [window_name]",
-	Short: "Create a new window/tab",
-	Args:  cobra.RangeArgs(1, 2),
+var windowCmd = &cobra.Command{
+	Use:     "window",
+	Aliases: []string{"w"},
+	Short:   "Manage windows within a session",
+}
+
+var windowCreateCmd = &cobra.Command{
+	Use:               "new [session_name] [window_name]",
+	Aliases:           []string{"create", "c"},
+	Short:             "Create a new window/tab",
+	Args:              cobra.RangeArgs(1, 2),
 	ValidArgsFunction: getSingleSessionCompletion,
 	RunE: func(cmd *cobra.Command, args []string) error {
-		session := getSessionName(args[0])
-		if err := validateName(session); err != nil {
+		session, err := parseSessionArgs(args)
+		if err != nil {
 			return err
 		}
-
-		windowName := ""
+		var windowName string
 		if len(args) > 1 {
 			windowName = args[1]
-			if err := validateName(windowName); err != nil {
-				return err
-			}
 		}
 
 		if err := manager.Backend.NewWindow(session, windowName); err != nil {
@@ -33,14 +37,15 @@ var newWindowCmd = &cobra.Command{
 	},
 }
 
-var listWindowsCmd = &cobra.Command{
-	Use:   "list [session_name]",
-	Short: "List windows in a session",
-	Args:  cobra.ExactArgs(1),
+var windowListCmd = &cobra.Command{
+	Use:               "list [session_name]",
+	Aliases:           []string{"ls"},
+	Short:             "List windows in a session",
+	Args:              cobra.ExactArgs(1),
 	ValidArgsFunction: getSingleSessionCompletion,
 	RunE: func(cmd *cobra.Command, args []string) error {
-		session := getSessionName(args[0])
-		if err := validateName(session); err != nil {
+		session, err := parseSessionArgs(args)
+		if err != nil {
 			return err
 		}
 
@@ -51,18 +56,15 @@ var listWindowsCmd = &cobra.Command{
 	},
 }
 
-var killWindowCmd = &cobra.Command{
-	Use:   "kill [session_name] [window_name]",
-	Short: "Remove a window",
-	Args:  cobra.ExactArgs(2),
+var windowKillCmd = &cobra.Command{
+	Use:               "kill [session_name] [window_name]",
+	Aliases:           []string{"delete", "rm"},
+	Short:             "Remove a window",
+	Args:              cobra.ExactArgs(2),
 	ValidArgsFunction: getSingleSessionCompletion,
 	RunE: func(cmd *cobra.Command, args []string) error {
-		session := getSessionName(args[0])
-		window := args[1]
-		if err := validateName(session); err != nil {
-			return err
-		}
-		if err := validateName(window); err != nil {
+		session, window, err := parseWindowArgs(args)
+		if err != nil {
 			return err
 		}
 
@@ -75,14 +77,14 @@ var killWindowCmd = &cobra.Command{
 	},
 }
 
-var nextWindowCmd = &cobra.Command{
-	Use:   "next [session_name]",
-	Short: "Switch to next window",
-	Args:  cobra.ExactArgs(1),
+var windowNextCmd = &cobra.Command{
+	Use:               "next [session_name]",
+	Short:             "Switch to next window",
+	Args:              cobra.ExactArgs(1),
 	ValidArgsFunction: getSingleSessionCompletion,
 	RunE: func(cmd *cobra.Command, args []string) error {
-		session := getSessionName(args[0])
-		if err := validateName(session); err != nil {
+		session, err := parseSessionArgs(args)
+		if err != nil {
 			return err
 		}
 
@@ -95,14 +97,14 @@ var nextWindowCmd = &cobra.Command{
 	},
 }
 
-var prevWindowCmd = &cobra.Command{
-	Use:   "prev [session_name]",
-	Short: "Switch to previous window",
-	Args:  cobra.ExactArgs(1),
+var windowPrevCmd = &cobra.Command{
+	Use:               "prev [session_name]",
+	Short:             "Switch to previous window",
+	Args:              cobra.ExactArgs(1),
 	ValidArgsFunction: getSingleSessionCompletion,
 	RunE: func(cmd *cobra.Command, args []string) error {
-		session := getSessionName(args[0])
-		if err := validateName(session); err != nil {
+		session, err := parseSessionArgs(args)
+		if err != nil {
 			return err
 		}
 
@@ -115,21 +117,18 @@ var prevWindowCmd = &cobra.Command{
 	},
 }
 
-var renameWindowCmd = &cobra.Command{
-	Use:   "rename [session_name] [old_name] [new_name]",
-	Short: "Rename a window",
-	Args:  cobra.ExactArgs(3),
+var windowRenameCmd = &cobra.Command{
+	Use:               "rename [session_name] [old_name] [new_name]",
+	Aliases:           []string{"mv"},
+	Short:             "Rename a window",
+	Args:              cobra.ExactArgs(3),
 	ValidArgsFunction: getSingleSessionCompletion,
 	RunE: func(cmd *cobra.Command, args []string) error {
-		session := getSessionName(args[0])
-		oldName := args[1]
+		session, oldName, err := parseWindowArgs(args)
+		if err != nil {
+			return err
+		}
 		newName := args[2]
-		if err := validateName(session); err != nil {
-			return err
-		}
-		if err := validateName(oldName); err != nil {
-			return err
-		}
 		if err := validateName(newName); err != nil {
 			return err
 		}
@@ -143,21 +142,17 @@ var renameWindowCmd = &cobra.Command{
 	},
 }
 
-var splitWindowCmd = &cobra.Command{
-	Use:   "split [session_name] [window_name] [direction(v|h)]",
-	Short: "Split a window into panes",
-	Args:  cobra.ExactArgs(3),
+var windowSplitCmd = &cobra.Command{
+	Use:               "split [session_name] [window_name] [direction(v|h)]",
+	Short:             "Split a window into panes",
+	Args:              cobra.ExactArgs(3),
 	ValidArgsFunction: getSingleSessionCompletion,
 	RunE: func(cmd *cobra.Command, args []string) error {
-		session := getSessionName(args[0])
-		window := args[1]
+		session, window, err := parseWindowArgs(args)
+		if err != nil {
+			return err
+		}
 		direction := args[2]
-		if err := validateName(session); err != nil {
-			return err
-		}
-		if err := validateName(window); err != nil {
-			return err
-		}
 		if direction != "v" && direction != "h" {
 			return fmt.Errorf("direction must be 'v' or 'h'")
 		}
@@ -169,4 +164,14 @@ var splitWindowCmd = &cobra.Command{
 		logInstance.Info(fmt.Sprintf("Split window '%s' direction '%s'", window, direction))
 		return nil
 	},
+}
+
+func init() {
+	windowCmd.AddCommand(windowCreateCmd)
+	windowCmd.AddCommand(windowListCmd)
+	windowCmd.AddCommand(windowKillCmd)
+	windowCmd.AddCommand(windowNextCmd)
+	windowCmd.AddCommand(windowPrevCmd)
+	windowCmd.AddCommand(windowRenameCmd)
+	windowCmd.AddCommand(windowSplitCmd)
 }

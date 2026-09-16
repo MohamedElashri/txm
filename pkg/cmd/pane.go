@@ -2,21 +2,25 @@ package cmd
 
 import (
 	"fmt"
+
 	"github.com/spf13/cobra"
 )
 
-var listPanesCmd = &cobra.Command{
-	Use:   "list [session_name] [window_name]",
-	Short: "List panes in a window",
-	Args:  cobra.ExactArgs(2),
+var paneCmd = &cobra.Command{
+	Use:     "pane",
+	Aliases: []string{"p"},
+	Short:   "Manage panes within a window",
+}
+
+var paneListCmd = &cobra.Command{
+	Use:     "list [session_name] [window_name]",
+	Aliases: []string{"ls"},
+	Short:   "List panes in a window",
+	Args:    cobra.ExactArgs(2),
 	ValidArgsFunction: getSingleSessionCompletion,
 	RunE: func(cmd *cobra.Command, args []string) error {
-		session := getSessionName(args[0])
-		window := args[1]
-		if err := validateName(session); err != nil {
-			return err
-		}
-		if err := validateName(window); err != nil {
+		session, window, err := parseWindowArgs(args)
+		if err != nil {
 			return err
 		}
 
@@ -27,19 +31,15 @@ var listPanesCmd = &cobra.Command{
 	},
 }
 
-var killPaneCmd = &cobra.Command{
-	Use:   "kill [session_name] [window_name] [pane_id]",
-	Short: "Remove a pane",
-	Args:  cobra.ExactArgs(3),
+var paneKillCmd = &cobra.Command{
+	Use:     "kill [session_name] [window_name] [pane_id]",
+	Aliases: []string{"delete", "rm"},
+	Short:   "Remove a pane",
+	Args:    cobra.ExactArgs(3),
 	ValidArgsFunction: getSingleSessionCompletion,
 	RunE: func(cmd *cobra.Command, args []string) error {
-		session := getSessionName(args[0])
-		window := args[1]
-		pane := args[2]
-		if err := validateName(session); err != nil {
-			return err
-		}
-		if err := validateName(window); err != nil {
+		session, window, pane, err := parsePaneArgs(args)
+		if err != nil {
 			return err
 		}
 
@@ -52,23 +52,17 @@ var killPaneCmd = &cobra.Command{
 	},
 }
 
-var execCmd = &cobra.Command{
+var paneExecCmd = &cobra.Command{
 	Use:   "exec [session_name] [window_name] [pane_id] [command]",
 	Short: "Execute a command in a pane",
 	Args:  cobra.ExactArgs(4),
 	ValidArgsFunction: getSingleSessionCompletion,
 	RunE: func(cmd *cobra.Command, args []string) error {
-		session := getSessionName(args[0])
-		window := args[1]
-		pane := args[2]
+		session, window, pane, err := parsePaneArgs(args)
+		if err != nil {
+			return err
+		}
 		command := args[3]
-
-		if err := validateName(session); err != nil {
-			return err
-		}
-		if err := validateName(window); err != nil {
-			return err
-		}
 
 		if err := manager.Backend.Exec(session, window, pane, command); err != nil {
 			logInstance.Error(fmt.Sprintf("Failed to execute command in pane '%s': %v", pane, err))
@@ -77,4 +71,10 @@ var execCmd = &cobra.Command{
 		logInstance.Info(fmt.Sprintf("Executed command in pane '%s'", pane))
 		return nil
 	},
+}
+
+func init() {
+	paneCmd.AddCommand(paneListCmd)
+	paneCmd.AddCommand(paneKillCmd)
+	paneCmd.AddCommand(paneExecCmd)
 }

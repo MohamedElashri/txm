@@ -5,6 +5,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.5] - 2026-09-17
+
+### Changed
+- **CLI Reorganization**: Refactored the command-line interface to a concrete noun-verb structure (`txm session <cmd>`, `txm window <cmd>`, `txm pane <cmd>`).
+- **Code Refactoring**: Centralized argument parsing and validation into helper functions, significantly reducing logic duplication across commands.
+
+### Aliases
+- **Root Commands**: Old root-level commands (`txm detach`, `txm delete`, `txm rename-session`, `txm nuke`, `txm exec`) have been retained as aliases to their new equivalents to ensure backward compatibility and a fast UX.
+
 ## [1.2.2] - 2026-07-10
 
 ### Fixed

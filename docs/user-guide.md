@@ -7,11 +7,10 @@
 - [Configuration System](#configuration-system)
 - [Backend Support](#backend-support)
 - [Command Line Options](#command-line-options)
-- [Basic Commands](#basic-commands)
+- [Session Management](#session-management)
 - [Window Management](#window-management)
 - [Pane Operations](#pane-operations)
 - [Configuration Commands](#configuration-commands)
-- [Advanced Operations](#advanced-operations)
 - [Environment Variables](#environment-variables)
 - [Seamless SSH Workflow](#seamless-ssh-workflow)
 - [Backend-Specific Notes](#backend-specific-notes)
@@ -84,7 +83,9 @@ txm completion powershell       # powershell
 
 When you uninstall the app using `txm uninstall`, these autocompletion files are automatically purged from your system.
 
-## Basic Commands
+## Session Management (`txm session`)
+
+Commands for managing sessions. The most common commands (`create`, `list`, `attach`) are available at the root level as aliases.
 
 ### Interactive picker
 Launch interactive fuzzy-finder picker to select and preview sessions
@@ -93,53 +94,60 @@ txm
 ```
 
 ### create
-Create a new session (optionally run a specific command)
+Create a new session (optionally run a specific command).
+**Alias:** `txm create`
 ```bash
-txm create [session_name] [command...]
+txm session create [session_name] [command...]
 ```
 - `--log`: Mirror PTY output to a persistent file with automatic size-based log rotation.
 
 ### list
-List all active sessions and display the number of active clients attached
+List all active sessions and display the number of active clients attached.
+**Alias:** `txm list`, `txm ls`
 ```bash
-txm list
+txm session list
 ```
 
 ### attach
 Attach to an existing session. If no name is provided, it automatically attaches to the only available session or creates a default one. Can also accept custom startup commands.
+**Alias:** `txm attach`
 ```bash
-txm attach [session_name] [command...]
+txm session attach [session_name] [command...]
 ```
 - `-r`, `--read-only`: Attach in read-only mode for safe, interference-free session monitoring.
 
 ### detach
 Detach from current session. (Alternatively, use `Ctrl+\` when in a native session to gracefully detach).
+**Alias:** `txm detach`
 ```bash
-txm detach
+txm session detach
 ```
 
 ### delete
-Delete a session
+Delete a session.
+**Alias:** `txm delete`
 ```bash
-txm delete [session_name]
+txm session delete [session_name]
 ```
 
-### exec
-Remotely execute commands inside background sessions/panes.
+### rename
+Rename a session.
+**Alias:** `txm rename-session`
 ```bash
-txm exec [session] [window] [pane] [cmd]
+txm session rename [old_name] [new_name]
+```
+
+### nuke
+Remove all sessions across all backends.
+**Alias:** `txm nuke`
+```bash
+txm session nuke
 ```
 
 ### generate-ssh-config
 Automatically generate zmx-style `ControlMaster` SSH configurations for seamless SSH workflows.
 ```bash
 txm generate-ssh-config
-```
-
-### nuke
-Remove all sessions
-```bash
-txm nuke
 ```
 
 ### update
@@ -220,6 +228,13 @@ txm pane list [session_name] [window_name]
 Remove a pane
 ```bash
 txm pane kill [session_name] [window_name] [pane_number]
+```
+
+### exec
+Remotely execute commands inside background panes.
+**Alias:** `txm exec`
+```bash
+txm pane exec [session] [window] [pane] [cmd]
 ```
 
 ## Environment Variables

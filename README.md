@@ -49,24 +49,24 @@ make build
 # Launch interactive session picker (fuzzy finder with previews)
 txm
 
-# Create and attach to a session
+# Create and attach to a session (using short aliases)
 txm create my-project
 txm attach my-project
 
 # Or create a session running a specific command
-txm create my-server npm run dev
+txm session create my-server npm run dev
 
 # List sessions
 txm list
 
 # Create a window inside the session
-txm new-window my-project editor
+txm window create my-project editor
 
 # Split the window vertically
-txm split-window my-project editor v
+txm window split my-project editor v
 
 # Delete the session when done
-txm delete my-project
+txm session delete my-project
 ```
 
 For a comprehensive guide covering configuration, window/pane management, backends, environment variables, and SSH workflows, see the **[User Guide](docs/user-guide.md)**.

@@ -97,9 +97,4 @@ func (l *Logger) Error(msg string) {
 	fmt.Printf("%s %s\n", prefix, msg)
 }
 
-func (l *Logger) Debug(msg string) {
-	if l.verbose {
-		prefix := l.Colorize(colorBlue, "[DEBUG]")
-		fmt.Fprintf(os.Stderr, "%s %s\n", prefix, msg)
-	}
-}
+

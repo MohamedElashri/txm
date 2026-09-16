@@ -3,7 +3,6 @@ package cmd
 import (
 	"fmt"
 	"os"
-	"strings"
 
 	"github.com/spf13/cobra"
 )
@@ -11,16 +10,23 @@ import (
 var createLogFile string
 var attachReadOnly bool
 
-var createCmd = &cobra.Command{
-	Use:   "create [session_name] [command...]",
-	Short: "Create a new session",
-	Args:  cobra.MinimumNArgs(1),
+var sessionCmd = &cobra.Command{
+	Use:     "session",
+	Aliases: []string{"s"},
+	Short:   "Manage sessions",
+}
+
+var sessionCreateCmd = &cobra.Command{
+	Use:     "create [session_name] [command...]",
+	Aliases: []string{"c", "new"},
+	Short:   "Create a new session",
+	Args:    cobra.MinimumNArgs(1),
 	ValidArgsFunction: func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
 		return nil, cobra.ShellCompDirectiveNoFileComp
 	},
 	RunE: func(cmd *cobra.Command, args []string) error {
-		name := getSessionName(args[0])
-		if err := validateName(name); err != nil {
+		name, err := parseSessionArgs(args)
+		if err != nil {
 			return err
 		}
 
@@ -37,10 +43,11 @@ var createCmd = &cobra.Command{
 	},
 }
 
-var listCmd = &cobra.Command{
-	Use:   "list",
-	Short: "List all active sessions",
-	Args:  cobra.NoArgs,
+var sessionListCmd = &cobra.Command{
+	Use:     "list",
+	Aliases: []string{"ls"},
+	Short:   "List all active sessions",
+	Args:    cobra.NoArgs,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		if err := manager.Backend.ListSessions(); err != nil {
 			logInstance.Warning(fmt.Sprintf("No %s sessions found", manager.Backend.Name()))
@@ -49,8 +56,9 @@ var listCmd = &cobra.Command{
 	},
 }
 
-var attachCmd = &cobra.Command{
+var sessionAttachCmd = &cobra.Command{
 	Use:               "attach [session_name] [command...]",
+	Aliases:           []string{"a"},
 	Short:             "Attach to an existing session",
 	Args:              cobra.ArbitraryArgs,
 	ValidArgsFunction: getSingleSessionCompletion,
@@ -75,8 +83,9 @@ var attachCmd = &cobra.Command{
 				return fmt.Errorf("multiple sessions exist, please specify one to attach to")
 			}
 		} else {
-			name = getSessionName(args[0])
-			if err := validateName(name); err != nil {
+			var err error
+			name, err = parseSessionArgs(args)
+			if err != nil {
 				return err
 			}
 
@@ -101,10 +110,11 @@ var attachCmd = &cobra.Command{
 	},
 }
 
-var detachCmd = &cobra.Command{
-	Use:   "detach",
-	Short: "Detach from current session",
-	Args:  cobra.NoArgs,
+var sessionDetachCmd = &cobra.Command{
+	Use:     "detach",
+	Aliases: []string{"d"},
+	Short:   "Detach from current session",
+	Args:    cobra.NoArgs,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		if err := manager.Backend.DetachSession(); err != nil {
 			logInstance.Error(fmt.Sprintf("Failed to detach from %s session: %v", manager.Backend.Name(), err))
@@ -115,14 +125,15 @@ var detachCmd = &cobra.Command{
 	},
 }
 
-var deleteCmd = &cobra.Command{
+var sessionDeleteCmd = &cobra.Command{
 	Use:               "delete [session_name]",
+	Aliases:           []string{"kill", "rm"},
 	Short:             "Delete a session",
 	Args:              cobra.ExactArgs(1),
 	ValidArgsFunction: getSingleSessionCompletion,
 	RunE: func(cmd *cobra.Command, args []string) error {
-		name := getSessionName(args[0])
-		if err := validateName(name); err != nil {
+		name, err := parseSessionArgs(args)
+		if err != nil {
 			return err
 		}
 
@@ -135,18 +146,19 @@ var deleteCmd = &cobra.Command{
 	},
 }
 
-var renameSessionCmd = &cobra.Command{
-	Use:               "rename-session [old_name] [new_name]",
+var sessionRenameCmd = &cobra.Command{
+	Use:               "rename [old_name] [new_name]",
+	Aliases:           []string{"mv"},
 	Short:             "Rename an existing session",
 	Args:              cobra.ExactArgs(2),
 	ValidArgsFunction: getSingleSessionCompletion,
 	RunE: func(cmd *cobra.Command, args []string) error {
-		oldName := getSessionName(args[0])
-		newName := getSessionName(args[1])
-		if err := validateName(oldName); err != nil {
+		oldName, err := parseSessionArgs(args)
+		if err != nil {
 			return err
 		}
-		if err := validateName(newName); err != nil {
+		newName, err := parseSessionArgs(args[1:])
+		if err != nil {
 			return err
 		}
 
@@ -164,7 +176,7 @@ var renameSessionCmd = &cobra.Command{
 	},
 }
 
-var nukeCmd = &cobra.Command{
+var sessionNukeCmd = &cobra.Command{
 	Use:   "nuke",
 	Short: "Remove all sessions",
 	Args:  cobra.NoArgs,
@@ -178,14 +190,14 @@ var nukeCmd = &cobra.Command{
 	},
 }
 
-var dumpCmd = &cobra.Command{
+var sessionDumpCmd = &cobra.Command{
 	Use:               "dump [session_name]",
 	Hidden:            true,
 	Args:              cobra.ExactArgs(1),
 	ValidArgsFunction: getSingleSessionCompletion,
 	RunE: func(cmd *cobra.Command, args []string) error {
-		name := getSessionName(args[0])
-		if err := validateName(name); err != nil {
+		name, err := parseSessionArgs(args)
+		if err != nil {
 			return err
 		}
 
@@ -198,27 +210,13 @@ var dumpCmd = &cobra.Command{
 	},
 }
 
-var generateSshConfigCmd = &cobra.Command{
-	Use:   "generate-ssh-config",
-	Short: "Generate SSH config snippet for seamless remote workflows",
-	Args:  cobra.NoArgs,
-	Run: func(cmd *cobra.Command, args []string) {
-		config := `
-# Add this to your ~/.ssh/config for seamless session persistence
-
-Host d.*
-    HostName 192.168.1.xxx
-
-    # Automatically attach to a txm session on the remote server
-    # named after the remote host we're connecting to (%h).
-    RemoteCommand txm attach %h
-    RequestTTY yes
-
-    # Multiplex multiple PTY sessions to a single server over one connection
-    ControlMaster auto
-    ControlPath ~/.ssh/cm-%r@%h:%p
-    ControlPersist 10m
-`
-		fmt.Println(strings.TrimSpace(config))
-	},
+func init() {
+	sessionCmd.AddCommand(sessionCreateCmd)
+	sessionCmd.AddCommand(sessionListCmd)
+	sessionCmd.AddCommand(sessionAttachCmd)
+	sessionCmd.AddCommand(sessionDetachCmd)
+	sessionCmd.AddCommand(sessionDeleteCmd)
+	sessionCmd.AddCommand(sessionRenameCmd)
+	sessionCmd.AddCommand(sessionNukeCmd)
+	sessionCmd.AddCommand(sessionDumpCmd)
 }
