@@ -1,4 +1,4 @@
-.PHONY: build clean test lint init all build-deps
+.PHONY: build clean test lint init update all build-deps
 
 BINARY_NAME=txm
 GHOSTTY_HOST_DIR ?= $(CURDIR)/.ghostty-host
@@ -7,6 +7,10 @@ all: test build
 
 init:
 	go mod download
+	go mod tidy
+
+update:
+	go get -u ./...
 	go mod tidy
 
 build-deps:
