@@ -45,7 +45,7 @@ unzip txm_Linux_x86_64.zip
 
 ### Build from Source
 
-Requirements: Go 1.25.11+
+Requirements: Go 1.26+
 ```bash
 git clone https://github.com/MohamedElashri/txm
 cd txm
