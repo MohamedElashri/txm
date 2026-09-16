@@ -7,6 +7,7 @@ import (
 	"io"
 	"net/http"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"runtime"
 	"strings"
@@ -459,6 +460,19 @@ var updateCmd = &cobra.Command{
 		}
 
 		_ = os.Remove(oldPath)
+
+		fmt.Println("Updating man page and shell completions...")
+		installArgs := []string{"install"}
+		if strings.HasPrefix(execPath, "/usr/") {
+			installArgs = append(installArgs, "--system")
+		}
+		
+		postInstallCmd := exec.Command(execPath, installArgs...)
+		postInstallCmd.Stdout = os.Stdout
+		postInstallCmd.Stderr = os.Stderr
+		if err := postInstallCmd.Run(); err != nil {
+			fmt.Printf("Warning: failed to update man page and completions: %v\n", err)
+		}
 
 		fmt.Printf("Successfully updated txm to %s\n", release.TagName)
 		return nil
