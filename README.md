@@ -23,6 +23,18 @@ curl -s https://raw.githubusercontent.com/MohamedElashri/txm/main/utils/install.
 ### Pre-built Binaries
 
 Download the appropriate archive for your platform from the [releases page](https://github.com/MohamedElashri/txm/releases) and extract. For maximum portability on Alpine Linux or minimal Docker containers, use the `-musl` binaries which are 100% statically linked.
+
+| Platform | Architecture | Download Link (Latest) |
+|----------|--------------|------------------------|
+| Linux    | x86_64       | [txm_Linux_x86_64.zip](https://github.com/MohamedElashri/txm/releases/latest/download/txm_Linux_x86_64.zip) |
+| Linux    | ARM64        | [txm_Linux_arm64.zip](https://github.com/MohamedElashri/txm/releases/latest/download/txm_Linux_arm64.zip) |
+| Linux (Static) | x86_64 | [txm_Linux_x86_64-musl.zip](https://github.com/MohamedElashri/txm/releases/latest/download/txm_Linux_x86_64-musl.zip) |
+| Linux (Static) | ARM64  | [txm_Linux_arm64-musl.zip](https://github.com/MohamedElashri/txm/releases/latest/download/txm_Linux_arm64-musl.zip) |
+| macOS    | x86_64       | [txm_Darwin_x86_64.zip](https://github.com/MohamedElashri/txm/releases/latest/download/txm_Darwin_x86_64.zip) |
+| macOS    | Apple Silicon| [txm_Darwin_arm64.zip](https://github.com/MohamedElashri/txm/releases/latest/download/txm_Darwin_arm64.zip) |
+| Windows  | x86_64       | [txm_Windows_x86_64.zip](https://github.com/MohamedElashri/txm/releases/latest/download/txm_Windows_x86_64.zip) |
+| Windows  | ARM64        | [txm_Windows_arm64.zip](https://github.com/MohamedElashri/txm/releases/latest/download/txm_Windows_arm64.zip) |
+
 ```bash
 unzip txm_Linux_x86_64.zip
 # or unzip txm_Linux_x86_64-musl.zip for fully static binary
