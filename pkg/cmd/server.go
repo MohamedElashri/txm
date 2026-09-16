@@ -34,7 +34,7 @@ var serverCmd = &cobra.Command{
 
 		term, err := libghostty.NewTerminal(
 			libghostty.WithSize(80, 24),
-			libghostty.WithMaxScrollback(uint(scrollbackSize)),
+			libghostty.WithMaxScrollbackLines(uint(scrollbackSize)),
 		)
 		if err != nil {
 			return fmt.Errorf("failed to create libghostty terminal: %v", err)
