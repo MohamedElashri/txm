@@ -7,11 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [1.2.5] - 2026-09-17
 
+### Added 
+- **Verbosity Levels**: Added verbosity levels to the CLI, allowing users to see more detailed information about what the CLI is doing.
+- **Color Support**: Added color support to the CLI, allowing users to see colors in the terminal.
+
 ### Changed
 - **CLI Reorganization**: Refactored the command-line interface to a concrete noun-verb structure (`txm session <cmd>`, `txm window <cmd>`, `txm pane <cmd>`).
 - **Code Refactoring**: Centralized argument parsing and validation into helper functions, significantly reducing logic duplication across commands.
-
-### Aliases
+- **man page**: Update the man page to accompany changes for v1.2.5.
 - **Root Commands**: Old root-level commands (`txm detach`, `txm delete`, `txm rename-session`, `txm nuke`, `txm exec`) have been retained as aliases to their new equivalents to ensure backward compatibility and a fast UX.
 
 ## [1.2.2] - 2026-07-10

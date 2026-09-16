@@ -15,7 +15,7 @@ import (
 )
 
 var (
-	verbose     bool
+	verbosity   int
 	manager     *backend.Manager
 	logInstance *logger.Logger
 )
@@ -47,12 +47,12 @@ func getManager() (*backend.Manager, error) {
 	}
 
 	cfg, err := config.LoadConfig()
-	if err != nil && verbose {
+	if err != nil && verbosity > 0 {
 		fmt.Fprintf(os.Stderr, "Warning: Failed to load config: %v\n", err)
 		cfg = config.NewDefaultConfig()
 	}
 
-	logInstance = logger.NewLogger(verbose)
+	logInstance = logger.NewLogger(verbosity)
 	manager = backend.NewManager(cfg, logInstance)
 
 	if err := manager.CheckAvailability(); err != nil {
@@ -233,7 +233,7 @@ Host d.*
 }
 
 func init() {
-	rootCmd.PersistentFlags().BoolVarP(&verbose, "verbose", "v", false, "verbose output")
+	rootCmd.PersistentFlags().CountVarP(&verbosity, "verbose", "v", "verbosity level (can be specified multiple times, e.g., -vv)")
 
 	// Group Commands
 	rootCmd.AddCommand(sessionCmd)
