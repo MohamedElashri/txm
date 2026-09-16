@@ -16,7 +16,6 @@ update:
 build-deps:
 	@if [ ! -d "ghostty" ]; then git clone https://github.com/ghostty-org/ghostty.git ghostty && cd ghostty && git checkout d4c88d806; fi
 	@if [ ! -d "$(GHOSTTY_HOST_DIR)" ]; then cd ghostty && zig build -Demit-lib-vt --prefix $(GHOSTTY_HOST_DIR); fi
-	@patch -N -p1 -d go-libghostty < submodule.patch || true
 
 build: build-deps
 	mkdir -p bin
