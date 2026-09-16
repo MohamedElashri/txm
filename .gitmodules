@@ -1,3 +1,0 @@
-[submodule "go-libghostty"]
-	path = go-libghostty
-	url = https://tangled.org/mitchellh.com/go-libghostty.git

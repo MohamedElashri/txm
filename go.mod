@@ -26,6 +26,3 @@ require (
 	golang.org/x/text v0.42.0 // indirect
 )
 
-// TODO: Remove this workaround replace directive when the upstream go.mitchellh.com/libghostty 
-// module is updated to support the new Ghostty C API.
-replace go.mitchellh.com/libghostty => ./go-libghostty
