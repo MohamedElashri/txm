@@ -1,6 +1,6 @@
 # txm: Terminal Session Manager
 
-`txm` is a unified command-line interface for managing terminal multiplexer sessions. It supports a built-in **native** backend for lightweight session persistence, as well as **tmux**, **zellij**, and **GNU Screen** through a single consistent set of commands.
+**txm** is a unified command-line interface for managing terminal multiplexer sessions. It supports a built-in **native** backend for lightweight session persistence, as well as **tmux**, **zellij**, and **GNU Screen** through a single consistent set of commands.
 
 ---
 
@@ -103,4 +103,4 @@ Contributions are welcome! Please open an issue or submit a pull request on [Git
 
 ## License
 
-GNU General Public License v3.0 — see [LICENSE](LICENSE)
+GNU General Public License v3.0 - see [LICENSE](LICENSE)
