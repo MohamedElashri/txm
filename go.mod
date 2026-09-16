@@ -7,7 +7,7 @@ require (
 	github.com/ktr0731/go-fuzzyfinder v0.9.0
 	github.com/spf13/cobra v1.10.2
 	go.mitchellh.com/libghostty v0.0.0-20260528200934-790a3ff6e9f6
-	golang.org/x/term v0.45.0
+	golang.org/x/term v0.46.0
 )
 
 require (
@@ -21,6 +21,6 @@ require (
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/rivo/uniseg v0.4.7 // indirect
 	github.com/spf13/pflag v1.0.9 // indirect
-	golang.org/x/sys v0.47.0 // indirect
+	golang.org/x/sys v0.48.0 // indirect
 	golang.org/x/text v0.24.0 // indirect
 )
