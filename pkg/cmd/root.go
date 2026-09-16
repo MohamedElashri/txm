@@ -264,10 +264,6 @@ func init() {
 	rootCmd.AddCommand(nukeCmd)
 	rootCmd.AddCommand(execCmd)
 	
-	// Server command (from server.go)
-	rootCmd.AddCommand(serverCmd)
-	serverCmd.Flags().SetInterspersed(false)
-
 	// Hidden / Misc
 	rootCmd.AddCommand(dumpCmd)
 	rootCmd.AddCommand(generateSshConfigCmd)
