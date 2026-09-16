@@ -59,6 +59,9 @@ txm session create my-server npm run dev
 # List sessions
 txm list
 
+# Start a session from a declarative TOML profile
+txm profile dev.toml
+
 # Create a window inside the session
 txm window create my-project editor
 
@@ -77,6 +80,7 @@ For a comprehensive guide covering configuration, window/pane management, backen
 
 - Full command reference & guide: **[User Guide](docs/user-guide.md)**
 - Changelog: [`docs/CHANGELOG.md`](docs/CHANGELOG.md)
+- Future Plans : **[Roadmap](docs/ROADMAP.md)**
 - Man page: `man txm` (installed alongside the binary)
 
 ---

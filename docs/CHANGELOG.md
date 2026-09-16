@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added 
 - **Verbosity Levels**: Added verbosity levels to the CLI, allowing users to see more detailed information about what the CLI is doing.
 - **Color Support**: Added color support to the CLI, allowing users to see colors in the terminal.
+- **Profile Management**: Added a new command `txm profile` to create and manage terminal session profiles declaratively from TOML configuration files.
 
 ### Changed
 - **CLI Reorganization**: Refactored the command-line interface to a concrete noun-verb structure (`txm session <cmd>`, `txm window <cmd>`, `txm pane <cmd>`).

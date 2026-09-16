@@ -239,6 +239,7 @@ func init() {
 	rootCmd.AddCommand(sessionCmd)
 	rootCmd.AddCommand(windowCmd)
 	rootCmd.AddCommand(paneCmd)
+	rootCmd.AddCommand(profileCmd)
 
 	// Add flags to session subcommands
 	sessionCreateCmd.Flags().SetInterspersed(false)

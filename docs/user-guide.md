@@ -144,6 +144,31 @@ Remove all sessions across all backends.
 txm session nuke
 ```
 
+### profile
+Create a full session structure (windows, panes, commands) declaratively from a TOML configuration file.
+```bash
+txm profile [path_to_toml]
+```
+
+**Example TOML Profile:**
+```toml
+name = "dev-workspace"
+backend = "tmux"
+
+[[window]]
+name = "server"
+[[window.pane]]
+command = "npm run start"
+
+[[window]]
+name = "client"
+[[window.pane]]
+command = "npm run dev"
+[[window.pane]]
+split = "v"
+command = "npm run test"
+```
+
 ### generate-ssh-config
 Automatically generate zmx-style `ControlMaster` SSH configurations for seamless SSH workflows.
 ```bash
