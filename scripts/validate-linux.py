@@ -120,7 +120,7 @@ def main():
                            capture_output=True, text=True, timeout=15, check=True)
         report['image_id'] = p.stdout.strip()
         for name, binary in binaries:
-            container(name, binary, ['/usr/bin/python3', 'tests/linux_followup_checks.py', '--binary', '/opt/txm',
+            container(name, binary, ['/usr/bin/python3', 'tests/linux_checks.py', '--binary', '/opt/txm',
                                     '--zellij', '/opt/zellij', '--report', '/results/'+name+'.json', '-v'])
             result = json.loads((reports/(name+'.json')).read_text())
             report.setdefault('runtime_results', {})[name] = result

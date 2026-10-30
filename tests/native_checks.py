@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Phase 1 native framing/permissions/lifecycle and real tmux observer checks."""
+"""native framing/permissions/lifecycle and real tmux observer checks."""
 import argparse
 import concurrent.futures
 import threading
@@ -15,6 +15,7 @@ import struct
 import subprocess
 import sys
 import termios
+from tty_state import attributes as tty_attributes
 import time
 import unittest
 from sandbox import Sandbox, native_server, wait_for
@@ -29,7 +30,7 @@ def snapshot(sock):
 def tty_attach(box, args):
     master, slave = os.openpty()
     fcntl.ioctl(slave, termios.TIOCSWINSZ, struct.pack('HHHH', 24, 80, 0, 0))
-    original = termios.tcgetattr(slave)
+    original = tty_attributes(slave)
     proc = box.start([BINARY, *args], stdin=slave, stdout=slave, stderr=slave)
     return proc, master, slave, original
 
@@ -111,7 +112,8 @@ time.sleep(120)
             box.run([BINARY, 'exec', 'first', '0', '0', 'TXM_INPUT_SENTINEL'])
             wait_for(lambda: b'TXM_INPUT_SENTINEL' in snapshot(sock))
             box.run([BINARY, 'delete', 'first'])
-            self.assertEqual(first.wait(timeout=3), 0)
+            self.assertEqual(first.wait(timeout=3), 0,
+                             '\n'.join(p.read_text() for p in box.root.glob('first-*.stderr')))
             self.assertFalse(sock.exists())
             self.assertIsNone(second.poll())
             self.assertIn('second', box.run([BINARY, 'list']).stdout)
@@ -121,7 +123,7 @@ time.sleep(120)
     def test_duplicate_and_legacy_sockets_are_untouched(self):
         with Sandbox() as box, native_server(box, BINARY) as (server, sock, _):
             original = sock.stat().st_ino
-            duplicate = box.run([BINARY, 'server', '--instance', secrets.token_hex(16), 'sample', '/bin/true'], check=False)
+            duplicate = box.run([BINARY, 'server', '--instance', secrets.token_hex(16), 'sample', '/usr/bin/true'], check=False)
             self.assertNotEqual(duplicate.returncode, 0)
             self.assertEqual(sock.stat().st_ino, original)
             self.assertIsNone(server.poll())
@@ -176,7 +178,7 @@ time.sleep(120)
                         os.write(master, b'SENTINEL\n\x1c')
                     proc.wait(timeout=4)
                     self.assertEqual(proc.returncode, 130 if signal_mode else 0)
-                    self.assertEqual(termios.tcgetattr(slave), old)
+                    self.assertEqual(tty_attributes(slave), old)
                     wait_for(lambda: PeerStatus(sock) == 0)
                     self.assertIsNone(server.poll())
                     self.assertNotIn(b'SENTINEL', snapshot(sock))
@@ -198,11 +200,11 @@ time.sleep(120)
             box.run([BINARY, 'delete', 'race'])
             runtime = box.root / 'runtime/txm/v1'
             self.assertFalse(list(runtime.glob('s-*.sock')))
-            result = box.run([BINARY, 'create', 'short', '/bin/true'], check=False)
+            result = box.run([BINARY, 'create', 'short', '/usr/bin/true'], check=False)
             # If the child was observed running during readiness, success is a
-            # truthful start; otherwise startup reports its early exit. Phase 2
+            # truthful start; otherwise startup reports its early exit. Structured queries
             # classifies a handshake observing exit as not-found (3), rather
-            # than the Phase 1 general failure (1). Cleanup stays mandatory.
+            # than the general failure (1). Cleanup stays mandatory.
             self.assertIn(result.returncode, (0, 1, 3))
             if result.returncode == 3:
                 self.assertIn('native child already exited', result.stderr)
@@ -335,7 +337,7 @@ time.sleep(120)
                 os.write(master, b'\x02d')
                 proc.wait(timeout=5)
                 self.assertEqual(proc.returncode, 0)
-                self.assertEqual(termios.tcgetattr(slave), old)
+                self.assertEqual(tty_attributes(slave), old)
             finally:
                 os.close(master)
                 os.close(slave)

@@ -17,7 +17,7 @@ import (
 var dashboardAgents, dashboardPreview bool
 var dashboardRefresh time.Duration
 var dashboardCmd = &cobra.Command{Use: "dashboard", Short: "Interactive local session observations and optional agent state", Args: cobra.NoArgs, RunE: func(cmd *cobra.Command, _ []string) error {
-	if runtime.GOOS != "linux" {
+	if runtime.GOOS != "linux" && runtime.GOOS != "darwin" {
 		return core.Failure("unsupported", "dashboard terminal runtime is unverified on this platform")
 	}
 	if !term.IsTerminal(int(os.Stdin.Fd())) || !term.IsTerminal(int(os.Stdout.Fd())) {

@@ -1,4 +1,0 @@
-{
-  "passed": true,
-  "scope": "Final Linux CGO-disabled binary; agent commands unsupported exit 4 without state/runtime creation. No Windows runtime claim."
-}

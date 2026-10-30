@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Phase 6 real PTYs rendered by the existing native VT, never a new parser."""
+"""real PTYs rendered by the existing native VT, never a new parser."""
 import argparse
 import base64
 from contextlib import contextmanager
@@ -18,6 +18,8 @@ import unittest
 import agent_checks as a
 from agent_events_checks import signal_request
 from sandbox import native_server,wait_for
+from platform_metrics import rss_kib
+from tty_state import configured_attributes,configured_flags
 from structured_checks import fake,calls,tmux
 from wire import Peer,packet,read,RESIZE
 
@@ -56,25 +58,29 @@ class Console:
     def exited(self,code=0,timeout=6):
         wait_for(self.result.exists,timeout=timeout);result=json.loads(self.result.read_text())
         assert result['code']==code,result
-        assert result['term_before']==result['term_after'],result
-        assert result['flags_before']==result['flags_after'],result
+        assert configured_attributes(result['term_before'])==configured_attributes(result['term_after']),result
+        assert list(map(configured_flags,result['flags_before']))==list(map(configured_flags,result['flags_after'])),result
         return result
     def send_signal(self,sig):
-        wait_for(self.ready.exists);pid=json.loads(self.ready.read_text())['pid']
-        assert f'PPid:\t{self.wrapper}\n' in Path(f'/proc/{pid}/status').read_text()
-        assert b'dashboard\0' in Path(f'/proc/{pid}/cmdline').read_bytes()
-        fd=os.pidfd_open(pid)
-        try:signal.pidfd_send_signal(fd,sig)
-        finally:os.close(fd)
+        # The fixture wrapper is the sole reaper and signals its live Popen
+        # child itself. Never signal a remembered PID from a separate process.
+        wait_for(self.ready.exists)
+        request=self.ready.with_suffix('.signal')
+        request.write_text(str(int(sig)))
 
 @contextmanager
 def console(box,args=()):
     token=secrets.token_hex(4);script=box.root/('console-'+token+'.py');result=box.root/('result-'+token+'.json');ready=box.root/('ready-'+token+'.json')
-    script.write_text(f'''import fcntl,json,os,subprocess,termios
+    script.write_text(f'''import fcntl,json,os,signal,subprocess,termios,time
 from pathlib import Path
 before=termios.tcgetattr(0);flags=[fcntl.fcntl(fd,fcntl.F_GETFL) for fd in (0,1)]
 p=subprocess.Popen({[str(BINARY),'dashboard',*map(str,args)]!r})
 Path({str(ready)!r}).write_text(json.dumps({{"pid":p.pid}}))
+request=Path({str(ready.with_suffix('.signal'))!r})
+while p.poll() is None:
+ if request.exists():
+  value=int(request.read_text());request.unlink();p.send_signal(value)
+ time.sleep(.01)
 code=p.wait()
 value={{"code":code,"term_before":before,"term_after":termios.tcgetattr(0),"flags_before":flags,"flags_after":[fcntl.fcntl(fd,fcntl.F_GETFL) for fd in (0,1)]}}
 p=Path({str(result)!r});tmp=p.with_suffix('.tmp');tmp.write_text(json.dumps(value,default=lambda b:b.hex()));tmp.replace(p)
@@ -132,15 +138,26 @@ class DashboardChecks(unittest.TestCase):
             box.start_tmux(shutil.which('tmux'));tmux(box,'new-session','-d','-s','work','exec /bin/sleep 120')
             with console(box,['--backend','tmux']) as ui:
                 ui.search('work');ui.wait('read_only_attach=supported')
+                previous_source=None
                 for key,readonly in [(b'o','1'),(b'\r','0')]:
-                    ui.keys(key);wait_for(lambda:tmux(box,'list-clients','-F','#{client_readonly}')==readonly)
+                    # Resuming deliberately invalidates pre-attach observations.
+                    # Wait for this selected row's fresh listing before acting;
+                    # the resumed message alone does not authorize another attach.
+                    def fresh():
+                        lines=ui.snapshot().splitlines()
+                        source=next((line.strip() for line in lines if line.startswith('Source: tmux session listing | observed ')),None)
+                        return source is not None and source!=previous_source and any(line.split()[:3]==['session','tmux','work'] and 'stale' not in line.split() for line in lines)
+                    wait_for(fresh)
+                    previous_source=next(line.strip() for line in ui.snapshot().splitlines() if line.startswith('Source: tmux session listing | observed '))
+                    ui.keys(key)
+                    try:wait_for(lambda:tmux(box,'list-clients','-F','#{client_readonly}')==readonly)
+                    except TimeoutError:raise AssertionError((key,readonly,ui.snapshot()))
                     ui.wait('[work]');ui.keys(b'\x02d');ui.wait('Detached; dashboard resumed')
                 tmux(box,'rename-session','-t','=work','renamed');ui.keys(b'\x1b');time.sleep(.08)
                 # Leave search, then refresh using the new name, never resurrect work.
-                ui.search('renamed');ui.keys(b'r');ui.wait('renamed');ui.keys(b'q');ui.exited()
+                ui.search('renamed');ui.keys(b'r');ui.wait('Session tmux/renamed');ui.keys(b'q');ui.exited()
                 self.assertNotIn('work',tmux(box,'list-sessions','-F','#{session_name}'));box.verify_tmux()
 
-    @unittest.skipUnless(sys.platform.startswith('linux') and hasattr(os,'pidfd_open'),'Linux fixture PID ownership')
     def test_cancellation_during_native_and_tmux_attach_restores_tty(self):
         with fixture() as box,native_server(box,BINARY,name='work') as (_,sock,_),console(box,['--backend','native']) as ui:
             ui.search('work');ui.wait('running');ui.keys(b'\r')
@@ -235,7 +252,6 @@ class DashboardChecks(unittest.TestCase):
                     ui.keys(b'q');ui.exited()
             with a.coordinator(box):self.assertEqual(a.status(box,live['id'])['lifecycle'],'running')
 
-    @unittest.skipUnless(sys.platform.startswith('linux') and hasattr(os,'pidfd_open'),'Linux fixture PID ownership')
     def test_sigint_sigterm_and_raw_ctrl_c_restore_tty(self):
         with fixture() as box:
             for sig in (signal.SIGINT,signal.SIGTERM,None):
@@ -253,9 +269,8 @@ class DashboardChecks(unittest.TestCase):
                 ui.wait('tmux:1000');started=time.monotonic();ui.search('task-0999');ui.wait('1 rows');METRICS['search_1000_ms']=(time.monotonic()-started)*1000
                 self.assertLess(METRICS['search_1000_ms'],500)
                 started=time.monotonic();ui.resize(120,35);ui.wait('task-0999');METRICS['resize_1000_ms']=(time.monotonic()-started)*1000;self.assertLess(METRICS['resize_1000_ms'],500)
-                if sys.platform.startswith('linux'):
-                    pid=json.loads(ui.ready.read_text())['pid'];rss=next(int(line.split()[1]) for line in Path(f'/proc/{pid}/status').read_text().splitlines() if line.startswith('VmRSS:'));METRICS['rss_1000_kib']=rss
-                    if 'race' not in str(BINARY):self.assertLess(rss,65536)
+                pid=json.loads(ui.ready.read_text())['pid'];rss=rss_kib(pid);METRICS['rss_1000_kib']=rss
+                if 'race' not in str(BINARY):self.assertLess(rss,65536)
                 started=time.monotonic();ui.keys(b'q');ui.exited();METRICS['quit_1000_ms']=(time.monotonic()-started)*1000;self.assertLess(METRICS['quit_1000_ms'],500)
 
 if __name__=='__main__':
@@ -263,5 +278,5 @@ if __name__=='__main__':
     args,remaining=p.parse_known_args();BINARY=args.binary.resolve(strict=True);a.BINARY=BINARY;REPORT=args.report
     try:result=unittest.main(argv=[sys.argv[0],*remaining],exit=False).result
     finally:
-        if REPORT:REPORT.write_text(json.dumps({'scope':'guarded Linux native VT/PTY dashboard fixtures; race RSS is diagnostic only','budgets':{'input_resize_quit_ms':500,'rss_1000_kib':65536,'slow_cancel_s':3},'metrics':METRICS},indent=2)+'\n')
+        if REPORT:REPORT.write_text(json.dumps({'scope':'guarded POSIX native VT/PTY dashboard fixtures; race RSS is diagnostic only','budgets':{'input_resize_quit_ms':500,'rss_1000_kib':65536,'slow_cancel_s':3},'metrics':METRICS},indent=2)+'\n')
     raise SystemExit(0 if result.wasSuccessful() else 1)

@@ -1,6 +1,8 @@
-.PHONY: build clean test lint init update all build-deps test-integration test-race test-harness test-fuzz test-integration-race test-performance test-extensions
+.PHONY: build clean test lint init update all build-deps test-integration test-race test-harness test-fuzz test-integration-race test-performance test-extensions test-ssh release-check
 
 BINARY_NAME=txm
+VERSION ?= $(shell cat VERSION)
+VERSION_LDFLAGS = -X github.com/MohamedElashri/txm/pkg/cmd.Version=$(VERSION)
 GHOSTTY_HOST_DIR ?= $(CURDIR)/.ghostty-host
 GHOSTTY_SOURCE_DIR ?= $(CURDIR)/ghostty
 ZIG ?= zig
@@ -20,7 +22,7 @@ build-deps:
 
 build: build-deps
 	mkdir -p bin
-	PKG_CONFIG_PATH="$(GHOSTTY_HOST_DIR)/share/pkgconfig" CGO_ENABLED=1 go build -o bin/$(BINARY_NAME) .
+	PKG_CONFIG_PATH="$(GHOSTTY_HOST_DIR)/share/pkgconfig" CGO_ENABLED=1 go build -ldflags "$(VERSION_LDFLAGS)" -o bin/$(BINARY_NAME) .
 
 clean:
 	rm -rf bin
@@ -37,7 +39,6 @@ test-harness:
 	python3 -m unittest discover -s tests -p 'test_*.py' -v
 
 test-integration: build test-harness
-	python3 tests/integration.py --binary "$(CURDIR)/bin/$(BINARY_NAME)"
 	python3 tests/cli_errors.py --binary "$(CURDIR)/bin/$(BINARY_NAME)"
 	python3 tests/native_checks.py --binary "$(CURDIR)/bin/$(BINARY_NAME)"
 	python3 tests/structured_checks.py --binary "$(CURDIR)/bin/$(BINARY_NAME)"
@@ -63,7 +64,7 @@ test-fuzz:
 
 test-integration-race: build-deps test-harness
 	mkdir -p bin
-	PKG_CONFIG_PATH="$(GHOSTTY_HOST_DIR)/share/pkgconfig" CGO_ENABLED=1 go build -race -o bin/$(BINARY_NAME)-race .
+	PKG_CONFIG_PATH="$(GHOSTTY_HOST_DIR)/share/pkgconfig" CGO_ENABLED=1 go build -race -ldflags "$(VERSION_LDFLAGS)" -o bin/$(BINARY_NAME)-race .
 	python3 tests/native_checks.py --binary "$(CURDIR)/bin/$(BINARY_NAME)-race"
 	python3 tests/structured_checks.py --binary "$(CURDIR)/bin/$(BINARY_NAME)-race"
 	python3 tests/profile_checks.py --binary "$(CURDIR)/bin/$(BINARY_NAME)-race"
@@ -81,3 +82,11 @@ install: build
 
 install-user: build
 	./bin/$(BINARY_NAME) install
+
+# Real loopback OpenSSH; unprivileged macOS or the isolated Linux container.
+test-ssh: build test-harness
+	python3 tests/ssh_checks.py --binary "$(CURDIR)/bin/$(BINARY_NAME)" --report "$(CURDIR)/bin/ssh.json" -v
+
+release-check:
+	python3 scripts/check-release.py
+	goreleaser check

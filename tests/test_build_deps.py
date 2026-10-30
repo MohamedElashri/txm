@@ -36,10 +36,11 @@ from pathlib import Path
 if sys.argv[1] == 'version':
     print(os.environ.get('FAKE_ZIG_VERSION', '0.16.0'))
 else:
+    assert '-Demit-xcframework=false' in sys.argv, 'txm must not require Xcode packaging'
     with open({str(self.root / 'builds')!r}, 'a') as f: f.write('build\\n')
     if os.environ.get('FAKE_ZIG_FAIL'): sys.exit(1)
     prefix=Path(sys.argv[sys.argv.index('--prefix')+1])
-    for relative in ['share/pkgconfig/libghostty-vt-static.pc', 'lib/libghostty-vt.a', 'lib/ghostty-vt-static.lib']:
+    for relative in ['share/pkgconfig/libghostty-vt-static.pc', 'lib/libghostty-vt.a']:
         p=prefix/relative
         p.parent.mkdir(parents=True,exist_ok=True)
         p.write_text('fixture')
@@ -92,7 +93,9 @@ else:
         out=subprocess.run(command,env=self.env,capture_output=True,text=True,timeout=10)
         self.assertEqual(out.returncode,0,out.stderr)
         prefixes=list((self.root/".ghostty-release").iterdir())
-        self.assertEqual(len(prefixes),8)
+        self.assertEqual({p.name for p in prefixes}, {
+            'linux-amd64', 'linux-arm64', 'linux-musl-amd64',
+            'linux-musl-arm64', 'darwin-amd64', 'darwin-arm64'})
         for prefix in prefixes:self.assertTrue((prefix/".txm-build-info").exists())
 
 

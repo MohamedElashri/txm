@@ -11,14 +11,24 @@ builds:
   - id: default
     env:
       - CGO_ENABLED=1
-      - CC=zig cc -target {{ if eq .Os "linux" }}{{ if eq .Arch "amd64" }}x86_64-linux-gnu{{ else }}aarch64-linux-gnu{{ end }}{{ else if eq .Os "darwin" }}{{ if eq .Arch "amd64" }}x86_64-macos{{ else }}aarch64-macos{{ end }}{{ else if eq .Os "windows" }}{{ if eq .Arch "amd64" }}x86_64-windows-gnu{{ else }}aarch64-windows-gnu{{ end }}{{ end }}{{ if eq .Os "darwin" }} --sysroot {{ .Env.MACOS_SDK_PATH }}{{ end }}
-      - CXX=zig c++ -target {{ if eq .Os "linux" }}{{ if eq .Arch "amd64" }}x86_64-linux-gnu{{ else }}aarch64-linux-gnu{{ end }}{{ else if eq .Os "darwin" }}{{ if eq .Arch "amd64" }}x86_64-macos{{ else }}aarch64-macos{{ end }}{{ else if eq .Os "windows" }}{{ if eq .Arch "amd64" }}x86_64-windows-gnu{{ else }}aarch64-windows-gnu{{ end }}{{ end }}{{ if eq .Os "darwin" }} --sysroot {{ .Env.MACOS_SDK_PATH }}{{ end }}
+      - CC=zig cc -target {{ if eq .Os "linux" }}{{ if eq .Arch "amd64" }}x86_64-linux-gnu{{ else }}aarch64-linux-gnu{{ end }}{{ else if eq .Os "darwin" }}{{ if eq .Arch "amd64" }}x86_64-macos{{ else }}aarch64-macos{{ end }}{{ end }}{{ if eq .Os "darwin" }} --sysroot {{ .Env.MACOS_SDK_PATH }}{{ end }}
+      - CXX=zig c++ -target {{ if eq .Os "linux" }}{{ if eq .Arch "amd64" }}x86_64-linux-gnu{{ else }}aarch64-linux-gnu{{ end }}{{ else if eq .Os "darwin" }}{{ if eq .Arch "amd64" }}x86_64-macos{{ else }}aarch64-macos{{ end }}{{ end }}{{ if eq .Os "darwin" }} --sysroot {{ .Env.MACOS_SDK_PATH }}{{ end }}
       - PKG_CONFIG_PATH={{ .Env.TXM_RELEASE_ROOT }}/.ghostty-release/{{ .Os }}-{{ .Arch }}/share/pkgconfig
       - CGO_LDFLAGS={{ if eq .Os "darwin" }}-L/usr/lib -F{{ .Env.MACOS_SDK_PATH }}/System/Library/Frameworks{{ end }}
       - CGO_LDFLAGS_ALLOW=.*
     goos:
       - linux
       - darwin
+    goarch:
+      - amd64
+      - arm64
+    ldflags:
+      - -s -w -X github.com/MohamedElashri/txm/pkg/cmd.Version={{.Version}}
+
+  - id: windows
+    env:
+      - CGO_ENABLED=0
+    goos:
       - windows
     goarch:
       - amd64
@@ -45,6 +55,7 @@ archives:
   - id: default
     ids:
       - default
+      - windows
     formats: [zip]
     files:
       - LICENSE
@@ -67,7 +78,7 @@ checksum:
   name_template: 'checksums.txt'
 
 snapshot:
-  version_template: "{{ incpatch .Version }}-next"
+  version_template: '{{ if .Env.TXM_SNAPSHOT_VERSION }}{{ .Env.TXM_SNAPSHOT_VERSION }}{{ else }}{{ incpatch .Version }}-next{{ end }}'
 
 changelog:
   sort: asc
@@ -75,3 +86,7 @@ changelog:
     exclude:
       - '^docs:'
       - '^test:'
+
+release:
+  draft: true
+  prerelease: auto

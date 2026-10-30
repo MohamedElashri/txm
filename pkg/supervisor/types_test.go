@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"github.com/MohamedElashri/txm/pkg/runtimepath"
 	"os"
+	"path/filepath"
 	"testing"
 )
 
@@ -29,7 +30,10 @@ func TestReceiptIdentityOutcomesAndImmutability(t *testing.T) {
 	if !runtimepath.Supported() {
 		t.Skip("private Unix state")
 	}
-	base := t.TempDir()
+	base, canonicalErr := filepath.EvalSymlinks(t.TempDir())
+	if canonicalErr != nil {
+		t.Fatal(canonicalErr)
+	}
 	if e := os.Chmod(base, 0700); e != nil {
 		t.Fatal(e)
 	}

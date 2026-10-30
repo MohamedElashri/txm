@@ -6,6 +6,8 @@ import (
 	"os/exec"
 	"syscall"
 	"testing"
+
+	"golang.org/x/sys/unix"
 )
 
 func TestExitObservationDoesNotReap(t *testing.T) {
@@ -23,6 +25,9 @@ func TestExitObservationDoesNotReap(t *testing.T) {
 	}
 	if err := syscall.Kill(cmd.Process.Pid, 0); err != nil {
 		t.Fatal("PID released before group teardown", err)
+	}
+	if err := SignalGroup(cmd.Process.Pid, unix.SIGKILL); err != nil {
+		t.Fatal("owned zombie-only group reported permission failure", err)
 	}
 	if err := cmd.Wait(); err != nil {
 		t.Fatal(err)

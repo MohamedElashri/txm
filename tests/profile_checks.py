@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
-"""Phase 3 profile preflight, exact placement, ownership and compatibility."""
+"""profile preflight, exact placement, ownership and compatibility."""
 import argparse
 import fcntl
 import termios
+from tty_state import attributes as tty_attributes
 import struct
 import json
 import os
@@ -118,13 +119,18 @@ class ProfileChecks(unittest.TestCase):
                 proc=box.start([BINARY,'profile','--attach-existing','-r',profile],stdin=slave,stdout=slave,stderr=slave)
                 def attached():
                     with Peer(sock) as p:return p.request('status')['attached_clients']==1
-                wait_for(attached);os.write(master,b'\x1c');self.assertEqual(proc.wait(timeout=4),0)
+                wait_for(attached);os.write(master,b'\x1c')
+                wait_for(lambda:proc.poll() is not None,timeout=4)
+                self.assertEqual(proc.returncode,0)
                 with Peer(sock) as p:
                     import base64
                     content=base64.b64decode(p.request('snapshot',format='plain',lines=100,max_bytes=1048576)['content'])
                     self.assertNotIn(b'PRIVATE_SYNTHETIC',content)
             finally:
-                if proc and proc.poll() is None:proc.terminate();proc.wait(timeout=4)
+                if proc and proc.poll() is None:
+                    proc.terminate()
+                    try:wait_for(lambda:proc.poll() is not None,timeout=4)
+                    except TimeoutError:proc.kill();proc.wait(timeout=4)
                 os.close(master);os.close(slave)
 
     def test_native_single_terminal_cwd_prefix_and_no_host_state(self):
@@ -143,24 +149,32 @@ class ProfileChecks(unittest.TestCase):
 
     def test_picker_enter_attach_detach_restores_tty(self):
         with Sandbox() as box,native_server(box,BINARY) as (_,sock,_):
-            master,slave=os.openpty();fcntl.ioctl(slave,termios.TIOCSWINSZ,struct.pack('HHHH',24,80,0,0));old=termios.tcgetattr(slave)
-            proc=None
+            master,slave=os.openpty();fcntl.ioctl(slave,termios.TIOCSWINSZ,struct.pack('HHHH',24,80,0,0));old=tty_attributes(slave)
+            # A real terminal's shell remains its session leader while txm exits.
+            # Darwin revokes the PTY if the session leader exits, so hold an owned
+            # wrapper until configuration has been checked and drain output.
+            done=box.root/'picker-done';release=box.root/'picker-release';stop=box.root/'picker-stop'
+            wrapper=box.root/'picker-wrapper.py'
+            wrapper.write_text(f"import subprocess,time\nfrom pathlib import Path\np=subprocess.Popen({[str(BINARY)]!r})\nwhile p.poll() is None:\n if Path({str(stop)!r}).exists():p.kill()\n time.sleep(.01)\npath=Path({str(done)!r});tmp=path.with_suffix('.tmp');tmp.write_text(str(p.wait()));tmp.replace(path)\nwhile not Path({str(release)!r}).exists():time.sleep(.01)\n")
+            proc=box.start([sys.executable,wrapper],stdin=slave,stdout=slave,stderr=slave,preexec_fn=lambda:fcntl.ioctl(0,termios.TIOCSCTTY,0))
+            os.set_blocking(master,False);rendered=bytearray()
+            def visible():
+                try:rendered.extend(os.read(master,65536))
+                except BlockingIOError:pass
+                return b'sample' in rendered
             try:
-                proc=box.start([BINARY],stdin=slave,stdout=slave,stderr=slave,preexec_fn=lambda:fcntl.ioctl(0,termios.TIOCSCTTY,0))
-                os.set_blocking(master,False)
-                rendered=bytearray()
-                def visible():
-                    try:rendered.extend(os.read(master,65536))
-                    except BlockingIOError:pass
-                    return b'sample' in rendered
-                wait_for(visible)
-                os.write(master,b'\r')
+                wait_for(visible);os.write(master,b'\r')
                 def attached():
+                    visible()
                     with Peer(sock) as peer:return peer.request('status')['attached_clients']==1
-                wait_for(attached);os.write(master,b'\x1c');self.assertEqual(proc.wait(timeout=4),0)
-                self.assertEqual(termios.tcgetattr(slave),old)
+                wait_for(attached);os.write(master,b'\x1c')
+                wait_for(lambda:(visible(),done.exists())[1],timeout=4)
+                self.assertEqual(int(done.read_text()),0)
+                self.assertEqual(tty_attributes(slave),old)
             finally:
-                if proc and proc.poll() is None:proc.terminate();proc.wait(timeout=4)
+                if not done.exists():
+                    stop.touch();wait_for(lambda:(visible(),done.exists())[1],timeout=4)
+                release.touch();proc.wait(timeout=4)
                 os.close(master);os.close(slave)
 
     @unittest.skipUnless(shutil.which('tmux'),'tmux unavailable')
@@ -210,12 +224,12 @@ class ProfileChecks(unittest.TestCase):
         with Sandbox() as box:
             box.start_tmux(shutil.which('tmux'))
             profile=write_profile(box,'name="profile"\nbackend="tmux"')
-            master,slave=os.openpty();fcntl.ioctl(slave,termios.TIOCSWINSZ,struct.pack('HHHH',24,80,0,0));old=termios.tcgetattr(slave)
+            master,slave=os.openpty();fcntl.ioctl(slave,termios.TIOCSWINSZ,struct.pack('HHHH',24,80,0,0));old=tty_attributes(slave)
             proc=None
             try:
                 proc=box.start([BINARY,'profile',profile],stdin=slave,stdout=slave,stderr=slave)
                 wait_for(lambda:tmux(box,'list-clients','-F','#{session_name}')=='profile')
-                os.write(master,b'\x02d');self.assertEqual(proc.wait(timeout=5),0);self.assertEqual(termios.tcgetattr(slave),old)
+                os.write(master,b'\x02d');self.assertEqual(proc.wait(timeout=5),0);self.assertEqual(tty_attributes(slave),old)
             finally:
                 if proc and proc.poll() is None:proc.terminate();proc.wait(timeout=5)
                 os.close(master);os.close(slave)

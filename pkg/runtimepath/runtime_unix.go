@@ -114,9 +114,9 @@ func (r *Root) Lock(name string) (*os.File, error) {
 		return nil, err
 	}
 	key := fmt.Sprintf("n-%x.lock", sha256.Sum256([]byte(name)))
-	fd, err := unix.Openat(int(r.dir.Fd()), key, unix.O_RDWR|unix.O_CREAT|unix.O_NOFOLLOW|unix.O_CLOEXEC|unix.O_NONBLOCK|unix.O_NOCTTY, 0600)
+	fd, err := openNameLock(int(r.dir.Fd()), key)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("open native name lock: %w", err)
 	}
 	f := os.NewFile(uintptr(fd), key)
 	var st unix.Stat_t

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Phase 2 contracts, isolated real tmux/native and bounded fake queries."""
+"""contracts, isolated real tmux/native and bounded fake queries."""
 import argparse
 import base64
 import concurrent.futures
@@ -52,6 +52,19 @@ class StructuredChecks(unittest.TestCase):
             self.assertEqual(set(error),{'code','message','backend','locator','retryable'})
             self.assertIsInstance(error['retryable'],bool)
         return data
+
+    @unittest.skipUnless(shutil.which('tmux'), 'tmux unavailable')
+    def test_nuke_is_limited_to_the_selected_private_server(self):
+        with Sandbox() as protected, Sandbox() as box:
+            protected.start_tmux(shutil.which('tmux'))
+            box.start_tmux(shutil.which('tmux'))
+            box.run([BINARY, 'create', 'sample'])
+            listing = box.run([BINARY, 'list']).stdout
+            self.assertIn('sample:', listing)
+            self.assertNotIn(protected.guard_name, listing)
+            box.run([BINARY, 'nuke'])
+            wait_for(lambda: box.tmux_server.poll() is not None)
+            protected.verify_tmux()
 
     def test_empty_identity_and_argument_error_goldens(self):
         with Sandbox() as box:

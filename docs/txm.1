@@ -10,13 +10,13 @@ txm \- A terminal session manager with multi-backend support
 \fBtxm\fR supports four terminal multiplexer backends:
 .TP
 \fBnative\fR
-Built-in native persistence using libghostty, implemented by Linux/macOS CGO builds (Linux amd64 runtime validated; macOS unverified); Windows native persistence is unsupported. Framed v1 IPC uses a private per-user runtime directory. Legacy native sockets remain untouched and require the old binary.
+Built-in native persistence using libghostty, implemented by Linux/macOS CGO builds (Linux amd64 and macOS arm64 runtime validated); Windows native persistence is unsupported. Framed v1 IPC uses a private per-user runtime directory. Legacy native sockets remain untouched and require the old binary.
 .TP
 \fBtmux\fR
-Exact session/window/pane IDs and names, bounded screen/history capture and read-only attach. Requires a compatible 3.x CLI; local runtime evidence covers 3.4.
+Exact session/window/pane IDs and names, bounded screen/history capture and read-only attach. Requires a compatible 3.x CLI; runtime evidence covers Linux 3.4 and macOS 3.8.
 .TP
 \fBzellij\fR
-Degraded session/tab adapter; real runtime unverified. Exact pane, window close/rename/split and output capture are unsupported. Listings may include resurrectable sessions, with unknown process state.
+Degraded session/tab adapter; Linux/macOS Zellij 0.45.1 basic runtime tested. Exact pane, window close/rename/split and output capture are unsupported. Listings may include resurrectable sessions, with unknown process state.
 .TP
 \fBGNU Screen\fR
 Degraded session adapter retaining full PID.name identity. Duplicate short names are ambiguous. Exact pane/window mutations and output capture are unsupported until verified.
@@ -115,11 +115,11 @@ intact with partial error 7; cancellation exits 130. Accepted input may have
 external effects that rollback cannot undo.
 .TP
 \fBdashboard\fR [--backend NAME|--all-backends] [--agents] [--preview] [--refresh D]
-Interactive local session observations and optional M2 registrations. Separate
+Interactive local session observations and optional agent registrations. Separate
 from the unchanged bare txm picker. Requires terminal stdin/stdout; non-TTY use
 fails with exit 2 before backend/state access. Default all local adapters;
 --backend is strict. --refresh defaults to 2s (500ms..1m). Only explicit --agents
-starts/subscribes to the optional coordinator. Non-Linux dashboard runtime is unsupported pending platform ancestry/TTY validation.
+starts/subscribes to the optional coordinator. Dashboard runtime supports Linux and macOS with a deny-only ancestry/TTY feedback guard. Other platforms remain unsupported.
 .PP
 Arrow/j/k and page keys navigate; / edits search; Escape clears search/query
 before quitting; Tab cycles state/type filters; b cycles backend filters; Enter
@@ -212,8 +212,9 @@ throttle, bounded local queue; snapshot/resync never replays actions. Default of
 Stop only the matching local agent service, leaving managed sessions/children
 running. Only agent workflows/events start/contact the optional service; ordinary session
 commands remain independent. Private versioned registry/manifest/receipt files
-are under the state directory. Phase 5 runtime evidence is Linux amd64;
-M1 cross-platform release gates and later M2 hooks/events/wait remain pending.
+are under the state directory. Sessions, supervision, hooks/events/waits and
+TTY restoration have Linux amd64 and macOS ARM64 runtime coverage. Other
+platform/provider gates remain separate; see docs/releasing.md.
 .TP
 \fBwindow\fR [\fInew|list|kill|next|prev|rename|split\fR]
 Manage windows within a session.
@@ -240,9 +241,10 @@ Install txm binary and man page.
 Uninstall txm cleanly from your system.
 .TP
 \fBupdate\fR
-Update txm to the latest version directly from GitHub Releases.
+Update stable builds from GitHub Releases. Development and prerelease builds
+refuse automatic updates; install a chosen release explicitly.
 .TP
-\fBversion\fR [\fB\-\-check-update\fR]
+\fBversion\fR
 Show version information.
 .SH OPTIONS
 .TP
@@ -298,7 +300,9 @@ List allowed pinned hosts using native (default) or explicit tmux. Per-host boun
 .B remote attach ALIAS --host-id ID --backend BACKEND --name NAME --session-id ID [--instance ID] [--read-only]
 TTY-only attachment to an exact observed native/tmux session. Native requires its exact instance. Requests use encoded JSON tokens; local TTY settings/flags are restored. JSON attachment is unsupported.
 .PP
-Extensions have Linux development fixture coverage. Actual SSH server/network and inherited platform release gates remain unrun. See docs/extensions.md for recovery and limits.
+Extensions have Linux amd64 and macOS ARM64 fixture coverage, including actual
+private loopback OpenSSH servers and native/tmux PTYs. Other platform/provider
+gates remain separate. See docs/user-guide.md and docs/releasing.md.
 .SH FILES
 .TP
 .I $XDG_STATE_HOME/txm/v1/host.json
@@ -318,7 +322,7 @@ System-wide installation location.
 130 cancelled. Partial aggregate data exits 7 unless interrupted (130). JSON
 errors include code, message, backend/locator when applicable, and retryable.
 .PP
-Linux amd64 is locally validated. macOS runtime and actual release-archive
+Linux amd64 and macOS arm64 are locally validated. Other OS/architecture runtime and archive
 verification remain required gates; Windows native persistence is unsupported.
 .SH AUTHOR
 Written by Mohamed Elashri.

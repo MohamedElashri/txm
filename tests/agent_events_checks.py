@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Phase 5 private fixtures: signals, streams, waits and explicit actions."""
+"""private fixtures: signals, streams, waits and explicit actions."""
 import argparse
 from contextlib import contextmanager
 from datetime import datetime, timezone, timedelta
@@ -101,7 +101,7 @@ class AgentEventsChecks(unittest.TestCase):
 
     def test_wait_exit_codes_timeout_cancellation_and_missing_hooks(self):
         with a.fixture() as box,a.coordinator(box):
-            for label,argv in [('zero',['/bin/true']),('nonzero',['/bin/sh','-c','exit 42']),('signal',[sys.executable,'-c','import os,signal;os.kill(os.getpid(),signal.SIGUSR1)'])]:
+            for label,argv in [('zero',['/usr/bin/true']),('nonzero',['/bin/sh','-c','exit 42']),('signal',[sys.executable,'-c','import os,signal;os.kill(os.getpid(),signal.SIGUSR1)'])]:
                 v=a.start(box,label,argv);a.await_exit(box,v['id'])
                 a.envelope(box,['agent','wait',v['id'],'--timeout','2s'])
                 a.envelope(box,['agent','wait',v['id'],'--timeout','2s','--fail-on-nonzero'],0 if label=='zero' else 1)
@@ -135,7 +135,7 @@ class AgentEventsChecks(unittest.TestCase):
 
     def test_missing_receipt_is_unknown_and_wait_fails(self):
         with a.fixture() as box,a.coordinator(box):
-            v=a.start(box,'once',['/bin/true']);a.await_exit(box,v['id'])
+            v=a.start(box,'once',['/usr/bin/true']);a.await_exit(box,v['id'])
             (a.state(box)/('r-'+v['instance_id']+'.json')).unlink()
             result=a.envelope(box,['agent','wait',v['id'],'--timeout','4s'],1)
             self.assertEqual(result['data']['agent']['lifecycle'],'unknown');self.assertIsNone(result['data']['agent']['receipt'])
@@ -228,7 +228,7 @@ class AgentEventsChecks(unittest.TestCase):
             box.executable('claude','#!/bin/sh\necho "future unsupported"\n')
             value=a.envelope(box,['agent','providers'])
             self.assertFalse(next(p for p in value['data']['providers'] if p['name']=='opencode')['supported'])
-            a.envelope(box,['agent','start','--provider','claude','bad','--','/bin/true'],4)
+            a.envelope(box,['agent','start','--provider','claude','bad','--','/usr/bin/true'],4)
             self.assertFalse(a.runtime(box).exists());self.assertFalse(a.state(box).exists())
             with native_server(box,BINARY):
                 box.run([BINARY,'list','--json']);self.assertFalse(a.runtime(box).exists())

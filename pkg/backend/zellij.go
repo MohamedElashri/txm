@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/MohamedElashri/txm/pkg/core"
 )
@@ -90,14 +91,28 @@ func (b *ZellijBackend) CreateSession(name string, command ...string) error {
 	if e = b.run(args...); e != nil {
 		return e
 	}
-	found, e = b.LookupSession(name)
-	if e != nil {
-		return e
+	// Background startup can outlive the CLI acknowledgement. Observe exact
+	// readiness within one finite budget; never retry the mutating request.
+	ctx, cancel := request(b.ctx)
+	defer cancel()
+	observer := *b
+	observer.ctx = ctx
+	ticker := time.NewTicker(50 * time.Millisecond)
+	defer ticker.Stop()
+	for {
+		found, e = observer.LookupSession(name)
+		if e != nil {
+			return e
+		}
+		if found {
+			return nil
+		}
+		select {
+		case <-ctx.Done():
+			return ctx.Err()
+		case <-ticker.C:
+		}
 	}
-	if !found {
-		return core.Failure("operation_failed", "created session could not be observed")
-	}
-	return nil
 }
 func (b *ZellijBackend) AttachSession(name string) error {
 	s, e := b.session(name)

@@ -201,12 +201,12 @@ func Serve(ctx context.Context, opts Options) (retErr error) {
 	default:
 	}
 	if safeToSignal {
-		if e := unix.Kill(-child.Process.Pid, unix.SIGTERM); e != nil && e != unix.ESRCH {
+		if e := nativeprocess.SignalGroup(child.Process.Pid, unix.SIGTERM); e != nil && e != unix.ESRCH {
 			retErr = errors.Join(retErr, e)
 		}
 		timer := time.NewTimer(2 * time.Second)
 		<-timer.C
-		if e := unix.Kill(-child.Process.Pid, unix.SIGKILL); e != nil && e != unix.ESRCH {
+		if e := nativeprocess.SignalGroup(child.Process.Pid, unix.SIGKILL); e != nil && e != unix.ESRCH {
 			retErr = errors.Join(retErr, e)
 		}
 	}

@@ -18,7 +18,10 @@ func repository(t *testing.T) (git, string) {
 	if e != nil {
 		t.Skip("git unavailable")
 	}
-	home := t.TempDir()
+	home, canonicalErr := filepath.EvalSymlinks(t.TempDir())
+	if canonicalErr != nil {
+		t.Fatal(canonicalErr)
+	}
 	t.Setenv("HOME", home)
 	t.Setenv("XDG_CONFIG_HOME", filepath.Join(home, "config"))
 	root := filepath.Join(home, "repo")

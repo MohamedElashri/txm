@@ -301,9 +301,12 @@ type GitHubRelease struct {
 
 var updateCmd = &cobra.Command{
 	Use:   "update",
-	Short: "Update txm to the latest version",
+	Short: "Update txm to the latest stable version",
 	Args:  cobra.NoArgs,
 	RunE: func(cmd *cobra.Command, args []string) error {
+		if Version == "dev" || strings.Contains(Version, "-") {
+			return core.Failure("unsupported", "automatic updates are disabled for development and prerelease builds; install an explicit release instead")
+		}
 		fmt.Println("Checking for updates...")
 
 		resp, err := http.Get("https://api.github.com/repos/MohamedElashri/txm/releases/latest")
@@ -645,11 +648,11 @@ func init() {
 }
 
 // Version is set at build time via ldflags: -X github.com/MohamedElashri/txm/pkg/cmd.Version=<tag>
-var Version = "1.2.0"
+var Version = "dev"
 
 var versionCmd = &cobra.Command{
 	Use:   "version",
-	Short: "Show version and check for updates",
+	Short: "Show version",
 	Args:  cobra.NoArgs,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		fmt.Printf("txm version %s\n", Version)

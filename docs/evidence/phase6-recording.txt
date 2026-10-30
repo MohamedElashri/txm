@@ -1,1 +1,0 @@
-{"output": "docs/evidence/phase6-dashboard.cast", "seconds": 5.552196, "events": 91, "bytes": 239906, "synthetic_only": true}

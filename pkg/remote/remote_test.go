@@ -71,7 +71,10 @@ func TestResponseIdentityAndVersion(t *testing.T) {
 	}
 }
 func TestAllowlistAtomicIdentity(t *testing.T) {
-	home := t.TempDir()
+	home, canonicalErr := filepath.EvalSymlinks(t.TempDir())
+	if canonicalErr != nil {
+		t.Fatal(canonicalErr)
+	}
 	t.Setenv("HOME", home)
 	t.Setenv("XDG_STATE_HOME", filepath.Join(home, "state"))
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
@@ -97,7 +100,10 @@ func TestSSHBoundedFailureAndCancellation(t *testing.T) {
 	if os.PathSeparator != '/' {
 		t.Skip("POSIX fake SSH executable")
 	}
-	dir := t.TempDir()
+	dir, canonicalErr := filepath.EvalSymlinks(t.TempDir())
+	if canonicalErr != nil {
+		t.Fatal(canonicalErr)
+	}
 	exe := filepath.Join(dir, "ssh")
 	t.Setenv("PATH", dir)
 	q := Request{Schema: 1, Protocol: 1, Op: "probe"}
@@ -157,7 +163,10 @@ func TestSSHEnvelopeRequiredFields(t *testing.T) {
 	if os.PathSeparator != '/' {
 		t.Skip("POSIX fake SSH executable")
 	}
-	dir := t.TempDir()
+	dir, canonicalErr := filepath.EvalSymlinks(t.TempDir())
+	if canonicalErr != nil {
+		t.Fatal(canonicalErr)
+	}
 	t.Setenv("PATH", dir)
 	exe := filepath.Join(dir, "ssh")
 	valid := `{"schema_version":1,"data":{"protocol_version":1,"host_id":"` + testHost + `","sessions":[]},"errors":[],"partial":false}`

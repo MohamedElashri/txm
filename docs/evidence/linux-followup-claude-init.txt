@@ -1,6 +1,0 @@
-test_real_claude_init_only_sessionstart_no_model_or_auth (__main__.AgentEventsChecks.test_real_claude_init_only_sessionstart_no_model_or_auth) ... ok
-
-----------------------------------------------------------------------
-Ran 1 test in 0.435s
-
-OK

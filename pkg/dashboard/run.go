@@ -62,6 +62,8 @@ type previewResult struct {
 // Run owns screen lifetime. Workers never draw, and attachment runs only after
 // the screen, input reader and all asynchronous reads have stopped.
 func Run(ctx context.Context, o Options, source Source, factory func() (tcell.Screen, error)) error {
+	restore := terminalGuard()
+	defer restore()
 	if o.Refresh < 500*time.Millisecond || o.Refresh > time.Minute || len(o.Backends) == 0 {
 		return core.Failure("invalid_usage", "dashboard refresh must be 500ms..1m and a backend is required")
 	}

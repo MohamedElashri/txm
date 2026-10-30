@@ -1,12 +1,27 @@
 #!/usr/bin/env python3
-"""Phase 1A subprocess contracts; fake executables never contact a mux server."""
+"""CLI subprocess contracts; fake executables never contact a mux server."""
 import argparse
 import json
 from pathlib import Path
 import sys
 import unittest
 from sandbox import Sandbox
-from integration import recorder
+def recorder(box, backend, listing, typed=False):
+    if typed and backend=="tmux":
+        listing="\n".join(f"${i+1}|{name}|0" for i,name in enumerate(listing.splitlines()))
+    log = box.root / "calls.jsonl"
+    box.executable(backend, f'''#!{sys.executable}
+import json, sys
+with open({str(log)!r}, 'a') as f:
+    f.write(json.dumps(sys.argv[1:]) + '\\n')
+if {typed!r} and sys.argv[1] == '-V': print('tmux 3.4')
+if sys.argv[1] in ('list-sessions', '-ls'):
+    print({listing!r})
+if len(sys.argv) > 1 and sys.argv[1] == 'has-session':
+    sys.exit(0 if sys.argv[-1] in {listing.splitlines()!r} else 1)
+''')
+    box.env["TXM_DEFAULT_BACKEND"] = backend
+    return log
 
 
 class CLIErrorTests(unittest.TestCase):

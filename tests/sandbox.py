@@ -44,6 +44,7 @@ class Sandbox:
             "PATH": str(self.root / "bin"),
             "SHELL": "/bin/sh", "TERM": "xterm-256color", "LANG": "C",
             "TXM_DEFAULT_BACKEND": "native",
+            "GORACE": "atexit_sleep_ms=0 exitcode=66",
         }
         # A small explicit tool set for fixture shells; no inherited user PATH.
         for name in ("sh", "bash", "sleep", "cat", "stty", "printf"):
@@ -104,7 +105,7 @@ class Sandbox:
         self.run([self.tmux, "-S", self.socket, "new-session", "-d", "-s",
                   self.guard_name, "exec /bin/sleep 120"])
         self.verify_tmux()
-        # Route EVERY baseline adapter invocation through the same -S socket.
+        # Route every adapter invocation through the same -S socket.
         # Reject attempts to supply a different global socket/config selector.
         self.executable("tmux", f'''#!{sys.executable}
 import os, stat, subprocess, sys
@@ -150,6 +151,7 @@ os.execv(prefix[0], prefix + sys.argv[1:])
         if self.tmux and self.tmux_server.poll() is None:
             self.verify_tmux()
             self.run([self.tmux, "-S", self.socket, "kill-server"])
+            self.tmux_server.wait(timeout=3)
         # Only process groups whose original Popen handle is still live.
         for child in reversed(self.children):
             if child.poll() is None:
@@ -181,8 +183,8 @@ def wait_for(predicate, timeout=5):
 
 
 @contextlib.contextmanager
-def native_server(box, binary, name="sample", argv=None, legacy=False):
-    """Owned foreground server + PTY child, even on the unsafe legacy runtime.
+def native_server(box, binary, name="sample", argv=None):
+    """Owned foreground server and PTY child.
 
     The shell uses only builtins and exec: no descendant can escape teardown.
     Future process-tree cases must track child instance identity explicitly.
@@ -193,12 +195,12 @@ def native_server(box, binary, name="sample", argv=None, legacy=False):
     child = shlex.join([str(x) for x in (argv or ["/bin/sleep", "120"])])
     command = f"printf '%s' $$ > {shlex.quote(str(pidfile))}; exec {child}"
     instance=secrets.token_hex(16)
-    server_args=["server"] if legacy else ["server","--instance",instance]
+    server_args=["server","--instance",instance]
     server_log = box.root / (name + '-' + instance + '.stderr')
     with server_log.open('wb') as log:
         proc = box.start([binary, *server_args, name, "/bin/sh", "-c", command],
                          stdout=subprocess.DEVNULL, stderr=log)
-    sock = box.root / "tmp" / ("txm-" + name + ".sock") if legacy else box.root / "runtime/txm/v1" / ("s-" + instance + ".sock")
+    sock = box.root / "runtime/txm/v1" / ("s-" + instance + ".sock")
     child_pid = None
     try:
         wait_for(lambda: (sock.exists() and pidfile.exists() and pidfile.stat().st_size) or proc.poll() is not None)
@@ -207,20 +209,12 @@ def native_server(box, binary, name="sample", argv=None, legacy=False):
         child_pid = int(pidfile.read_text())
         yield proc, sock, child_pid
     finally:
-        # The server remains alive/unreaped, so its unreaped PTY child PID
-        # cannot be reused. Check that relationship before sending a signal.
-        if child_pid and proc.poll() is None:
-            if sys.platform.startswith("linux"):
-                status = Path(f"/proc/{child_pid}/status")
-                if status.exists() and f"PPid:\t{proc.pid}\n" in status.read_text():
-                    os.kill(child_pid, signal.SIGTERM)
-            else:
-                # Portable parent verification; ps is read-only and PID-scoped.
-                parent = subprocess.run(["/bin/ps", "-o", "ppid=", "-p", str(child_pid)],
-                                        capture_output=True, text=True, check=True)
-                if parent.stdout.strip() == str(proc.pid):
-                    os.kill(child_pid, signal.SIGTERM)
-            proc.wait(timeout=5)
+        # Signal the owned live Popen server, which retains child/PGID ownership
+        # until teardown finishes. A separate ps/kill child-PID check can race
+        # the server's reaping on Darwin and is unnecessary for fixture cleanup.
+        if proc.poll() is None:
+            proc.terminate()
+            proc.wait(timeout=6)
         diagnostic = server_log.read_text()
         if proc.returncode == 66 or 'WARNING: DATA RACE' in diagnostic:
             raise AssertionError('native server race detector failure: ' + diagnostic[:8192])

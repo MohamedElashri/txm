@@ -11,8 +11,14 @@ import (
 )
 
 func TestCompileCwdDefaultsNamesAndPrefix(t *testing.T) {
-	base := t.TempDir()
-	cwd := t.TempDir()
+	base, canonicalErr := filepath.EvalSymlinks(t.TempDir())
+	if canonicalErr != nil {
+		t.Fatal(canonicalErr)
+	}
+	cwd, canonicalErr := filepath.EvalSymlinks(t.TempDir())
+	if canonicalErr != nil {
+		t.Fatal(canonicalErr)
+	}
 	sub := filepath.Join(base, "cwd with spaces")
 	if e := os.Mkdir(sub, 0700); e != nil {
 		t.Fatal(e)
@@ -32,7 +38,10 @@ func TestCompileCwdDefaultsNamesAndPrefix(t *testing.T) {
 	}
 }
 func TestProfileValidationBeforeApply(t *testing.T) {
-	dir := t.TempDir()
+	dir, canonicalErr := filepath.EvalSymlinks(t.TempDir())
+	if canonicalErr != nil {
+		t.Fatal(canonicalErr)
+	}
 	cases := []struct {
 		spec          config.Profile
 		backend, code string

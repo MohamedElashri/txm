@@ -38,7 +38,7 @@ func HostID(ctx context.Context) (string, error) {
 	}
 	parent, e := stateDirectory(base)
 	if e != nil {
-		return "", e
+		return "", fmt.Errorf("open host state parent: %w", e)
 	}
 	defer func() { _ = parent.Close() }()
 	var st unix.Stat_t
@@ -50,7 +50,7 @@ func HostID(ctx context.Context) (string, error) {
 	}
 	r, e := privateRoot(parent, base)
 	if e != nil {
-		return "", e
+		return "", fmt.Errorf("open host state root: %w", e)
 	}
 	defer func() { _ = r.Close() }()
 	var lock *os.File
@@ -60,7 +60,7 @@ func HostID(ctx context.Context) (string, error) {
 			break
 		}
 		if !errors.Is(e, unix.EWOULDBLOCK) && !errors.Is(e, unix.EAGAIN) {
-			return "", e
+			return "", fmt.Errorf("lock host identity: %w", e)
 		}
 		select {
 		case <-ctx.Done():
@@ -86,7 +86,7 @@ func HostID(ctx context.Context) (string, error) {
 	temp := ".host-" + id
 	fd, e := unix.Openat(int(r.dir.Fd()), temp, unix.O_WRONLY|unix.O_CREAT|unix.O_EXCL|unix.O_NOFOLLOW|unix.O_CLOEXEC, 0600)
 	if e != nil {
-		return "", e
+		return "", fmt.Errorf("create host identity temporary file: %w", e)
 	}
 	f := os.NewFile(uintptr(fd), temp)
 	defer func() { _ = f.Close(); _ = unix.Unlinkat(int(r.dir.Fd()), temp, 0) }()
@@ -95,20 +95,17 @@ func HostID(ctx context.Context) (string, error) {
 		ID     string `json:"host_id"`
 	}{1, id})
 	if _, e = f.Write(append(data, '\n')); e != nil {
-		return "", e
+		return "", fmt.Errorf("write host identity: %w", e)
 	}
 	if e = f.Sync(); e != nil {
-		return "", e
+		return "", fmt.Errorf("sync host identity: %w", e)
 	}
-	// Link publication is atomic and fails if an identity already exists.
-	if e = unix.Linkat(int(r.dir.Fd()), temp, int(r.dir.Fd()), "host.json", 0); e != nil {
-		return "", e
-	}
-	if e = unix.Unlinkat(int(r.dir.Fd()), temp, 0); e != nil {
-		return "", e
+	// Exclusive rename publishes a complete single-link identity atomically.
+	if e = publishExclusive(int(r.dir.Fd()), temp, "host.json"); e != nil {
+		return "", fmt.Errorf("publish host identity: %w", e)
 	}
 	if e = r.dir.Sync(); e != nil {
-		return "", e
+		return "", fmt.Errorf("sync host directory: %w", e)
 	}
 	return id, nil
 }
@@ -140,7 +137,7 @@ func stateDirectory(path string) (*os.File, error) {
 func readHost(r *Root) (string, error) {
 	fd, e := unix.Openat(int(r.dir.Fd()), "host.json", unix.O_RDONLY|unix.O_NOFOLLOW|unix.O_NONBLOCK|unix.O_CLOEXEC, 0)
 	if e != nil {
-		return "", e
+		return "", fmt.Errorf("create host identity temporary file: %w", e)
 	}
 	f := os.NewFile(uintptr(fd), "host.json")
 	defer func() { _ = f.Close() }()

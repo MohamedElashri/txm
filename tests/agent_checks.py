@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Phase 4 real PTY, immutable receipt and coordinator recovery regressions."""
+"""real PTY, immutable receipt and coordinator recovery regressions."""
 import argparse
 from concurrent.futures import ThreadPoolExecutor
 from contextlib import contextmanager
@@ -87,7 +87,7 @@ def coordinator(box, binary=None):
 def fixture():
     with Sandbox() as box:
         box.env['NOT_ALLOWED'] = 'PRIVATE_ENV_VALUE'
-        box.env['GORACE'] = 'log_path=' + str(box.root / 'race') + ' exitcode=66'
+        box.env['GORACE'] = 'log_path=' + str(box.root / 'race') + ' atexit_sleep_ms=0 exitcode=66'
         try:
             yield box
         finally:
@@ -134,7 +134,7 @@ class AgentChecks(unittest.TestCase):
             before = (state(box) / 'registry.json').read_bytes()
             alternate = box.root / 'alternate-state'; alternate.mkdir(mode=0o700)
             env = dict(box.env, XDG_STATE_HOME=str(alternate))
-            for args in [['agent', 'list'], ['agent', 'start', 'wrong-state', '--', '/bin/true'], ['agent', 'stop-coordinator']]:
+            for args in [['agent', 'list'], ['agent', 'start', 'wrong-state', '--', '/usr/bin/true'], ['agent', 'stop-coordinator']]:
                 out = box.run([BINARY, '--json', *args], env=env, check=False, timeout=20)
                 self.assertEqual(out.returncode, 5, out.stdout + out.stderr)
                 self.assertEqual(json.loads(out.stdout)['errors'][0]['code'], 'conflict')
@@ -194,10 +194,10 @@ class AgentChecks(unittest.TestCase):
         with fixture() as box:
             logs = [fake(box, backend, "raise AssertionError('must not mutate')") for backend in ('screen', 'zellij')]
             for backend in ('screen', 'zellij'):
-                envelope(box, ['--backend', backend, 'agent', 'start', 'bad', '--', '/bin/true'], 4)
-            for args in [['agent', 'start', 'bad', '/bin/true'],
-                         ['agent', 'start', '--cwd', '/does-not-exist', 'bad', '--', '/bin/true'],
-                         ['agent', 'start', '--env', 'A=PRIVATE_SYNTHETIC', 'bad', '--', '/bin/true'],
+                envelope(box, ['--backend', backend, 'agent', 'start', 'bad', '--', '/usr/bin/true'], 4)
+            for args in [['agent', 'start', 'bad', '/usr/bin/true'],
+                         ['agent', 'start', '--cwd', '/does-not-exist', 'bad', '--', '/usr/bin/true'],
+                         ['agent', 'start', '--env', 'A=PRIVATE_SYNTHETIC', 'bad', '--', '/usr/bin/true'],
                          ['agent', 'start', 'bad', '--', '/does-not-exist'],
                          ['agent', 'status', 'not-an-id']]:
                 out = envelope(box, args, 2)
@@ -265,7 +265,7 @@ class AgentChecks(unittest.TestCase):
             observed = []
             with coordinator(box):
                 for backend in backends:
-                    for label, argv in [('zero', ['/bin/true']), ('nonzero', ['/bin/sh', '-c', 'exit 42']),
+                    for label, argv in [('zero', ['/usr/bin/true']), ('nonzero', ['/bin/sh', '-c', 'exit 42']),
                                         ('signal', [sys.executable, '-c', 'import os,signal;os.kill(os.getpid(),signal.SIGUSR1)'])]:
                         view = start(box, backend + '-' + label, argv, backend=backend)
                         observed.append(await_exit(box, view['id']))
@@ -343,7 +343,7 @@ class AgentChecks(unittest.TestCase):
             self.assertEqual(duplicate.returncode, 5)
             self.assertFalse((state(box) / ('m-' + live['instance_id'] + '.json')).exists())
             self.assertEqual(status(box, live['id'])['lifecycle'], 'running')
-            envelope(box, ['agent', 'start', 'one-use', '--', '/bin/true'], 5)
+            envelope(box, ['agent', 'start', 'one-use', '--', '/usr/bin/true'], 5)
 
     def test_interrupted_launch_intent_is_unknown_and_never_replayed(self):
         with fixture() as box:
@@ -440,7 +440,7 @@ class AgentChecks(unittest.TestCase):
     def test_corrupt_registry_and_receipts_are_not_repaired(self):
         with fixture() as box:
             with coordinator(box):
-                v = start(box, 'done', ['/bin/true']); await_exit(box, v['id'])
+                v = start(box, 'done', ['/usr/bin/true']); await_exit(box, v['id'])
                 receipt = state(box) / ('r-' + v['instance_id'] + '.json')
                 original = receipt.read_bytes(); receipt.write_text('{"schema_version":99}')
                 envelope(box, ['agent', 'status', v['id']], 1)

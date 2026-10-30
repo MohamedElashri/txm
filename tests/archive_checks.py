@@ -27,6 +27,7 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--archive', type=Path, required=True)
     parser.add_argument('--report', type=Path, required=True)
+    parser.add_argument('--expected-version', help='Require the packaged version stamp to match this release')
     args = parser.parse_args()
     archive = args.archive.resolve(strict=True)
     with Sandbox() as box, zipfile.ZipFile(archive) as payload:
@@ -42,6 +43,8 @@ def main():
         binary = box.root / 'payload/txm'
         binary.chmod(0o700)
         version = box.run([binary, 'version']).stdout.strip()
+        if args.expected_version:
+            assert version == 'txm version '+args.expected_version, version
         box.run([binary, 'install'])
         home = box.root / 'home'
         installed = home / '.local/bin/txm'

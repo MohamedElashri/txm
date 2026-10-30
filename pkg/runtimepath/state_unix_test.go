@@ -12,7 +12,10 @@ import (
 )
 
 func TestConcurrentHostIdentityAndCorruption(t *testing.T) {
-	root := t.TempDir()
+	root, canonicalErr := filepath.EvalSymlinks(t.TempDir())
+	if canonicalErr != nil {
+		t.Fatal(canonicalErr)
+	}
 	if e := os.Chmod(root, 0700); e != nil {
 		t.Fatal(e)
 	}
@@ -66,7 +69,10 @@ func TestConcurrentHostIdentityAndCorruption(t *testing.T) {
 	}
 }
 func TestHostIdentityRefusesSymlinksAndPublicFiles(t *testing.T) {
-	root := t.TempDir()
+	root, canonicalErr := filepath.EvalSymlinks(t.TempDir())
+	if canonicalErr != nil {
+		t.Fatal(canonicalErr)
+	}
 	if e := os.Chmod(root, 0700); e != nil {
 		t.Fatal(e)
 	}

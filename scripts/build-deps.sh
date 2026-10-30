@@ -31,18 +31,16 @@ fi
 
 build() {
     local prefix=$1 target=$2
-    local args=(build -Demit-lib-vt --prefix "$prefix")
+    # txm links the static library, never an Apple XCFramework. Explicitly
+    # disable packaging so Command Line Tools suffice without full Xcode.
+    local args=(build -Demit-lib-vt -Demit-xcframework=false --prefix "$prefix")
     [[ "$target" == native ]] || args+=("-Dtarget=$target")
     [[ -z "${GHOSTTY_BUILD_JOBS:-}" ]] || args+=("-j$GHOSTTY_BUILD_JOBS")
     # Ask Zig to validate its content-based incremental cache every time.
     # Directory presence or our informational stamp is never a cache hit.
     (cd "$src" && "$zig" "${args[@]}")
     test -s "$prefix/share/pkgconfig/libghostty-vt-static.pc"
-    if [[ "$target" == *windows* ]]; then
-        test -s "$prefix/lib/ghostty-vt-static.lib"
-    else
-        test -s "$prefix/lib/libghostty-vt.a"
-    fi
+    test -s "$prefix/lib/libghostty-vt.a"
     printf 'ghostty=%s\nzig=%s\ntarget=%s\n' "$GHOSTTY_REVISION" "$actual" "$target" > "$prefix/.txm-build-info"
 }
 
@@ -59,8 +57,7 @@ else
     # These absolute paths match .goreleaser.yaml; pkg-config runs in module dirs.
     for tuple in x86_64-linux-gnu:linux-amd64 aarch64-linux-gnu:linux-arm64 \
         x86_64-linux-musl:linux-musl-amd64 aarch64-linux-musl:linux-musl-arm64 \
-        x86_64-macos:darwin-amd64 aarch64-macos:darwin-arm64 \
-        x86_64-windows-gnu:windows-amd64 aarch64-windows-gnu:windows-arm64; do
+        x86_64-macos:darwin-amd64 aarch64-macos:darwin-arm64; do
         build "$root/.ghostty-release/${tuple#*:}" "${tuple%%:*}"
     done
 fi

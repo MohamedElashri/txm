@@ -121,7 +121,7 @@ var rootCmd = &cobra.Command{
 	SilenceUsage:  true,
 	Args:          cobra.NoArgs,
 	Short:         "A Terminal Session Manager",
-	Long:          `txm is a powerful command-line utility designed to manage terminal multiplexer sessions efficiently. It includes native Linux/macOS CGO code paths (Linux locally validated), plus tmux, zellij, and GNU Screen adapters with capability-specific limits. Native Windows persistence is unsupported.`,
+	Long:          `txm is a powerful command-line utility designed to manage terminal multiplexer sessions efficiently. It includes native Linux/macOS CGO code paths (Linux amd64 and macOS arm64 locally validated), plus tmux, zellij, and GNU Screen adapters with capability-specific limits. Native Windows persistence is unsupported.`,
 	PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
 		return prepareCommand(cmd, args)
 	},

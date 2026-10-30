@@ -29,7 +29,10 @@ func TestNoSymlinkAncestors(t *testing.T) {
 	if os.PathSeparator != '/' {
 		t.Skip("Unix paths")
 	}
-	dir := t.TempDir()
+	dir, canonicalErr := filepath.EvalSymlinks(t.TempDir())
+	if canonicalErr != nil {
+		t.Fatal(canonicalErr)
+	}
 	real := filepath.Join(dir, "real")
 	if e := os.Mkdir(real, 0700); e != nil {
 		t.Fatal(e)

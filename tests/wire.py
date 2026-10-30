@@ -36,14 +36,12 @@ class Peer:
         except BaseException:
             self.socket.close()
             raise
-        self.legacy = path.name.startswith('txm-')
         self.next_id = 1
-        if not self.legacy:
-            self.socket.sendall(packet(HELLO, 1, {'role': role}))
-            kind, ident, data = read(self.socket)
-            if kind != HELLO_OK or ident != 1:
-                raise AssertionError(data.decode())
-            self.identity = json.loads(data)
+        self.socket.sendall(packet(HELLO, 1, {'role': role}))
+        kind, ident, data = read(self.socket)
+        if kind != HELLO_OK or ident != 1:
+            raise AssertionError(data.decode())
+        self.identity = json.loads(data)
 
     def request(self, op, **fields):
         self.next_id += 1
@@ -61,14 +59,9 @@ class Peer:
             return result['data']
 
     def attach(self):
-        if self.legacy:
-            self.socket.sendall(b'\x00')
-        else:
-            return base64.b64decode(self.request('attach')['content'])
+        return base64.b64decode(self.request('attach')['content'])
 
     def recv_data(self):
-        if self.legacy:
-            return self.socket.recv(65536)
         while True:
             kind, ident, data = read(self.socket)
             if kind == PING:

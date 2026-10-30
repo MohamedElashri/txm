@@ -2,11 +2,8 @@ package runtimepath
 
 import "golang.org/x/sys/unix"
 
-// macOS path awaits its runtime gate. A crash between link/unlink is rejected
-// by the single-link reader rather than accepted as a completed publication.
+// One atomic operation publishes the complete single-link file without replacing
+// an existing receipt/manifest, including across concurrent writers or crashes.
 func publishExclusive(fd int, from, to string) error {
-	if e := unix.Linkat(fd, from, fd, to, 0); e != nil {
-		return e
-	}
-	return unix.Unlinkat(fd, from, 0)
+	return unix.RenameatxNp(fd, from, fd, to, unix.RENAME_EXCL)
 }

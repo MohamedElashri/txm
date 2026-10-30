@@ -33,7 +33,10 @@ func TestReusableNameLocksDoNotExhaustDiscovery(t *testing.T) {
 
 func privateRuntime(t *testing.T) string {
 	t.Helper()
-	dir := t.TempDir()
+	dir, canonicalErr := filepath.EvalSymlinks(t.TempDir())
+	if canonicalErr != nil {
+		t.Fatal(canonicalErr)
+	}
 	if e := os.Chmod(dir, 0700); e != nil {
 		t.Fatal(e)
 	}
@@ -101,7 +104,10 @@ func TestFallbackAndSocketLength(t *testing.T) {
 }
 
 func TestLogPermissionsSymlinkAndFIFO(t *testing.T) {
-	root := t.TempDir()
+	root, canonicalErr := filepath.EvalSymlinks(t.TempDir())
+	if canonicalErr != nil {
+		t.Fatal(canonicalErr)
+	}
 	path := filepath.Join(root, "output.log")
 	file, err := OpenLog(path)
 	if err != nil {

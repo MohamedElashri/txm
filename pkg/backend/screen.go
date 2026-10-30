@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"regexp"
+	"runtime"
 	"strconv"
 	"strings"
 
@@ -20,15 +21,23 @@ func (b *ScreenBackend) Name() string      { return "screen" }
 func (b *ScreenBackend) IsAvailable() bool { return b.path != "" }
 
 var screenID = regexp.MustCompile(`^[0-9]+\..+$`)
+var screenSummary = regexp.MustCompile(`(?m)^([0-9]+) Sockets? in [^\r\n]+\.\r?$`)
 
 func (b *ScreenBackend) Sessions(ctx context.Context) ([]core.Session, error) {
-	out, _, _, e := b.output(ctx, core.MaxBytes, false, "-ls")
+	out, diag, _, e := b.output(ctx, core.MaxBytes, false, "-ls")
+	legacyDarwin := false
 	if e != nil {
 		var exit interface{ ExitCode() int }
-		if errors.As(e, &exit) && exit.ExitCode() == 1 && strings.HasPrefix(strings.TrimSpace(out), "No Sockets found in ") {
+		if errors.As(e, &exit) && exit.ExitCode() == 1 && diag == "" && strings.HasPrefix(strings.TrimSpace(out), "No Sockets found in ") {
 			return []core.Session{}, nil
 		}
-		return nil, e
+		// Apple's Screen 4.00.03 exits 1 for a valid populated listing too.
+		// Accept only that platform/status, no stderr, and a matching parsed
+		// session-count summary below. Other command failures remain errors.
+		legacyDarwin = runtime.GOOS == "darwin" && errors.As(e, &exit) && exit.ExitCode() == 1 && diag == ""
+		if !legacyDarwin {
+			return nil, e
+		}
 	}
 	result := []core.Session{}
 	seen := map[string]bool{}
@@ -48,6 +57,12 @@ func (b *ScreenBackend) Sessions(ctx context.Context) ([]core.Session, error) {
 			s.ClientState = "attached"
 		}
 		result = append(result, s)
+	}
+	if legacyDarwin {
+		summary := screenSummary.FindStringSubmatch(out)
+		if len(result) == 0 || len(summary) != 2 || summary[1] != strconv.Itoa(len(result)) {
+			return nil, e
+		}
 	}
 	// Unknown successful output must not be mistaken for an empty server.
 	if len(result) == 0 && strings.TrimSpace(out) != "" && !strings.HasPrefix(strings.TrimSpace(out), "No Sockets found in ") {
@@ -196,7 +211,13 @@ func externalCapabilities(ctx context.Context, b external, flag string) (core.Ba
 		disableCapabilities(&c, "backend executable unavailable")
 		return c, core.Scope(core.Failure("backend_unavailable", "backend executable unavailable"), b.name)
 	}
-	out, _, _, e := b.output(ctx, 4096, false, flag)
+	out, diag, _, e := b.output(ctx, 4096, false, flag)
+	if e != nil && runtime.GOOS == "darwin" && b.name == "screen" && flag == "-v" && diag == "" && strings.TrimSpace(out) == "Screen version 4.00.03 (FAU) 23-Oct-06" {
+		var exit interface{ ExitCode() int }
+		if errors.As(e, &exit) && exit.ExitCode() == 1 {
+			e = nil // Apple's legacy version banner has the same exit-1 convention.
+		}
+	}
 	if e != nil {
 		disableCapabilities(&c, "backend version probe failed")
 		return c, e

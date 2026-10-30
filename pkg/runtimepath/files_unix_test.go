@@ -9,7 +9,10 @@ import (
 )
 
 func TestPrivateAtomicFilesAndUnsafeObjects(t *testing.T) {
-	base := t.TempDir()
+	base, canonicalErr := filepath.EvalSymlinks(t.TempDir())
+	if canonicalErr != nil {
+		t.Fatal(canonicalErr)
+	}
 	if e := os.Chmod(base, 0700); e != nil {
 		t.Fatal(e)
 	}

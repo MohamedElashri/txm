@@ -31,7 +31,7 @@ class PruneChecks(unittest.TestCase):
             cmd(box,['task','prune',ident,'--confirm',ident],7)
             cmd(box,['agent','prune',ident,'--confirm',ident],7)
             self.assertEqual(a.status(box,ident)['lifecycle'],'running')
-            r=e.start(box,name='complete',argv=['/bin/true'])['task'];ident=r['id'];a.await_exit(box,ident)
+            r=e.start(box,name='complete',argv=['/usr/bin/true'])['task'];ident=r['id'];a.await_exit(box,ident)
             cmd(box,['task','prune',ident,'--confirm',ident],7)
             cmd(box,['task','cleanup',ident])
             index=box.root/'state/txm/v1/tasks/index.json';before=index.read_bytes()
@@ -46,7 +46,7 @@ class PruneChecks(unittest.TestCase):
             cmd(box,['agent','prune',ident],2)
             cmd(box,['agent','prune',ident,'--confirm',ident]);cmd(box,['agent','status',ident],3)
             self.assertEqual(receipt.read_bytes(),data);self.assertTrue(e.git(box,'rev-parse',r['branch']))
-            body=dict(op='start',id=ident,backend='native',name='replay-must-not-run',cwd=str(box.root/'repo'),argv=['/bin/true'],env_names=['HOME','PATH','TERM'])
+            body=dict(op='start',id=ident,backend='native',name='replay-must-not-run',cwd=str(box.root/'repo'),argv=['/usr/bin/true'],env_names=['HOME','PATH','TERM'])
             self.assertEqual(a.rpc(box,body)['error']['code'],'conflict')
             history=json.loads((a.state(box)/'pruned.json').read_text());self.assertIn(ident,history['ids'])
             self.assertEqual(a.status(box,live['id'])['lifecycle'],'running');cmd(box,['task','stop',live['id']])
@@ -59,7 +59,7 @@ class PruneChecks(unittest.TestCase):
 
     def test_prune_resyncs_all_subscribers_and_ends_removed_id_stream(self):
         with a.fixture() as box,a.coordinator(box):
-            view=a.start(box,'done',['/bin/true']);ident=view['id'];a.await_exit(box,ident)
+            view=a.start(box,'done',['/usr/bin/true']);ident=view['id'];a.await_exit(box,ident)
             all_events=box.start([BINARY,'events','--jsonl'],stdout=subprocess.PIPE,stderr=subprocess.PIPE)
             targeted=box.start([BINARY,'events','--jsonl','--id',ident],stdout=subprocess.PIPE,stderr=subprocess.PIPE)
             try:
@@ -81,12 +81,12 @@ class PruneChecks(unittest.TestCase):
 
     def test_corrupt_prune_history_blocks_agent_mutation_but_not_core(self):
         with a.fixture() as box,a.coordinator(box),native_server(box,BINARY,name='core_guard'):
-            view=a.start(box,'done',['/bin/true']);ident=view['id'];a.await_exit(box,ident)
+            view=a.start(box,'done',['/usr/bin/true']);ident=view['id'];a.await_exit(box,ident)
             receipt=a.state(box)/('r-'+view['instance_id']+'.json');original=receipt.read_bytes();receipt.unlink()
             cmd(box,['agent','prune',ident,'--confirm',ident],7);receipt.write_bytes(original);receipt.chmod(0o600)
             cmd(box,['agent','prune',ident,'--confirm',ident])
             history=a.state(box)/'pruned.json';history.write_text('{bad')
-            cmd(box,['agent','start','blocked','--','/bin/true'],1)
+            cmd(box,['agent','start','blocked','--','/usr/bin/true'],1)
             self.assertIn('core_guard',box.run([BINARY,'list']).stdout);self.assertEqual(history.read_text(),'{bad')
 
 

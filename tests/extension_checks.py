@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Phase 7: disposable Git repositories and fake SSH only; no user resources."""
+"""Disposable Git repositories and fake SSH only; no user resources."""
 import argparse
 import base64
 import json
@@ -15,6 +15,7 @@ import signal
 import subprocess
 import sys
 import termios
+from tty_state import attributes as tty_attributes
 import time
 import unittest
 from concurrent.futures import ThreadPoolExecutor
@@ -84,10 +85,10 @@ class TaskChecks(unittest.TestCase):
             self.assertTrue(out['data']['dry_run']);self.assertNotIn('PRIVATE_',json.dumps(out))
             self.assertFalse((box.root/'state/txm').exists());self.assertFalse((box.root/'runtime/txm').exists())
             self.assertEqual(git(box,'worktree','list','--porcelain'),before);self.assertEqual(git(box,'rev-parse','HEAD'),head)
-            command(box,['task','start','dry','--repo',str(source),'--branch','main','--dry-run','--','/bin/true'],5)
+            command(box,['task','start','dry','--repo',str(source),'--branch','main','--dry-run','--','/usr/bin/true'],5)
             git(box,'config','filter.fixture.smudge','touch '+str(marker))
-            command(box,['task','start','filter','--repo',str(source),'--dry-run','--','/bin/true'],8)
-            command(box,['task','start','filter','--repo',str(source),'--allow-repo-commands','--dry-run','--','/bin/true'])
+            command(box,['task','start','filter','--repo',str(source),'--dry-run','--','/usr/bin/true'],8)
+            command(box,['task','start','filter','--repo',str(source),'--allow-repo-commands','--dry-run','--','/usr/bin/true'])
             self.assertFalse(marker.exists());self.assertFalse((box.root/'state/txm').exists())
 
     def test_detached_head_hooks_dirty_and_forced_cleanup(self):
@@ -117,23 +118,23 @@ class TaskChecks(unittest.TestCase):
         with a.fixture() as box:
             repo(box)
             with a.coordinator(box):
-                v=start(box,argv=['/bin/true']);r=v['task'];a.await_exit(box,r['id'])
+                v=start(box,argv=['/usr/bin/true']);r=v['task'];a.await_exit(box,r['id'])
             with a.coordinator(box):
                 got=command(box,['task','inspect',r['id']])['data'];self.assertEqual(got['agent']['lifecycle'],'exited')
-                response=a.rpc(box,dict(op='start',id=r['id'],backend='native',name='must-not-replay',cwd=r['worktree'],argv=['/bin/true'],env_names=['HOME','PATH','TERM']))
+                response=a.rpc(box,dict(op='start',id=r['id'],backend='native',name='must-not-replay',cwd=r['worktree'],argv=['/usr/bin/true'],env_names=['HOME','PATH','TERM']))
                 self.assertEqual(response['error']['code'],'conflict')
                 command(box,['task','cleanup',r['id']])
                 # Existing unmanaged name causes a known prelaunch refusal. Its
                 # resource survives and preflight creates no new worktree.
                 with native_server(box,BINARY,name='collision'):
                     before=git(box,'worktree','list','--porcelain')
-                    command(box,['task','start','collision','--repo',str(box.root/'repo'),'--','/bin/true'],5)
+                    command(box,['task','start','collision','--repo',str(box.root/'repo'),'--','/usr/bin/true'],5)
                     self.assertEqual(git(box,'worktree','list','--porcelain'),before)
                     self.assertIn('collision',box.run([BINARY,'list']).stdout)
 
     def test_identity_symlink_and_state_copy_refusal(self):
         with a.fixture() as box,a.coordinator(box):
-            source=repo(box);v=start(box,argv=['/bin/true']);r=v['task'];ident=r['id'];a.await_exit(box,ident);work=Path(r['worktree']);saved=work.with_name('saved')
+            source=repo(box);v=start(box,argv=['/usr/bin/true']);r=v['task'];ident=r['id'];a.await_exit(box,ident);work=Path(r['worktree']);saved=work.with_name('saved')
             work.rename(saved);work.symlink_to(saved,target_is_directory=True)
             command(box,['task','cleanup',ident,'--force','--confirm',ident],7);self.assertTrue(saved.exists())
             work.unlink();saved.rename(work)
@@ -144,12 +145,12 @@ class TaskChecks(unittest.TestCase):
             other=box.root/'copied-state';shutil.copytree(box.root/'state',other)
             env=dict(box.env,XDG_STATE_HOME=str(other));p=box.run([BINARY,'--json','task','inspect',ident],env=env,check=False);self.assertEqual(p.returncode,1);self.assertTrue(work.exists())
             link=box.root/'repo-link';link.symlink_to(source,target_is_directory=True)
-            command(box,['task','start','symlink','--repo',str(link),'--dry-run','--','/bin/true'],5)
+            command(box,['task','start','symlink','--repo',str(link),'--dry-run','--','/usr/bin/true'],5)
 
-    @unittest.skipUnless(shutil.which('tmux',path='/usr/bin:/bin'),'tmux unavailable')
+    @unittest.skipUnless(shutil.which('tmux'),'tmux unavailable')
     def test_tmux_rename_and_owner_loss(self):
         with a.fixture() as box:
-            repo(box);box.start_tmux(shutil.which('tmux',path='/usr/bin:/bin'))
+            repo(box);box.start_tmux(shutil.which('tmux'))
             with a.coordinator(box):
                 v=start(box,backend='tmux');r=v['task'];ident=r['id'];binding=json.loads((a.state(box)/'registry.json').read_text())['agents'][0]['binding'];sid=binding['backend_id']
                 box.run(['tmux','rename-session','-t',sid,'renamed'])
@@ -164,14 +165,14 @@ class TaskChecks(unittest.TestCase):
             (source/'.gitattributes').write_text('*.txt filter=fixture\n');(source/'data.txt').write_text('fixture data\n');git(box,'add','.gitattributes','data.txt');git(box,'commit','-m','attributes')
             config.write_text('[filter "fixture"]\n smudge = /bin/sh -c "touch '+str(marker)+'; cat"\n required = true\n')
             key='includeIf.gitdir:'+str(source/'.git/worktrees')+'/.path';git(box,'config',key,str(config))
-            result=command(box,['task','start','conditional','--repo',str(source),'--','/bin/true'],7)['data'];r=result['task']
+            result=command(box,['task','start','conditional','--repo',str(source),'--','/usr/bin/true'],7)['data'];r=result['task']
             self.assertTrue(r['created']);self.assertFalse(r['launch_requested']);self.assertFalse(marker.exists())
             self.assertFalse((box.root/'runtime/txm/v1/agents').exists());git(box,'config','--unset-all',key)
             command(box,['task','cleanup',r['id'],'--force','--confirm',r['id']]);self.assertFalse(marker.exists())
 
     def test_native_name_reuse_and_changed_branch_never_target_other_resource(self):
         with a.fixture() as box,a.coordinator(box):
-            repo(box);v=start(box,argv=['/bin/true']);r=v['task'];ident=r['id'];a.await_exit(box,ident)
+            repo(box);v=start(box,argv=['/usr/bin/true']);r=v['task'];ident=r['id'];a.await_exit(box,ident)
             wait_for(lambda:r['name'] not in box.run([BINARY,'list']).stdout.splitlines())
             lock=box.root/'runtime/txm/v1'/('n-'+hashlib.sha256(r['name'].encode()).hexdigest()+'.lock')
             def released():
@@ -232,7 +233,7 @@ class TaskChecks(unittest.TestCase):
         with a.fixture() as box:
             repo(box)
             with a.coordinator(box):
-                with ThreadPoolExecutor(max_workers=3) as pool:values=list(pool.map(lambda n:start(box,name='task'+str(n),argv=['/bin/true']),range(3)))
+                with ThreadPoolExecutor(max_workers=3) as pool:values=list(pool.map(lambda n:start(box,name='task'+str(n),argv=['/usr/bin/true']),range(3)))
                 self.assertEqual(len({v['task']['id'] for v in values}),3)
                 for v in values:a.await_exit(box,v['task']['id'])
                 self.assertEqual(len(command(box,['task','list'])['data']),3)
@@ -297,14 +298,14 @@ class RemoteChecks(unittest.TestCase):
                 with Peer(sock,'observer') as peer:instance=peer.identity['instance_id']
                 args=[BINARY,'--backend','native','remote','attach','fixture','--host-id',host,'--name','remote-session','--session-id',instance,'--instance',instance,'--read-only']
                 p=local.run(args,check=False);self.assertEqual(p.returncode,2)
-                master,slave=pty.openpty();before=termios.tcgetattr(slave)
+                master,slave=pty.openpty();before=tty_attributes(slave)
                 try:
                     proc=local.start(args,stdin=slave,stdout=slave,stderr=subprocess.PIPE)
                     wait_for(lambda:log.exists());time.sleep(.2)
                     os.write(master,b'REMOTE_READONLY_SENTINEL\n');time.sleep(.1)
                     from native_checks import snapshot
                     self.assertNotIn(b'REMOTE_READONLY_SENTINEL',snapshot(sock))
-                    proc.terminate();_,err=proc.communicate(timeout=8);self.assertEqual(proc.returncode,130,err);self.assertEqual(termios.tcgetattr(slave),before)
+                    proc.terminate();_,err=proc.communicate(timeout=8);self.assertEqual(proc.returncode,130,err);self.assertEqual(tty_attributes(slave),before)
                 finally:os.close(master);os.close(slave)
                 # A malicious name stays inside the encoded JSON token.
                 marker=local.root/'shell-injection';evil='name; touch '+str(marker)+'; $(id) \n'

@@ -50,13 +50,16 @@ class ValidationChecks(unittest.TestCase):
             root = Path(temp)
             for directory in ['pkg', 'scripts', 'tests', 'docs']:
                 (root/directory).mkdir()
-            for name in ['main.go','go.mod','go.sum','docs/embeds.go','docs/txm.1','scripts/validate.py','tests/fixture.py']:
+            for name in ['main.go','go.mod','go.sum','VERSION','docs/embeds.go','docs/txm.1','scripts/validate.py','tests/fixture.py']:
                 (root/name).write_text('fixture')
             before = validator.source_fingerprint(root)
             (root/'docs/notes.md').write_text('mutable documentation excluded')
             self.assertEqual(before, validator.source_fingerprint(root))
             (root/'tests/containers').mkdir()
             (root/'tests/containers/Dockerfile.linux').write_text('changed container recipe')
+            self.assertNotEqual(before, validator.source_fingerprint(root))
+            before = validator.source_fingerprint(root)
+            (root/'VERSION').write_text('2.0.0-rc.1')
             self.assertNotEqual(before, validator.source_fingerprint(root))
             before = validator.source_fingerprint(root)
             (root/'tests/fixture.py').write_text('changed harness')

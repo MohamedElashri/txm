@@ -6,39 +6,50 @@ on:
       - 'v*'
 
 permissions:
-  contents: write
+  contents: read
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
 
 jobs:
+  validate:
+    uses: ./.github/workflows/ci.yml
+
   goreleaser:
-    runs-on: ubuntu-latest
+    needs: validate
+    runs-on: macos-15
+    permissions:
+      contents: write
     steps:
       - name: Checkout
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # sanad: ref=v7.0.1
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # ref=v7.0.1
         with:
           fetch-depth: 0
-          
       - name: Set up Go
-        uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # sanad: ref=v7.0.0
+        uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # ref=v7.0.0
         with:
-          go-version: '1.26.0'
-          
+          go-version: '1.26.10'
       - name: Set up Zig
+        run: bash scripts/install-ci-zig.sh
+      - name: Validate tag and prepare release notes and SDK
         run: |
-          bash scripts/install-ci-zig.sh
-          
-      - name: Download macOS SDK
-        run: |
-          cd /tmp
-          wget https://github.com/joseluisq/macosx-sdks/releases/download/14.4/MacOSX14.4.sdk.tar.xz
-          tar xf MacOSX14.4.sdk.tar.xz
-          echo "MACOS_SDK_PATH=/tmp/MacOSX14.4.sdk" >> $GITHUB_ENV
-          
-      - name: Run GoReleaser
-        uses: goreleaser/goreleaser-action@f06c13b6b1a9625abc9e6e439d9c05a8f2190e94 # sanad: ref=v7.2.3
+          python3 scripts/check-release.py --tag "$GITHUB_REF_NAME" --notes "$RUNNER_TEMP/release-notes.md"
+          echo "MACOS_SDK_PATH=$(xcrun --show-sdk-path)" >> "$GITHUB_ENV"
+      - name: Build draft release
+        uses: goreleaser/goreleaser-action@f06c13b6b1a9625abc9e6e439d9c05a8f2190e94 # ref=v7.2.3
         with:
           distribution: goreleaser
-          version: latest
-          args: release --clean
+          version: v2.19.0
+          args: release --clean --release-notes "${{ runner.temp }}/release-notes.md"
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           TXM_RELEASE_ROOT: ${{ github.workspace }}
+      - name: Smoke the packaged macOS candidate
+        run: |
+          case "$(uname -m)" in
+            arm64) archive=dist/txm_Darwin_arm64.zip ;;
+            x86_64) archive=dist/txm_Darwin_x86_64.zip ;;
+            *) exit 1 ;;
+          esac
+          python3 tests/archive_checks.py --archive "$archive" --expected-version "$(cat VERSION)" --report "$RUNNER_TEMP/archive-install.json"

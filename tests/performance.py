@@ -1,10 +1,12 @@
 #!/usr/bin/env python3
-"""Finite Linux native scale comparison; provisional budgets fixed before runs."""
+"""Finite POSIX native scale comparison; provisional budgets fixed before runs."""
 import argparse
 from contextlib import ExitStack
 import json
 from pathlib import Path
 import statistics
+import platform
+from platform_metrics import available_memory_kib,rss_kib
 import time
 from sandbox import Sandbox,native_server
 
@@ -12,10 +14,9 @@ BUDGETS={'version_median_ms':20,'list_1_ms':50,'list_10_ms':250,'list_100_ms':20
 
 def main():
     p=argparse.ArgumentParser();p.add_argument('--binary',type=Path,required=True);p.add_argument('--report',type=Path,required=True);args=p.parse_args();binary=args.binary.resolve(strict=True)
-    if not Path('/proc/meminfo').exists():raise SystemExit('Linux /proc required; platform scale gate unverified')
-    available=next(int(line.split()[1]) for line in Path('/proc/meminfo').read_text().splitlines() if line.startswith('MemAvailable:'))
+    available=available_memory_kib()
     if available<4*1024*1024:raise SystemExit('less than 4 GiB available; 100-session scale gate not run')
-    report={'scope':'Linux amd64, Debug VT, private idle sessions; not a release SLA','budgets':BUDGETS,'metrics':{},'passed':False}
+    report={'scope':platform.system()+' '+platform.machine()+', Debug VT, private idle sessions; not a release SLA','budgets':BUDGETS,'metrics':{},'passed':False}
     with Sandbox() as box,ExitStack() as stack:
         samples=[]
         for _ in range(10):
@@ -33,8 +34,7 @@ def main():
                 rss=[]
                 for server in servers:
                     assert server.poll() is None
-                    status=Path(f'/proc/{server.pid}/status').read_text()
-                    rss.append(next(int(line.split()[1]) for line in status.splitlines() if line.startswith('VmRSS:')))
+                    rss.append(rss_kib(server.pid))
                 report['metrics']['max_server_rss_kib']=max(rss)
                 print(json.dumps({'sessions':number,'list_ms':elapsed,'max_rss_kib':max(rss)}),flush=True)
         finally:
@@ -44,5 +44,5 @@ def main():
                 if server.poll() is None:server.terminate()
     report['passed']=all(report['metrics'][key]<=value for key,value in BUDGETS.items())
     args.report.write_text(json.dumps(report,indent=2)+'\n')
-    if not report['passed']:raise SystemExit('provisional baseline-comparison budget exceeded; inspect report')
+    if not report['passed']:raise SystemExit('fixed runtime budget exceeded; inspect report')
 if __name__=='__main__':main()
