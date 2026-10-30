@@ -1,0 +1,51 @@
+
+/tmp/txm-linux-followup/final/fuzz-nativeprotocol.log
+fuzz: elapsed: 0s, gathering baseline coverage: 0/35 completed
+fuzz: elapsed: 0s, gathering baseline coverage: 35/35 completed, now fuzzing with 2 workers
+fuzz: elapsed: 3s, execs: 109765 (36559/sec), new interesting: 0 (total: 35)
+fuzz: elapsed: 6s, execs: 186965 (25749/sec), new interesting: 0 (total: 35)
+fuzz: elapsed: 9s, execs: 251403 (21479/sec), new interesting: 0 (total: 35)
+fuzz: elapsed: 12s, execs: 364715 (37768/sec), new interesting: 0 (total: 35)
+fuzz: elapsed: 15s, execs: 450450 (28554/sec), new interesting: 0 (total: 35)
+fuzz: elapsed: 18s, execs: 512881 (20833/sec), new interesting: 0 (total: 35)
+fuzz: elapsed: 21s, execs: 590831 (25977/sec), new interesting: 0 (total: 35)
+fuzz: elapsed: 24s, execs: 664941 (24699/sec), new interesting: 0 (total: 35)
+fuzz: elapsed: 27s, execs: 786781 (40630/sec), new interesting: 0 (total: 35)
+fuzz: elapsed: 30s, execs: 922502 (45238/sec), new interesting: 0 (total: 35)
+fuzz: elapsed: 30s, execs: 922502 (0/sec), new interesting: 0 (total: 35)
+PASS
+ok  	github.com/MohamedElashri/txm/pkg/nativeprotocol	30.100s
+
+/tmp/txm-linux-followup/final/fuzz-core.log
+fuzz: elapsed: 0s, gathering baseline coverage: 0/107 completed
+fuzz: elapsed: 0s, gathering baseline coverage: 107/107 completed, now fuzzing with 2 workers
+fuzz: elapsed: 3s, execs: 15522 (5172/sec), new interesting: 0 (total: 107)
+fuzz: elapsed: 6s, execs: 15522 (0/sec), new interesting: 0 (total: 107)
+fuzz: elapsed: 9s, execs: 15522 (0/sec), new interesting: 0 (total: 107)
+fuzz: elapsed: 11s, execs: 15522 (0/sec), new interesting: 0 (total: 107)
+PASS
+ok  	github.com/MohamedElashri/txm/pkg/core	11.028s
+
+/tmp/txm-linux-followup/final/fuzz-localipc.log
+fuzz: elapsed: 0s, gathering baseline coverage: 0/342 completed
+fuzz: elapsed: 0s, gathering baseline coverage: 342/342 completed, now fuzzing with 2 workers
+fuzz: elapsed: 3s, execs: 118336 (39436/sec), new interesting: 1 (total: 343)
+fuzz: elapsed: 6s, execs: 194258 (25305/sec), new interesting: 6 (total: 348)
+fuzz: elapsed: 9s, execs: 270383 (25382/sec), new interesting: 10 (total: 352)
+fuzz: elapsed: 12s, execs: 345088 (24898/sec), new interesting: 11 (total: 353)
+fuzz: elapsed: 15s, execs: 422631 (25844/sec), new interesting: 13 (total: 355)
+fuzz: elapsed: 16s, execs: 422631 (0/sec), new interesting: 13 (total: 355)
+PASS
+ok  	github.com/MohamedElashri/txm/pkg/localipc	16.035s
+
+/tmp/txm-linux-followup/final/fuzz-remote.log
+fuzz: elapsed: 0s, gathering baseline coverage: 0/68 completed
+fuzz: elapsed: 0s, gathering baseline coverage: 68/68 completed, now fuzzing with 2 workers
+fuzz: elapsed: 3s, execs: 57219 (19065/sec), new interesting: 8 (total: 76)
+fuzz: elapsed: 6s, execs: 57219 (0/sec), new interesting: 8 (total: 76)
+fuzz: elapsed: 9s, execs: 57219 (0/sec), new interesting: 8 (total: 76)
+fuzz: elapsed: 12s, execs: 57219 (0/sec), new interesting: 8 (total: 76)
+fuzz: elapsed: 15s, execs: 57219 (0/sec), new interesting: 8 (total: 76)
+fuzz: elapsed: 16s, execs: 57219 (0/sec), new interesting: 8 (total: 76)
+PASS
+ok  	github.com/MohamedElashri/txm/pkg/remote	16.027s

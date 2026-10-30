@@ -36,3 +36,8 @@ zmx*
 
 ## local zig environment
 zig*
+
+# Python integration harness bytecode
+__pycache__/
+
+/completions/

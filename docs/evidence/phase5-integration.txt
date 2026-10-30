@@ -1,0 +1,72 @@
+
+integration-normal-final.log
+PASS isolated_tmux_cli: create/list through guarded -S wrapper
+PASS tmux_nuke_isolation: second disposable server survives target cleanup
+PASS R08_native_socket_detach: real PTY child/server survive socket attach/disconnect; not a raw-TTY restoration test
+PASS R08_native_tty_restore: CLI attach on real PTY, Ctrl-backslash detach, terminal attributes restored
+PASS native_pty_output: sentinel reached attached client through PTY/VT fanout
+{"metrics": {"version_median_ms": 5.029845982789993, "native_one_session_list_ms": 8.342109038494527, "native_socket_attach_ms": 0.6599079933948815, "native_cli_pty_attach_ms": 21.000417007599026, "native_server_rss_kib": 25768, "native_pty_bytes": 262292, "native_pty_mib_per_s": 0.04670758025447052}}
+
+cli_errors-normal-final.log
+....
+----------------------------------------------------------------------
+Ran 4 tests in 0.490s
+
+OK
+
+native_checks-normal-final.log
+...........
+----------------------------------------------------------------------
+Ran 11 tests in 25.542s
+
+OK
+
+structured_checks-normal-final.log
+...............
+----------------------------------------------------------------------
+Ran 15 tests in 19.275s
+
+OK
+
+profile_checks-normal-final.log
+................
+----------------------------------------------------------------------
+Ran 16 tests in 11.956s
+
+OK
+
+integration-race-final.log
+PASS isolated_tmux_cli: create/list through guarded -S wrapper
+PASS tmux_nuke_isolation: second disposable server survives target cleanup
+PASS R08_native_socket_detach: real PTY child/server survive socket attach/disconnect; not a raw-TTY restoration test
+PASS R08_native_tty_restore: CLI attach on real PTY, Ctrl-backslash detach, terminal attributes restored
+PASS native_pty_output: sentinel reached attached client through PTY/VT fanout
+{"metrics": {"version_median_ms": 1020.04745247541, "native_one_session_list_ms": 1023.0863689794205, "native_socket_attach_ms": 2.0897500216960907, "native_cli_pty_attach_ms": 21.320538013242185, "native_server_rss_kib": 47984, "native_pty_bytes": 262292, "native_pty_mib_per_s": 0.04596874221738183}}
+
+cli_errors-race-final.log
+....
+----------------------------------------------------------------------
+Ran 4 tests in 8.079s
+
+OK
+
+native_checks-race-final.log
+...........
+----------------------------------------------------------------------
+Ran 11 tests in 48.106s
+
+OK
+
+structured_checks-race-final.log
+...............
+----------------------------------------------------------------------
+Ran 15 tests in 62.524s
+
+OK
+
+profile_checks-race-final.log
+................
+----------------------------------------------------------------------
+Ran 16 tests in 25.632s
+
+OK

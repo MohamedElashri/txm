@@ -1,0 +1,135 @@
+
+/tmp/txm-linux-followup/runtime-final/archive-1-integration.log
+PASS isolated_tmux_cli: create/list through guarded -S wrapper
+PASS tmux_nuke_isolation: second disposable server survives target cleanup
+PASS R08_native_socket_detach: real PTY child/server survive socket attach/disconnect; not a raw-TTY restoration test
+PASS R08_native_tty_restore: CLI attach on real PTY, Ctrl-backslash detach, terminal attributes restored
+PASS native_pty_output: sentinel reached attached client through PTY/VT fanout
+{"metrics": {"version_median_ms": 4.80010750470683, "native_one_session_list_ms": 6.652662996202707, "native_socket_attach_ms": 0.9894769755192101, "native_cli_pty_attach_ms": 21.088782988954335, "native_server_rss_kib": 20968, "native_pty_bytes": 262292, "native_pty_mib_per_s": 0.04549089696755178}}
+
+/tmp/txm-linux-followup/runtime-final/archive-1-cli_errors.log
+....
+----------------------------------------------------------------------
+Ran 4 tests in 0.582s
+
+OK
+
+/tmp/txm-linux-followup/runtime-final/archive-1-native_checks.log
+...........
+----------------------------------------------------------------------
+Ran 11 tests in 25.561s
+
+OK
+
+/tmp/txm-linux-followup/runtime-final/archive-1-structured_checks.log
+...............
+----------------------------------------------------------------------
+Ran 15 tests in 18.420s
+
+OK
+
+/tmp/txm-linux-followup/runtime-final/archive-1-profile_checks.log
+................
+----------------------------------------------------------------------
+Ran 16 tests in 11.020s
+
+OK
+
+/tmp/txm-linux-followup/runtime-final/archive-1-agent_checks.log
+test_all_receipt_outcomes_remain_queryable_after_restart (__main__.AgentChecks.test_all_receipt_outcomes_remain_queryable_after_restart) ... ok
+test_cancelled_agent_read_preserves_exit_130 (__main__.AgentChecks.test_cancelled_agent_read_preserves_exit_130) ... ok
+test_concurrent_automatic_start_and_explicit_stop (__main__.AgentChecks.test_concurrent_automatic_start_and_explicit_stop) ... ok
+test_corrupt_registry_and_receipts_are_not_repaired (__main__.AgentChecks.test_corrupt_registry_and_receipts_are_not_repaired) ... ok
+test_different_state_identity_cannot_use_running_coordinator (__main__.AgentChecks.test_different_state_identity_cannot_use_running_coordinator) ... ok
+test_duplicate_concurrent_starts_and_single_writer (__main__.AgentChecks.test_duplicate_concurrent_starts_and_single_writer) ... ok
+test_failed_exec_and_single_use_manifest (__main__.AgentChecks.test_failed_exec_and_single_use_manifest) ... ok
+test_framing_epoch_and_slow_clients_do_not_block_native (__main__.AgentChecks.test_framing_epoch_and_slow_clients_do_not_block_native) ... ok
+test_interrupted_launch_intent_is_unknown_and_never_replayed (__main__.AgentChecks.test_interrupted_launch_intent_is_unknown_and_never_replayed) ... ok
+test_launcher_path_with_spaces_quotes_and_format_characters (__main__.AgentChecks.test_launcher_path_with_spaces_quotes_and_format_characters) ... ok
+test_native_argv_cwd_environment_and_short_exit_receipts (__main__.AgentChecks.test_native_argv_cwd_environment_and_short_exit_receipts) ... ok
+test_ordinary_commands_do_not_start_or_contact_coordinator (__main__.AgentChecks.test_ordinary_commands_do_not_start_or_contact_coordinator) ... ok
+test_parent_exit_coordinator_crash_and_receipt_recovery_no_reexecution (__main__.AgentChecks.test_parent_exit_coordinator_crash_and_receipt_recovery_no_reexecution) ... ok
+test_preflight_unsupported_and_invalid_never_starts_service (__main__.AgentChecks.test_preflight_unsupported_and_invalid_never_starts_service) ... ok
+test_registration_has_no_supervised_identity_or_exit (__main__.AgentChecks.test_registration_has_no_supervised_identity_or_exit) ... ok
+test_signal_receipt_and_resistant_descendant_cleanup (__main__.AgentChecks.test_signal_receipt_and_resistant_descendant_cleanup) ... ok
+test_tmux_coordinator_loss_preserves_receipt_without_reexecution (__main__.AgentChecks.test_tmux_coordinator_loss_preserves_receipt_without_reexecution) ... ok
+test_tmux_exact_launch_rename_and_reused_name (__main__.AgentChecks.test_tmux_exact_launch_rename_and_reused_name) ... ok
+test_unobserved_wrapper_loss_is_unknown (__main__.AgentChecks.test_unobserved_wrapper_loss_is_unknown) ... ok
+
+----------------------------------------------------------------------
+Ran 19 tests in 24.397s
+
+OK
+
+/tmp/txm-linux-followup/runtime-final/archive-1-agent_events_checks.log
+test_atomic_initial_snapshot_and_future_transition (__main__.AgentEventsChecks.test_atomic_initial_snapshot_and_future_transition) ... ok
+test_authenticated_signals_replay_freshness_rotation_and_privacy (__main__.AgentEventsChecks.test_authenticated_signals_replay_freshness_rotation_and_privacy) ... ok
+test_generic_managed_context_self_signals_and_environment_opt_in (__main__.AgentEventsChecks.test_generic_managed_context_self_signals_and_environment_opt_in) ... ok
+test_missing_receipt_is_unknown_and_wait_fails (__main__.AgentEventsChecks.test_missing_receipt_is_unknown_and_wait_fails) ... ok
+test_notifications_explicit_transcript_free_throttled_and_no_snapshot_replay (__main__.AgentEventsChecks.test_notifications_explicit_transcript_free_throttled_and_no_snapshot_replay) ... ok
+test_provider_bridge_session_binding_and_conservative_stop (__main__.AgentEventsChecks.test_provider_bridge_session_binding_and_conservative_stop) ... ok
+test_real_claude_init_only_sessionstart_no_model_or_auth (__main__.AgentEventsChecks.test_real_claude_init_only_sessionstart_no_model_or_auth) ... skipped 'explicit real Claude path not supplied'
+test_reconnect_epoch_resync_never_reexecutes (__main__.AgentEventsChecks.test_reconnect_epoch_resync_never_reexecutes) ... ok
+test_slow_notification_action_deadline_and_cancellation (__main__.AgentEventsChecks.test_slow_notification_action_deadline_and_cancellation) ... ok
+test_stale_attention_is_unknown_after_restart (__main__.AgentEventsChecks.test_stale_attention_is_unknown_after_restart) ... ok
+test_subscriber_limit_and_cancellation_release (__main__.AgentEventsChecks.test_subscriber_limit_and_cancellation_release) ... ok
+test_tmux_generic_hook_context_wait_and_exit (__main__.AgentEventsChecks.test_tmux_generic_hook_context_wait_and_exit) ... ok
+test_unsupported_providers_and_ordinary_independence (__main__.AgentEventsChecks.test_unsupported_providers_and_ordinary_independence) ... ok
+test_wait_exit_codes_timeout_cancellation_and_missing_hooks (__main__.AgentEventsChecks.test_wait_exit_codes_timeout_cancellation_and_missing_hooks) ... ok
+
+----------------------------------------------------------------------
+Ran 14 tests in 33.152s
+
+OK (skipped=1)
+
+/tmp/txm-linux-followup/runtime-final/archive-1-dashboard_checks.log
+test_agent_disconnect_is_stale_then_epoch_resync_without_relaunch (__main__.DashboardChecks.test_agent_disconnect_is_stale_then_epoch_resync_without_relaunch) ... ok
+test_agent_subscription_shows_sources_and_separate_process_attention_turn (__main__.DashboardChecks.test_agent_subscription_shows_sources_and_separate_process_attention_turn) ... ok
+test_cancellation_during_native_and_tmux_attach_restores_tty (__main__.DashboardChecks.test_cancellation_during_native_and_tmux_attach_restores_tty) ... ok
+test_current_native_terminal_cannot_attach_or_preview_itself (__main__.DashboardChecks.test_current_native_terminal_cannot_attach_or_preview_itself) ... ok
+test_native_readonly_and_control_attach_repeat_without_input_leaks (__main__.DashboardChecks.test_native_readonly_and_control_attach_repeat_without_input_leaks) ... ok
+test_native_refresh_search_preview_resize_and_quit_restore_tty (__main__.DashboardChecks.test_native_refresh_search_preview_resize_and_quit_restore_tty) ... ok
+test_non_tty_and_invalid_options_never_access_backends_or_agents (__main__.DashboardChecks.test_non_tty_and_invalid_options_never_access_backends_or_agents) ... ok
+test_real_tmux_readonly_control_and_name_reuse (__main__.DashboardChecks.test_real_tmux_readonly_control_and_name_reuse) ... ok
+test_sigint_sigterm_and_raw_ctrl_c_restore_tty (__main__.DashboardChecks.test_sigint_sigterm_and_raw_ctrl_c_restore_tty) ... ok
+test_slow_unavailable_backends_do_not_block_native_or_cancellation (__main__.DashboardChecks.test_slow_unavailable_backends_do_not_block_native_or_cancellation) ... ok
+test_stale_native_selection_cannot_attach_reused_name (__main__.DashboardChecks.test_stale_native_selection_cannot_attach_reused_name) ... ok
+test_thousand_sessions_search_resize_and_quit_budget (__main__.DashboardChecks.test_thousand_sessions_search_resize_and_quit_budget) ... ok
+test_unchanged_running_agent_gets_fresh_typed_proof (__main__.DashboardChecks.test_unchanged_running_agent_gets_fresh_typed_proof) ... ok
+test_unsupported_preview_and_attach_are_ui_errors_without_side_effects (__main__.DashboardChecks.test_unsupported_preview_and_attach_are_ui_errors_without_side_effects) ... ok
+
+----------------------------------------------------------------------
+Ran 14 tests in 69.930s
+
+OK
+
+/tmp/txm-linux-followup/runtime-final/archive-1-extension_checks.log
+test_attach_encoding_pinned_instance_and_local_tty_restore (__main__.RemoteChecks.test_attach_encoding_pinned_instance_and_local_tty_restore) ... ok
+test_cancelled_ssh_and_normal_core_do_not_initialize_extensions (__main__.RemoteChecks.test_cancelled_ssh_and_normal_core_do_not_initialize_extensions) ... ok
+test_endpoint_bad_protocol_and_host_refuse_before_backend (__main__.RemoteChecks.test_endpoint_bad_protocol_and_host_refuse_before_backend) ... ok
+test_fake_transport_pins_partial_version_collision_and_timeout (__main__.RemoteChecks.test_fake_transport_pins_partial_version_collision_and_timeout) ... ok
+test_concurrent_tasks_commits_and_unknown_launch_intent (__main__.TaskChecks.test_concurrent_tasks_commits_and_unknown_launch_intent) ... ok
+test_conditional_filters_cannot_run_during_new_worktree_checkout (__main__.TaskChecks.test_conditional_filters_cannot_run_during_new_worktree_checkout) ... ok
+test_detached_head_hooks_dirty_and_forced_cleanup (__main__.TaskChecks.test_detached_head_hooks_dirty_and_forced_cleanup) ... ok
+test_dry_run_and_branch_filter_boundaries (__main__.TaskChecks.test_dry_run_and_branch_filter_boundaries) ... ok
+test_identity_symlink_and_state_copy_refusal (__main__.TaskChecks.test_identity_symlink_and_state_copy_refusal) ... ok
+test_native_name_reuse_and_changed_branch_never_target_other_resource (__main__.TaskChecks.test_native_name_reuse_and_changed_branch_never_target_other_resource) ... ok
+test_registry_loss_requires_pinned_exit_receipt (__main__.TaskChecks.test_registry_loss_requires_pinned_exit_receipt) ... ok
+test_restart_orphan_and_no_reexecution (__main__.TaskChecks.test_restart_orphan_and_no_reexecution) ... ok
+test_tmux_rename_and_owner_loss (__main__.TaskChecks.test_tmux_rename_and_owner_loss) ... ok
+
+----------------------------------------------------------------------
+Ran 13 tests in 24.898s
+
+OK
+
+/tmp/txm-linux-followup/runtime-final/archive-1-prune_checks.log
+test_corrupt_prune_history_blocks_agent_mutation_but_not_core (__main__.PruneChecks.test_corrupt_prune_history_blocks_agent_mutation_but_not_core) ... ok
+test_prune_resyncs_all_subscribers_and_ends_removed_id_stream (__main__.PruneChecks.test_prune_resyncs_all_subscribers_and_ends_removed_id_stream) ... ok
+test_task_agent_pruning_preserves_branches_receipts_and_replay_guard (__main__.PruneChecks.test_task_agent_pruning_preserves_branches_receipts_and_replay_guard) ... ok
+test_unsupervised_prune_removes_registration_not_session (__main__.PruneChecks.test_unsupervised_prune_removes_registration_not_session) ... ok
+
+----------------------------------------------------------------------
+Ran 4 tests in 7.016s
+
+OK

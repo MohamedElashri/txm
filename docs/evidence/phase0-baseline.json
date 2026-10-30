@@ -1,0 +1,97 @@
+{
+  "mode": "baseline",
+  "checks": [
+    {
+      "check": "isolated_tmux_cli",
+      "passed": true,
+      "detail": "create/list through guarded -S wrapper"
+    },
+    {
+      "check": "tmux_nuke_isolation",
+      "passed": true,
+      "detail": "second disposable server survives target cleanup"
+    },
+    {
+      "check": "R08_native_socket_detach",
+      "passed": true,
+      "detail": "real PTY child/server survive socket attach/disconnect; not a raw-TTY restoration test"
+    },
+    {
+      "check": "R08_native_tty_restore",
+      "passed": true,
+      "detail": "CLI attach on real PTY, Ctrl-backslash detach, terminal attributes restored"
+    },
+    {
+      "check": "R01_native_kill",
+      "passed": false,
+      "detail": "CLI exit 0; actual server live=True"
+    },
+    {
+      "check": "R09_native_input",
+      "passed": false,
+      "detail": "CLI exit 0; no PTY echo means standalone input was rejected"
+    },
+    {
+      "check": "native_pty_output",
+      "passed": true,
+      "detail": "sentinel reached attached client through PTY/VT fanout"
+    },
+    {
+      "check": "R03_cli_failure",
+      "passed": false,
+      "detail": "unsupported operation exit=0, error_on_stdout=True"
+    },
+    {
+      "check": "R10_config_error",
+      "passed": false,
+      "detail": "config path is a directory; exit=2, panic=True"
+    },
+    {
+      "check": "R04_tmux_read_only",
+      "passed": false,
+      "detail": "argv probe only: adapter must request enforced read-only attach"
+    },
+    {
+      "check": "R05_zellij_exact_name",
+      "passed": false,
+      "detail": "fake backend lists foobar; creating foo must reach create, not conflict"
+    },
+    {
+      "check": "R05_screen_exact_name",
+      "passed": false,
+      "detail": "fake backend lists only foobar; delete foo must not quit it"
+    },
+    {
+      "check": "R06_R11_profile_preflight",
+      "passed": false,
+      "detail": "invalid cwd and unsupported layout must fail before creation; backend/prefix/target need fixes"
+    },
+    {
+      "check": "R02_duplicate_native",
+      "passed": false,
+      "detail": "direct duplicate server launch must not replace an active socket"
+    },
+    {
+      "check": "R12_startup_exec_failure",
+      "passed": false,
+      "detail": "missing executable must fail creation; CLI exit=0"
+    }
+  ],
+  "metrics": {
+    "version_median_ms": 6.637424492510036,
+    "native_one_session_list_ms": 9.982199990190566,
+    "native_socket_attach_ms": 20.503683015704155,
+    "native_cli_pty_attach_ms": 21.10109303612262,
+    "native_server_rss_kib": 21760,
+    "native_pty_bytes": 262292,
+    "native_pty_mib_per_s": 0.03379873639125894
+  },
+  "metric_limits": "10 startup samples; one list/socket-attach/CLI-PTY-attach/256-KiB PTY sample; no performance threshold claim",
+  "date": "2026-10-29",
+  "baseline_sha": "f2606d240912ffa2269569cd642a7f83e5457f74",
+  "host": "Linux amd64",
+  "go": "1.27.3",
+  "zig": "0.16.0",
+  "tmux": "3.4",
+  "ghostty": "36ec90a07fcb58e3033296c06c82438bf30d2e42"
+}

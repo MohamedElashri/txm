@@ -1,0 +1,14 @@
+{
+  "passed": true,
+  "known_validation_binary_processes_remaining": [],
+  "owned_container_labels_checked": [
+    "txm.validation=7adac8c440576ad811e9cb58",
+    "txm.validation=94384fdcb79feb53206b18b9"
+  ],
+  "owned_containers_remaining": [],
+  "head": "f2606d240912ffa2269569cd642a7f83e5457f74",
+  "nothing_staged": true,
+  "diff_check": true,
+  "original_ignored_ghostty_head": "d4c88d8069912b653d707191388ca98e24751f12",
+  "scope": "Read-only verification of exact validation artifact executables and owned container labels; no process or user resource was deleted."
+}

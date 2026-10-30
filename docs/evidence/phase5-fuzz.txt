@@ -1,0 +1,39 @@
+
+fuzz-nativeprotocol.log
+fuzz: elapsed: 0s, gathering baseline coverage: 0/35 completed
+fuzz: elapsed: 0s, gathering baseline coverage: 35/35 completed, now fuzzing with 2 workers
+fuzz: elapsed: 3s, execs: 161348 (53774/sec), new interesting: 0 (total: 35)
+fuzz: elapsed: 6s, execs: 328611 (55749/sec), new interesting: 0 (total: 35)
+fuzz: elapsed: 9s, execs: 489596 (53666/sec), new interesting: 0 (total: 35)
+fuzz: elapsed: 12s, execs: 638194 (49536/sec), new interesting: 0 (total: 35)
+fuzz: elapsed: 15s, execs: 784701 (48824/sec), new interesting: 0 (total: 35)
+fuzz: elapsed: 18s, execs: 939834 (51717/sec), new interesting: 0 (total: 35)
+fuzz: elapsed: 21s, execs: 1083176 (47781/sec), new interesting: 0 (total: 35)
+fuzz: elapsed: 24s, execs: 1238833 (51883/sec), new interesting: 0 (total: 35)
+fuzz: elapsed: 27s, execs: 1385075 (48757/sec), new interesting: 0 (total: 35)
+fuzz: elapsed: 30s, execs: 1520064 (44998/sec), new interesting: 0 (total: 35)
+fuzz: elapsed: 30s, execs: 1520064 (0/sec), new interesting: 0 (total: 35)
+PASS
+ok  	github.com/MohamedElashri/txm/pkg/nativeprotocol	30.096s
+
+fuzz-core.log
+fuzz: elapsed: 0s, gathering baseline coverage: 0/103 completed
+fuzz: elapsed: 0s, gathering baseline coverage: 103/103 completed, now fuzzing with 2 workers
+fuzz: elapsed: 3s, execs: 45361 (15116/sec), new interesting: 3 (total: 106)
+fuzz: elapsed: 6s, execs: 45361 (0/sec), new interesting: 3 (total: 106)
+fuzz: elapsed: 9s, execs: 45361 (0/sec), new interesting: 3 (total: 106)
+fuzz: elapsed: 11s, execs: 45361 (0/sec), new interesting: 3 (total: 106)
+PASS
+ok  	github.com/MohamedElashri/txm/pkg/core	11.028s
+
+fuzz-localipc.log
+fuzz: elapsed: 0s, gathering baseline coverage: 0/170 completed
+fuzz: elapsed: 0s, gathering baseline coverage: 170/170 completed, now fuzzing with 2 workers
+fuzz: elapsed: 3s, execs: 141523 (47172/sec), new interesting: 17 (total: 187)
+fuzz: elapsed: 6s, execs: 288905 (49124/sec), new interesting: 34 (total: 204)
+fuzz: elapsed: 9s, execs: 431826 (47635/sec), new interesting: 56 (total: 226)
+fuzz: elapsed: 12s, execs: 512171 (26783/sec), new interesting: 77 (total: 247)
+fuzz: elapsed: 15s, execs: 587795 (25209/sec), new interesting: 91 (total: 261)
+fuzz: elapsed: 16s, execs: 587795 (0/sec), new interesting: 91 (total: 261)
+PASS
+ok  	github.com/MohamedElashri/txm/pkg/localipc	16.033s

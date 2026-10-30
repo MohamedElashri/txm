@@ -1,0 +1,38 @@
+{
+  "claude": {
+    "path": "/home/linuxbrew/.linuxbrew/bin/claude",
+    "resolved_path": "/home/linuxbrew/.linuxbrew/Caskroom/claude-code/2.1.308/claude",
+    "--version": {
+      "code": 0,
+      "text": "2.1.308 (Claude Code)\n"
+    },
+    "--help": {
+      "code": 0,
+      "text": "saved help output"
+    }
+  },
+  "codex": {
+    "path": "/home/linuxbrew/.linuxbrew/bin/codex",
+    "resolved_path": "/home/linuxbrew/.linuxbrew/Caskroom/codex/0.165.0/bin/codex",
+    "--version": {
+      "code": 0,
+      "text": "codex-cli 0.165.0\n"
+    },
+    "--help": {
+      "code": 0,
+      "text": "saved help output"
+    }
+  },
+  "opencode": {
+    "path": "/home/linuxbrew/.linuxbrew/bin/opencode",
+    "resolved_path": "/home/linuxbrew/.linuxbrew/Cellar/opencode-v2/2.2.1/bin/opencode",
+    "--version": {
+      "code": 0,
+      "text": "opencode v2.2.1\n"
+    },
+    "--help": {
+      "code": 0,
+      "text": "saved help output"
+    }
+  }
+}

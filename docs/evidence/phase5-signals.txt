@@ -1,0 +1,19 @@
+test_atomic_initial_snapshot_and_future_transition (__main__.AgentEventsChecks.test_atomic_initial_snapshot_and_future_transition) ... ok
+test_authenticated_signals_replay_freshness_rotation_and_privacy (__main__.AgentEventsChecks.test_authenticated_signals_replay_freshness_rotation_and_privacy) ... ok
+test_generic_managed_context_self_signals_and_environment_opt_in (__main__.AgentEventsChecks.test_generic_managed_context_self_signals_and_environment_opt_in) ... ok
+test_missing_receipt_is_unknown_and_wait_fails (__main__.AgentEventsChecks.test_missing_receipt_is_unknown_and_wait_fails) ... ok
+test_notifications_explicit_transcript_free_throttled_and_no_snapshot_replay (__main__.AgentEventsChecks.test_notifications_explicit_transcript_free_throttled_and_no_snapshot_replay) ... ok
+test_provider_bridge_session_binding_and_conservative_stop (__main__.AgentEventsChecks.test_provider_bridge_session_binding_and_conservative_stop) ... ok
+test_real_claude_init_only_sessionstart_no_model_or_auth (__main__.AgentEventsChecks.test_real_claude_init_only_sessionstart_no_model_or_auth) ... ok
+test_reconnect_epoch_resync_never_reexecutes (__main__.AgentEventsChecks.test_reconnect_epoch_resync_never_reexecutes) ... ok
+test_slow_notification_action_deadline_and_cancellation (__main__.AgentEventsChecks.test_slow_notification_action_deadline_and_cancellation) ... ok
+test_stale_attention_is_unknown_after_restart (__main__.AgentEventsChecks.test_stale_attention_is_unknown_after_restart) ... ok
+test_subscriber_limit_and_cancellation_release (__main__.AgentEventsChecks.test_subscriber_limit_and_cancellation_release) ... ok
+test_tmux_generic_hook_context_wait_and_exit (__main__.AgentEventsChecks.test_tmux_generic_hook_context_wait_and_exit) ... ok
+test_unsupported_providers_and_ordinary_independence (__main__.AgentEventsChecks.test_unsupported_providers_and_ordinary_independence) ... ok
+test_wait_exit_codes_timeout_cancellation_and_missing_hooks (__main__.AgentEventsChecks.test_wait_exit_codes_timeout_cancellation_and_missing_hooks) ... ok
+
+----------------------------------------------------------------------
+Ran 14 tests in 34.147s
+
+OK

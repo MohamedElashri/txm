@@ -24,12 +24,7 @@ jobs:
           
       - name: Set up Zig
         run: |
-          ZIG_URL=$(curl -s https://ziglang.org/download/index.json | jq -r '.["0.16.0"]."x86_64-linux".tarball')
-          cd /tmp
-          wget $ZIG_URL -O zig.tar.xz
-          tar xf zig.tar.xz
-          DIR=$(ls -d zig-x86_64-linux-* | head -n 1)
-          echo "/tmp/$DIR" >> $GITHUB_PATH
+          bash scripts/install-ci-zig.sh
           
       - name: Download macOS SDK
         run: |
@@ -46,3 +41,4 @@ jobs:
           args: release --clean
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TXM_RELEASE_ROOT: ${{ github.workspace }}

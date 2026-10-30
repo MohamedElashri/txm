@@ -36,7 +36,7 @@ func ParseBackend(s string) (BackendType, error) {
 
 // Config represents the configuration for txm
 type Config struct {
-	DefaultBackend BackendType
+	DefaultBackend  BackendType
 	BackendOrder    []BackendType
 	ScrollbackSize  int
 	LogRotationSize int
@@ -45,7 +45,7 @@ type Config struct {
 // NewDefaultConfig creates a new default configuration
 func NewDefaultConfig() *Config {
 	return &Config{
-		DefaultBackend: BackendTmux,
+		DefaultBackend:  BackendTmux,
 		BackendOrder:    []BackendType{BackendTmux, BackendScreen, BackendZellij, BackendNative},
 		ScrollbackSize:  65536,
 		LogRotationSize: 10485760, // 10MB default
@@ -57,7 +57,10 @@ func LoadConfig() (*Config, error) {
 	config := NewDefaultConfig()
 
 	// Load config file first
-	configFile := getConfigFilePath()
+	configFile, err := getConfigFilePath()
+	if err != nil {
+		return nil, err
+	}
 	if configFile != "" {
 		if err := loadConfigFile(config, configFile); err != nil {
 			if !os.IsNotExist(err) {
@@ -68,19 +71,21 @@ func LoadConfig() (*Config, error) {
 
 	// Check environment variable last (highest priority)
 	if envBackend := os.Getenv("TXM_DEFAULT_BACKEND"); envBackend != "" {
-		if backend, err := ParseBackend(envBackend); err == nil {
-			config.DefaultBackend = backend
+		backend, err := ParseBackend(envBackend)
+		if err != nil {
+			return nil, err
 		}
+		config.DefaultBackend = backend
 	}
 
 	return config, nil
 }
 
 // getConfigFilePath returns the path to the config file
-func getConfigFilePath() string {
+func getConfigFilePath() (string, error) {
 	homeDir, err := os.UserHomeDir()
 	if err != nil {
-		return ""
+		return "", err
 	}
 
 	configPaths := []string{
@@ -91,11 +96,13 @@ func getConfigFilePath() string {
 
 	for _, path := range configPaths {
 		if _, err := os.Stat(path); err == nil {
-			return path
+			return path, nil
+		} else if !os.IsNotExist(err) {
+			return "", err
 		}
 	}
 
-	return ""
+	return "", nil
 }
 
 func loadConfigFile(config *Config, filePath string) error {
@@ -119,17 +126,23 @@ func loadConfigFile(config *Config, filePath string) error {
 
 				switch strings.ToLower(key) {
 				case "default_backend", "backend":
-					if backend, err := ParseBackend(value); err == nil {
-						config.DefaultBackend = backend
+					backend, err := ParseBackend(value)
+					if err != nil {
+						return err
 					}
+					config.DefaultBackend = backend
 				case "scrollbacksize", "scrollback_size":
-					if size, err := strconv.Atoi(value); err == nil {
-						config.ScrollbackSize = size
+					size, err := strconv.Atoi(value)
+					if err != nil || size <= 0 {
+						return fmt.Errorf("scrollback_size must be positive")
 					}
+					config.ScrollbackSize = size
 				case "logrotationsize", "log_rotation_size":
-					if size, err := strconv.Atoi(value); err == nil {
-						config.LogRotationSize = size
+					size, err := strconv.Atoi(value)
+					if err != nil || size <= 0 {
+						return fmt.Errorf("log_rotation_size must be positive")
 					}
+					config.LogRotationSize = size
 				}
 			}
 		}
@@ -151,7 +164,7 @@ func SaveConfig(config *Config) error {
 	}
 
 	configFile := filepath.Join(configDir, "config")
-	content := fmt.Sprintf("# txm configuration file\n# Set the default backend (tmux, zellij, screen)\ndefault_backend=%s\nscrollback_size=%d\nlog_rotation_size=%d\n", config.DefaultBackend, config.ScrollbackSize, config.LogRotationSize)
+	content := fmt.Sprintf("# txm configuration file\n# Set the default backend (native, tmux, zellij, screen)\ndefault_backend=%s\nscrollback_size=%d\nlog_rotation_size=%d\n", config.DefaultBackend, config.ScrollbackSize, config.LogRotationSize)
 
 	if err := os.WriteFile(configFile, []byte(content), 0644); err != nil {
 		return fmt.Errorf("failed to write config file: %v", err)

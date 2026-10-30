@@ -1,0 +1,2 @@
+# Preserve verbatim readelf captures whose exact bytes are recorded in evidence.
+docs/evidence/*-linkage.txt whitespace=-blank-at-eol

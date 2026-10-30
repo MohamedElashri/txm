@@ -3,6 +3,7 @@ package cmd
 import (
 	"fmt"
 
+	"github.com/MohamedElashri/txm/pkg/core"
 	"github.com/spf13/cobra"
 )
 
@@ -28,9 +29,13 @@ var windowCreateCmd = &cobra.Command{
 			windowName = args[1]
 		}
 
+		if windowName != "" {
+			if err := validateName(windowName); err != nil {
+				return err
+			}
+		}
 		if err := manager.Backend.NewWindow(session, windowName); err != nil {
-			logInstance.Error(fmt.Sprintf("Failed to create window in session '%s': %v", session, err))
-			return nil
+			return fmt.Errorf("failed to create window in session '%s': %w", session, err)
 		}
 		logInstance.Info(fmt.Sprintf("Created window in session '%s'", session))
 		return nil
@@ -49,8 +54,12 @@ var windowListCmd = &cobra.Command{
 			return err
 		}
 
-		if err := manager.Backend.ListWindows(session); err != nil {
-			logInstance.Error(fmt.Sprintf("Failed to list windows in session '%s': %v", session, err))
+		windows, err := manager.Backend.Windows(cmd.Context(), session)
+		if err != nil {
+			return err
+		}
+		for _, w := range windows {
+			fmt.Printf("%d: %s (%s)\n", w.Index, core.Plain([]byte(w.Name)), w.ID)
 		}
 		return nil
 	},
@@ -69,8 +78,7 @@ var windowKillCmd = &cobra.Command{
 		}
 
 		if err := manager.Backend.KillWindow(session, window); err != nil {
-			logInstance.Error(fmt.Sprintf("Failed to kill window '%s' in session '%s': %v", window, session, err))
-			return nil
+			return fmt.Errorf("failed to kill window '%s' in session '%s': %w", window, session, err)
 		}
 		logInstance.Info(fmt.Sprintf("Killed window '%s' in session '%s'", window, session))
 		return nil
@@ -89,8 +97,7 @@ var windowNextCmd = &cobra.Command{
 		}
 
 		if err := manager.Backend.NextWindow(session); err != nil {
-			logInstance.Error(fmt.Sprintf("Failed to switch to next window in session '%s': %v", session, err))
-			return nil
+			return fmt.Errorf("failed to switch to next window in session '%s': %w", session, err)
 		}
 		logInstance.Info("Switched to next window")
 		return nil
@@ -109,8 +116,7 @@ var windowPrevCmd = &cobra.Command{
 		}
 
 		if err := manager.Backend.PreviousWindow(session); err != nil {
-			logInstance.Error(fmt.Sprintf("Failed to switch to previous window in session '%s': %v", session, err))
-			return nil
+			return fmt.Errorf("failed to switch to previous window in session '%s': %w", session, err)
 		}
 		logInstance.Info("Switched to previous window")
 		return nil
@@ -134,8 +140,7 @@ var windowRenameCmd = &cobra.Command{
 		}
 
 		if err := manager.Backend.RenameWindow(session, oldName, newName); err != nil {
-			logInstance.Error(fmt.Sprintf("Failed to rename window '%s' to '%s' in session '%s': %v", oldName, newName, session, err))
-			return nil
+			return fmt.Errorf("failed to rename window '%s' to '%s' in session '%s': %w", oldName, newName, session, err)
 		}
 		logInstance.Info(fmt.Sprintf("Renamed window '%s' to '%s' in session '%s'", oldName, newName, session))
 		return nil
@@ -154,12 +159,11 @@ var windowSplitCmd = &cobra.Command{
 		}
 		direction := args[2]
 		if direction != "v" && direction != "h" {
-			return fmt.Errorf("direction must be 'v' or 'h'")
+			return core.Failure("invalid_usage", "direction must be v or h")
 		}
 
 		if err := manager.Backend.SplitWindow(session, window, direction); err != nil {
-			logInstance.Error(fmt.Sprintf("Failed to split window '%s': %v", window, err))
-			return nil
+			return fmt.Errorf("failed to split window '%s': %w", window, err)
 		}
 		logInstance.Info(fmt.Sprintf("Split window '%s' direction '%s'", window, direction))
 		return nil

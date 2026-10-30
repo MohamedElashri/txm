@@ -1,0 +1,5 @@
+{
+  "exit_code": 2,
+  "state_or_runtime_created": false,
+  "scope": "CGO-disabled Linux dashboard non-TTY refusal; no external runtime claim"
+}

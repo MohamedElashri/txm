@@ -1,0 +1,36 @@
+go test ./pkg/nativeprotocol -run='^$' -fuzz=FuzzNativeFrame -fuzztime=30s -parallel=2
+fuzz: elapsed: 0s, gathering baseline coverage: 0/35 completed
+fuzz: elapsed: 0s, gathering baseline coverage: 35/35 completed, now fuzzing with 2 workers
+fuzz: elapsed: 3s, execs: 114847 (38278/sec), new interesting: 0 (total: 35)
+fuzz: elapsed: 6s, execs: 244474 (43199/sec), new interesting: 0 (total: 35)
+fuzz: elapsed: 9s, execs: 373752 (43097/sec), new interesting: 0 (total: 35)
+fuzz: elapsed: 12s, execs: 511435 (45894/sec), new interesting: 0 (total: 35)
+fuzz: elapsed: 15s, execs: 644918 (44497/sec), new interesting: 0 (total: 35)
+fuzz: elapsed: 18s, execs: 783691 (46251/sec), new interesting: 0 (total: 35)
+fuzz: elapsed: 21s, execs: 918786 (45032/sec), new interesting: 0 (total: 35)
+fuzz: elapsed: 24s, execs: 1054975 (45405/sec), new interesting: 0 (total: 35)
+fuzz: elapsed: 27s, execs: 1190404 (45141/sec), new interesting: 0 (total: 35)
+fuzz: elapsed: 30s, execs: 1324136 (44575/sec), new interesting: 0 (total: 35)
+fuzz: elapsed: 30s, execs: 1324136 (0/sec), new interesting: 0 (total: 35)
+PASS
+ok  	github.com/MohamedElashri/txm/pkg/nativeprotocol	30.077s
+go test ./pkg/core -run='^$' -fuzz=FuzzPlain -fuzztime=10s -parallel=2
+fuzz: elapsed: 0s, gathering baseline coverage: 0/99 completed
+fuzz: elapsed: 0s, gathering baseline coverage: 99/99 completed, now fuzzing with 2 workers
+fuzz: elapsed: 3s, execs: 24694 (8228/sec), new interesting: 4 (total: 103)
+fuzz: elapsed: 6s, execs: 24694 (0/sec), new interesting: 4 (total: 103)
+fuzz: elapsed: 9s, execs: 24694 (0/sec), new interesting: 4 (total: 103)
+fuzz: elapsed: 11s, execs: 24694 (0/sec), new interesting: 4 (total: 103)
+PASS
+ok  	github.com/MohamedElashri/txm/pkg/core	11.027s
+go test ./pkg/localipc -run='^$' -fuzz=FuzzLocalFrame -fuzztime=15s -parallel=2
+fuzz: elapsed: 0s, gathering baseline coverage: 0/3 completed
+fuzz: elapsed: 0s, gathering baseline coverage: 3/3 completed, now fuzzing with 2 workers
+fuzz: elapsed: 3s, execs: 119054 (39678/sec), new interesting: 44 (total: 47)
+fuzz: elapsed: 6s, execs: 250207 (43711/sec), new interesting: 68 (total: 71)
+fuzz: elapsed: 9s, execs: 371672 (40492/sec), new interesting: 119 (total: 122)
+fuzz: elapsed: 12s, execs: 490110 (39478/sec), new interesting: 158 (total: 161)
+fuzz: elapsed: 15s, execs: 607628 (39178/sec), new interesting: 167 (total: 170)
+fuzz: elapsed: 15s, execs: 607628 (0/sec), new interesting: 167 (total: 170)
+PASS
+ok  	github.com/MohamedElashri/txm/pkg/localipc	15.112s

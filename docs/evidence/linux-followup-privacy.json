@@ -1,0 +1,2223 @@
+{
+  "schema_version": 1,
+  "scope": "Known credential forms only; no match contents logged; human provenance review required",
+  "artifacts": [
+    {
+      "path": "/home/melashri/projects/txm/.goreleaser.yaml",
+      "sha256": "74dccd6304569f6f17df38a4b0a1f76b54c807b2d523aedcd9c6d3ae7f4900da",
+      "bytes": 2817
+    },
+    {
+      "path": "/home/melashri/projects/txm/Makefile",
+      "sha256": "9906d747f551034c56e5402cb11aa60f575cf4dde25cda044548156eb1666d0c",
+      "bytes": 3447
+    },
+    {
+      "path": "/home/melashri/projects/txm/README.md",
+      "sha256": "7532dbd243c3c4b96be3a9fee306a31580465352a69780f415aefa3ac3e515ba",
+      "bytes": 7537
+    },
+    {
+      "path": "/home/melashri/projects/txm/docs/CHANGELOG.md",
+      "sha256": "c56208377ce9df25b2e6b294527920ddc08fcc90fe031c0506069367a4f7de76",
+      "bytes": 17120
+    },
+    {
+      "path": "/home/melashri/projects/txm/docs/ROADMAP.md",
+      "sha256": "aacb71d6f0c96614a6b73254ac058a6e353797e1ab01c380ef488571bacc8493",
+      "bytes": 2654
+    },
+    {
+      "path": "/home/melashri/projects/txm/docs/architecture.md",
+      "sha256": "f5ebd116c4d515649f89d3edb06b4473430534f63730538e1e1698e5798ab1bf",
+      "bytes": 28231
+    },
+    {
+      "path": "/home/melashri/projects/txm/docs/contracts.md",
+      "sha256": "e19a266e32c1f03020de1723aa361b99b05bec96aa17ea0832268aca60e7a963",
+      "bytes": 44127
+    },
+    {
+      "path": "/home/melashri/projects/txm/docs/embeds.go",
+      "sha256": "2eecdae6a4bfd4956626c8f1330dc851d32c3cc46ce5d03ac8e363cf953edcc5",
+      "bytes": 80
+    },
+    {
+      "path": "/home/melashri/projects/txm/docs/evidence/phase0-baseline.json",
+      "sha256": "ac5c5c649fec9cd29337f673e01db35f3f6a710eed7e36dbb1289445c0cd9e48",
+      "bytes": 3017
+    },
+    {
+      "path": "/home/melashri/projects/txm/docs/evidence/phase0-smoke.json",
+      "sha256": "d75b4255aa009b8b87405ac0e16f5ffa8b12462dfb8e3a2650e1b410b578ca93",
+      "bytes": 1495
+    },
+    {
+      "path": "/home/melashri/projects/txm/docs/evidence/phase1-smoke.json",
+      "sha256": "a03b6e3ff17b378e3386eaf57d1991d7d0608ec5f5dae8a9e0c38ba6cd17a7e6",
+      "bytes": 1272
+    },
+    {
+      "path": "/home/melashri/projects/txm/docs/evidence/phase1-validation.json",
+      "sha256": "d9ee11362324b42a69f250cc08a2f02eb013fc39e9fcf316ebb94ec6d67aab2b",
+      "bytes": 8681
+    },
+    {
+      "path": "/home/melashri/projects/txm/docs/evidence/phase2-fuzz.txt",
+      "sha256": "f5d8f68fd421f5393188fb141b7bc3552f09963c0dad032cfbb309b23f8c36b0",
+      "bytes": 1757
+    },
+    {
+      "path": "/home/melashri/projects/txm/docs/evidence/phase2-go-race.txt",
+      "sha256": "04ec8000247252d9dbb0cdee0af06f009e5782433d9733b034a448da90d3e336",
+      "bytes": 629
+    },
+    {
+      "path": "/home/melashri/projects/txm/docs/evidence/phase2-go126.txt",
+      "sha256": "59c87224b8d6e6282157f4698d7edc2f6080ca015d49687c43451b51886a5bd5",
+      "bytes": 629
+    },
+    {
+      "path": "/home/melashri/projects/txm/docs/evidence/phase2-integration-race.txt",
+      "sha256": "c05e2b970a213a3916b2a256d176d7f4c07d1ae5f306c007edae5cf182c0b46d",
+      "bytes": 513
+    },
+    {
+      "path": "/home/melashri/projects/txm/docs/evidence/phase2-integration.txt",
+      "sha256": "945e17aa0664b80351a9473ac53525337c72efd22e19e7effec9a757a4365eb2",
+      "bytes": 2911
+    },
+    {
+      "path": "/home/melashri/projects/txm/docs/evidence/phase2-smoke.json",
+      "sha256": "82061a438b5c1330bd1d1944edf6aa0e178d83b5ebb4e241e0c2096d4f7b7f1c",
+      "bytes": 1375
+    },
+    {
+      "path": "/home/melashri/projects/txm/docs/evidence/phase2-validation.json",
+      "sha256": "bbbef87a941653eace39407754f1fa680fe692fab0a4c8a8cf4790c06ddda4c6",
+      "bytes": 9898
+    },
+    {
+      "path": "/home/melashri/projects/txm/docs/evidence/phase3-archive-build.txt",
+      "sha256": "1f35dd06625342d502e669fa5976ee45a2acc5283f1e61d6ee3aed60ebd57d2d",
+      "bytes": 1222
+    },
+    {
+      "path": "/home/melashri/projects/txm/docs/evidence/phase3-archive-gnu-runtime.txt",
+      "sha256": "d3748c0b9bbe3cf3f9e05363be866625bb79da16e6ac49aa5cd2ff2401b33e53",
+      "bytes": 1303
+    },
+    {
+      "path": "/home/melashri/projects/txm/docs/evidence/phase3-archive-gnu-smoke.json",
+      "sha256": "a80a32e9f25b5f105d6f0d3b5c4fa444d34c820e12f6c898430e85e58bec10c3",
+      "bytes": 1273
+    },
+    {
+      "path": "/home/melashri/projects/txm/docs/evidence/phase3-archive-gnu.json",
+      "sha256": "d46a59fa437df89dcbdbe5f4e37e8ae627ec0251074df4611285fbc970fd4244",
+      "bytes": 475
+    },
+    {
+      "path": "/home/melashri/projects/txm/docs/evidence/phase3-archive-musl-runtime.txt",
+      "sha256": "141cda4610788664ace69eb5c34d3bafeb49601b67b11d3ddd56b3e4dc049bbf",
+      "bytes": 1302
+    },
+    {
+      "path": "/home/melashri/projects/txm/docs/evidence/phase3-archive-musl-smoke.json",
+      "sha256": "96d67953700d46a61b180dbca4c747203c1456cdc9b3890a37877739fcfa3bbe",
+      "bytes": 1272
+    },
+    {
+      "path": "/home/melashri/projects/txm/docs/evidence/phase3-archive-musl.json",
+      "sha256": "68239ac684274e0832406b2f831d60d18b2c3e3b5c99cd22cb1d0e5f52535487",
+      "bytes": 480
+    },
+    {
+      "path": "/home/melashri/projects/txm/docs/evidence/phase3-fuzz.txt",
+      "sha256": "8b5bfde0beb17256b3e11acbc1a3740a986f011e02fe3e18aec0a4fffc5d24da",
+      "bytes": 1591
+    },
+    {
+      "path": "/home/melashri/projects/txm/docs/evidence/phase3-go-race.txt",
+      "sha256": "e9acc1b0c11a1db89229334bc515283ca096ac56bff6183eb83872a7a8acce49",
+      "bytes": 679
+    },
+    {
+      "path": "/home/melashri/projects/txm/docs/evidence/phase3-go.txt",
+      "sha256": "46d90a1a365ca944b91c70b3736a0d099a6c3e3aa54a6cdeaffdd341f75f5d21",
+      "bytes": 681
+    },
+    {
+      "path": "/home/melashri/projects/txm/docs/evidence/phase3-go126.txt",
+      "sha256": "52376180005f3525fcb03d0bf168f13bfbd77d2be30a3d672bb4feeedb311aab",
+      "bytes": 677
+    },
+    {
+      "path": "/home/melashri/projects/txm/docs/evidence/phase3-integration.txt",
+      "sha256": "3cff56ce9604987159d1d2b2b86f2e2f6ef6f70709394ecf3c71678802ae5691",
+      "bytes": 3986
+    },
+    {
+      "path": "/home/melashri/projects/txm/docs/evidence/phase3-linux-smoke.yml",
+      "sha256": "18e4c053a4d39ae6aa2bdf9658e6a04056822cee38faee5d16a1a8d95591ba50",
+      "bytes": 2758
+    },
+    {
+      "path": "/home/melashri/projects/txm/docs/evidence/phase3-performance.json",
+      "sha256": "8e6116282225d1a23e72797eb375db40a5e1722b26e87cd340806e61015f0a7b",
+      "bytes": 457
+    },
+    {
+      "path": "/home/melashri/projects/txm/docs/evidence/phase3-smoke.json",
+      "sha256": "5ca8908d5cdb509c1adfa9aea5984760e71f89538f4678d3f11f8990da295192",
+      "bytes": 1199
+    },
+    {
+      "path": "/home/melashri/projects/txm/docs/evidence/phase3-validation.json",
+      "sha256": "e98f6f053be1c7cc89a3f428f91b28b700362d38acab27f3ce862cdbc2df19c5",
+      "bytes": 15608
+    },
+    {
+      "path": "/home/melashri/projects/txm/docs/evidence/phase4-agents-race.txt",
+      "sha256": "fd9dafef6187bb8cc909747a6d2d23383942c1f41e0a64d0b53980bdd3bddb74",
+      "bytes": 2747
+    },
+    {
+      "path": "/home/melashri/projects/txm/docs/evidence/phase4-agents.txt",
+      "sha256": "0571c904a2126bfc27a7e6b10ae8c1ef71e2300e4ff1347d8fb5dac8c90a7e1f",
+      "bytes": 2746
+    },
+    {
+      "path": "/home/melashri/projects/txm/docs/evidence/phase4-archive-build.txt",
+      "sha256": "c38069cf783c5e72ac9123617b93292a5c130fe9e74baeb18ba0f0c2bc0e4b11",
+      "bytes": 1201
+    },
+    {
+      "path": "/home/melashri/projects/txm/docs/evidence/phase4-archive-gnu-runtime.txt",
+      "sha256": "3b44fa730ae77a02ba02135bd167ffcb2586187a886a6d5efce3dfed1e8208de",
+      "bytes": 1866
+    },
+    {
+      "path": "/home/melashri/projects/txm/docs/evidence/phase4-archive-gnu-smoke.json",
+      "sha256": "68ff1479d44e025c1d89f9271890ba2a9bc911ad430b1c61885ed08a8124a181",
+      "bytes": 1270
+    },
+    {
+      "path": "/home/melashri/projects/txm/docs/evidence/phase4-archive-gnu.json",
+      "sha256": "0375b0ab2ccd9feb581ef9f5062c1bd31ec48a46e78e55f060fa56a2d513ee68",
+      "bytes": 475
+    },
+    {
+      "path": "/home/melashri/projects/txm/docs/evidence/phase4-archive-musl-runtime.txt",
+      "sha256": "45ce5666009d1f36a4367771fefe1198aa30d61924563415fd94a4b5e50cb38c",
+      "bytes": 1872
+    },
+    {
+      "path": "/home/melashri/projects/txm/docs/evidence/phase4-archive-musl-smoke.json",
+      "sha256": "92ae38689ae1785a5d2b8fc3326c83ce3fce1fbda35341bedf35b23b47938132",
+      "bytes": 1271
+    },
+    {
+      "path": "/home/melashri/projects/txm/docs/evidence/phase4-archive-musl.json",
+      "sha256": "17ffff6f86f1a41f1fb3db36d5508fb3b1139a5bd6eec124126ccb200943ef6b",
+      "bytes": 480
+    },
+    {
+      "path": "/home/melashri/projects/txm/docs/evidence/phase4-fuzz.txt",
+      "sha256": "6d5c0f6ae927618e237871fa429ecd40afb7a62d484039562fde0aa6cbe6b3fc",
+      "bytes": 2511
+    },
+    {
+      "path": "/home/melashri/projects/txm/docs/evidence/phase4-go-race.txt",
+      "sha256": "cab545b7c0d5210b0e448b0cd7a2a2788dfa9042396946e05e6f4bab5b1501a8",
+      "bytes": 853
+    },
+    {
+      "path": "/home/melashri/projects/txm/docs/evidence/phase4-go.txt",
+      "sha256": "880a41d6b7e7323c8e14f7dde20875ca72b92e1b38d79fbe15b330e8e37b6667",
+      "bytes": 853
+    },
+    {
+      "path": "/home/melashri/projects/txm/docs/evidence/phase4-go126.txt",
+      "sha256": "62c0f6ef0036b5ae4eec733ff980ec20535e82a95c16f55e986be285b62da582",
+      "bytes": 853
+    },
+    {
+      "path": "/home/melashri/projects/txm/docs/evidence/phase4-integration.txt",
+      "sha256": "9b81d09521cfaed2196010aa64a047e4d554aaa257ec00c51541f9db4e11a0ce",
+      "bytes": 4361
+    },
+    {
+      "path": "/home/melashri/projects/txm/docs/evidence/phase4-linux-smoke.yml",
+      "sha256": "18e4c053a4d39ae6aa2bdf9658e6a04056822cee38faee5d16a1a8d95591ba50",
+      "bytes": 2758
+    },
+    {
+      "path": "/home/melashri/projects/txm/docs/evidence/phase4-nocgo.json",
+      "sha256": "2d13b8fbbf827bff4ad353e4fba7e6b15a7adca25eeff30c19187a90eb674da1",
+      "bytes": 160
+    },
+    {
+      "path": "/home/melashri/projects/txm/docs/evidence/phase4-performance.json",
+      "sha256": "fada9cafd8a13c3fb398612932b129d717dea877fde4f90f542236c2300931cb",
+      "bytes": 458
+    },
+    {
+      "path": "/home/melashri/projects/txm/docs/evidence/phase4-validation.json",
+      "sha256": "d5672842bbf46f9d4090497d73a1a7faf9b565699589c2bb523db9e03de3cfa9",
+      "bytes": 19058
+    },
+    {
+      "path": "/home/melashri/projects/txm/docs/evidence/phase5-agents-race.txt",
+      "sha256": "82a384769e506c728d252bd8a3ce82dd15ede02260230ee3bcc47ea272dfd532",
+      "bytes": 2747
+    },
+    {
+      "path": "/home/melashri/projects/txm/docs/evidence/phase5-agents.txt",
+      "sha256": "429f8a6da59ab3b7e39f93de3811b69fcac5af1b1bf44a3da7dd59e8112844f8",
+      "bytes": 2746
+    },
+    {
+      "path": "/home/melashri/projects/txm/docs/evidence/phase5-archive-build.txt",
+      "sha256": "2f9997530f23afb28995137de74c5dfa1ea62cdb7981cb1665da8af53fca97fb",
+      "bytes": 1472
+    },
+    {
+      "path": "/home/melashri/projects/txm/docs/evidence/phase5-archive-gnu-runtime.txt",
+      "sha256": "e51633ccd07f75cd7626e8710755dcf40c2af8b0a92e80cffe19d4b9b7dd3fcf",
+      "bytes": 6754
+    },
+    {
+      "path": "/home/melashri/projects/txm/docs/evidence/phase5-archive-gnu-smoke.json",
+      "sha256": "9f6630d5e882577a62732eb12d2e6b18bbb35c7f901a4d5944ecfc6a9abdc28c",
+      "bytes": 1271
+    },
+    {
+      "path": "/home/melashri/projects/txm/docs/evidence/phase5-archive-gnu.json",
+      "sha256": "271106819f2f42545eab829775d9573f6fb7856f9b258555a10cc432350a27c0",
+      "bytes": 475
+    },
+    {
+      "path": "/home/melashri/projects/txm/docs/evidence/phase5-archive-musl-runtime.txt",
+      "sha256": "7f55139748f3ded3db73b5df72761c949ffe4851852b677e7738b0daa10e1acc",
+      "bytes": 6769
+    },
+    {
+      "path": "/home/melashri/projects/txm/docs/evidence/phase5-archive-musl-smoke.json",
+      "sha256": "ad1d3f7b3c24f32795639ecbfdb382138efbaa293f7bcaa9ba98baa8b05132db",
+      "bytes": 1273
+    },
+    {
+      "path": "/home/melashri/projects/txm/docs/evidence/phase5-archive-musl.json",
+      "sha256": "3dd8f738e697628b07c964be1aaccbbbcfe5458553907044052a34ba0a089848",
+      "bytes": 480
+    },
+    {
+      "path": "/home/melashri/projects/txm/docs/evidence/phase5-fuzz.txt",
+      "sha256": "30ffd2f65df7de33d2eb62fdc7f701ed909bc5f7dffa37bce991bcb39054e236",
+      "bytes": 2341
+    },
+    {
+      "path": "/home/melashri/projects/txm/docs/evidence/phase5-go-race.txt",
+      "sha256": "de61347b546f5e6e5eb39cebfb2f0f88fe060f50e55b6ae6ce9af04491587c28",
+      "bytes": 855
+    },
+    {
+      "path": "/home/melashri/projects/txm/docs/evidence/phase5-go.txt",
+      "sha256": "e557039bb9a9210b2a790e68c553977418cc1dd00b168de1c7b6c05cb8554069",
+      "bytes": 855
+    },
+    {
+      "path": "/home/melashri/projects/txm/docs/evidence/phase5-go126.txt",
+      "sha256": "8e4df4c095971d317e5ec7452888909ee0f91118372b13d87e05707f8dff7285",
+      "bytes": 855
+    },
+    {
+      "path": "/home/melashri/projects/txm/docs/evidence/phase5-harness.txt",
+      "sha256": "066f45a2de86d5e9531e37f55fe094c918478fb337488c04f118f8b7a009a83f",
+      "bytes": 1373
+    },
+    {
+      "path": "/home/melashri/projects/txm/docs/evidence/phase5-integration.txt",
+      "sha256": "665bd9243db64544e0cbf74a2e9f957aaebda625b5c5dfa21038b4a4167ee725",
+      "bytes": 2684
+    },
+    {
+      "path": "/home/melashri/projects/txm/docs/evidence/phase5-lint.txt",
+      "sha256": "e92606b0bf483111dff0a120c315ea165821348f31365020e2468a0059095c47",
+      "bytes": 10
+    },
+    {
+      "path": "/home/melashri/projects/txm/docs/evidence/phase5-linux-smoke.yml",
+      "sha256": "18e4c053a4d39ae6aa2bdf9658e6a04056822cee38faee5d16a1a8d95591ba50",
+      "bytes": 2758
+    },
+    {
+      "path": "/home/melashri/projects/txm/docs/evidence/phase5-mod-verify.txt",
+      "sha256": "b4537ed75f533f993f371954de47e42a793b8e5b0587577de7e27fb3e50696bd",
+      "bytes": 21
+    },
+    {
+      "path": "/home/melashri/projects/txm/docs/evidence/phase5-nocgo.json",
+      "sha256": "29d6496f0ba94797c95c5869a4e03fd9c5d4e6de82fb187d3aa7ead2b03ed462",
+      "bytes": 387
+    },
+    {
+      "path": "/home/melashri/projects/txm/docs/evidence/phase5-performance.json",
+      "sha256": "84aee088a7626708af7d45c0d4b8371c0f4992a0b0f3964661a55a50cf79c9e0",
+      "bytes": 459
+    },
+    {
+      "path": "/home/melashri/projects/txm/docs/evidence/phase5-providers.json",
+      "sha256": "a95124c2fcd87fa89bfd40be2ecfcd9c5dc4cb366297432dec6252e8fb4de342",
+      "bytes": 939
+    },
+    {
+      "path": "/home/melashri/projects/txm/docs/evidence/phase5-signals-race.txt",
+      "sha256": "1b2fcf751d9154d09d52251f268da39b8127c4ad9ee27b1445f6dd6579c05319",
+      "bytes": 2151
+    },
+    {
+      "path": "/home/melashri/projects/txm/docs/evidence/phase5-signals.txt",
+      "sha256": "0be2609408160876a3f679a2200bb8f0b7165154bc23d27a765fe307a6823a8e",
+      "bytes": 2150
+    },
+    {
+      "path": "/home/melashri/projects/txm/docs/evidence/phase5-smoke-race.json",
+      "sha256": "81346a2ec37ecf0b887de9afb4d6e2613238fef31fd0018d3fec5066e1d485d1",
+      "bytes": 1272
+    },
+    {
+      "path": "/home/melashri/projects/txm/docs/evidence/phase5-smoke.json",
+      "sha256": "1c5c6e3111a0c24513eef715ed33e991d4ded65d437b62eadce37b33e61266b3",
+      "bytes": 1272
+    },
+    {
+      "path": "/home/melashri/projects/txm/docs/evidence/phase5-validation.json",
+      "sha256": "d094679c47f8dc864ea8376d64bc3da09a7403380574b54fa9814f82a82ebb72",
+      "bytes": 39911
+    },
+    {
+      "path": "/home/melashri/projects/txm/docs/evidence/phase6-agents-race.txt",
+      "sha256": "4815981ceca4e573f57ade86143dcbbf1579a0395adb408bc119474e58f23396",
+      "bytes": 2747
+    },
+    {
+      "path": "/home/melashri/projects/txm/docs/evidence/phase6-agents.txt",
+      "sha256": "b90966963113827feec9b06c0dde24230edfe55b0af364f1a02d8a3409f07779",
+      "bytes": 2746
+    },
+    {
+      "path": "/home/melashri/projects/txm/docs/evidence/phase6-archive-build.txt",
+      "sha256": "27a695461c701972053f72d478f27ebc132813f2e19fd4537d70fe551dbbe9b6",
+      "bytes": 1581
+    },
+    {
+      "path": "/home/melashri/projects/txm/docs/evidence/phase6-archive-gnu-runtime.txt",
+      "sha256": "a8815a6f1c6c12b27843af79fd66b2b2f242baae2eaafe47e3b841b4a80ad923",
+      "bytes": 9260
+    },
+    {
+      "path": "/home/melashri/projects/txm/docs/evidence/phase6-archive-gnu.json",
+      "sha256": "869757475e0431ff61fe345b65145c00413e39aeb9a60ba9c6110579de07fb1b",
+      "bytes": 481
+    },
+    {
+      "path": "/home/melashri/projects/txm/docs/evidence/phase6-archive-musl-runtime.txt",
+      "sha256": "e6aae4da4abeff70e4cccd2a720566f3b591cba8377f50b905a02760c07d0d7f",
+      "bytes": 9277
+    },
+    {
+      "path": "/home/melashri/projects/txm/docs/evidence/phase6-archive-musl.json",
+      "sha256": "e47343ffc3c6c2ae74690ccd469be593a6daec71719bf5d81ebbe216ea2bcd0c",
+      "bytes": 486
+    },
+    {
+      "path": "/home/melashri/projects/txm/docs/evidence/phase6-dashboard-gnu-metrics.json",
+      "sha256": "c9458b06ed78281eae7fc2cfd3720afa46b3ac4b9db50f32dc7f85497e94369e",
+      "bytes": 414
+    },
+    {
+      "path": "/home/melashri/projects/txm/docs/evidence/phase6-dashboard-metrics.json",
+      "sha256": "6be890afe3f6f06fed9f57a70cc6d37c5617d9b4083ab7240c717786bed7a16c",
+      "bytes": 413
+    },
+    {
+      "path": "/home/melashri/projects/txm/docs/evidence/phase6-dashboard-musl-metrics.json",
+      "sha256": "b27bcbc33b5a0dcc918fecb98293d399341152d186d0b3c731c68bfc39b680a0",
+      "bytes": 415
+    },
+    {
+      "path": "/home/melashri/projects/txm/docs/evidence/phase6-dashboard-nocgo.json",
+      "sha256": "3a121a2db5f69b49401a6ae2040e2f024d576bdd0cef6ec9c1ef815bf77adcc9",
+      "bytes": 143
+    },
+    {
+      "path": "/home/melashri/projects/txm/docs/evidence/phase6-dashboard-race-metrics.json",
+      "sha256": "b1da9636b4df0101dce707944ae068660f466e957001ac74e5e8b8d6c182fb07",
+      "bytes": 414
+    },
+    {
+      "path": "/home/melashri/projects/txm/docs/evidence/phase6-dashboard-race.txt",
+      "sha256": "d7f63f6dd246a8d7115c56ecafb34595a9973fd3a1d552259d0dfedea129e5b6",
+      "bytes": 2272
+    },
+    {
+      "path": "/home/melashri/projects/txm/docs/evidence/phase6-dashboard.cast",
+      "sha256": "5e44df353fcc4b3c064b120e9eff70b7d933cf2827b4e0b4692e826bc3f95ae5",
+      "bytes": 239906
+    },
+    {
+      "path": "/home/melashri/projects/txm/docs/evidence/phase6-dashboard.txt",
+      "sha256": "05c71f146547d8d875aacdc996b72a3fdd36dfed3d8f990e998ea7c6a3c54801",
+      "bytes": 2272
+    },
+    {
+      "path": "/home/melashri/projects/txm/docs/evidence/phase6-fuzz.txt",
+      "sha256": "f3c1f244e9fcaa5d953a11f8ec29c671fcec396bd87de6bc218dfd39d40d62db",
+      "bytes": 2393
+    },
+    {
+      "path": "/home/melashri/projects/txm/docs/evidence/phase6-go-race.txt",
+      "sha256": "866624c2c49089908586036bc280f57a9e9f558627e6cc2210ea7eb55bc14564",
+      "bytes": 911
+    },
+    {
+      "path": "/home/melashri/projects/txm/docs/evidence/phase6-go.txt",
+      "sha256": "5cc337c1d52d9f012d086879469068b577a170abb6acf395f12b55cb379dbfc6",
+      "bytes": 911
+    },
+    {
+      "path": "/home/melashri/projects/txm/docs/evidence/phase6-go126.txt",
+      "sha256": "4c5d76730dac8baf7901e97c6bbfac786871cfacefb69ac4ff1f4a1d0ded896e",
+      "bytes": 911
+    },
+    {
+      "path": "/home/melashri/projects/txm/docs/evidence/phase6-harness.txt",
+      "sha256": "10f9eb1d25492bbc245770e5bfa3a9b45559fa811b86b43a3a44bb3b5be35104",
+      "bytes": 1373
+    },
+    {
+      "path": "/home/melashri/projects/txm/docs/evidence/phase6-integration.txt",
+      "sha256": "5b5d7e282a6968f306b74584ce65f1232cee2f97b49c75cafed660ddb561c6b1",
+      "bytes": 2902
+    },
+    {
+      "path": "/home/melashri/projects/txm/docs/evidence/phase6-lint.txt",
+      "sha256": "e92606b0bf483111dff0a120c315ea165821348f31365020e2468a0059095c47",
+      "bytes": 10
+    },
+    {
+      "path": "/home/melashri/projects/txm/docs/evidence/phase6-linux-smoke.yml",
+      "sha256": "18e4c053a4d39ae6aa2bdf9658e6a04056822cee38faee5d16a1a8d95591ba50",
+      "bytes": 2758
+    },
+    {
+      "path": "/home/melashri/projects/txm/docs/evidence/phase6-mod-verify.txt",
+      "sha256": "b4537ed75f533f993f371954de47e42a793b8e5b0587577de7e27fb3e50696bd",
+      "bytes": 21
+    },
+    {
+      "path": "/home/melashri/projects/txm/docs/evidence/phase6-nocgo.json",
+      "sha256": "29d6496f0ba94797c95c5869a4e03fd9c5d4e6de82fb187d3aa7ead2b03ed462",
+      "bytes": 387
+    },
+    {
+      "path": "/home/melashri/projects/txm/docs/evidence/phase6-performance-isolated.json",
+      "sha256": "f3eadf5d90714f61637d50947ba8bf9f787c5261798d2471fde9aab1a50686fe",
+      "bytes": 457
+    },
+    {
+      "path": "/home/melashri/projects/txm/docs/evidence/phase6-performance.json",
+      "sha256": "7bcff8cde81b9905b902d1434f65ce6f3aab81f6a2095084a0d376d093f85f38",
+      "bytes": 457
+    },
+    {
+      "path": "/home/melashri/projects/txm/docs/evidence/phase6-recording.txt",
+      "sha256": "c4b577ac6f1a3b91a75cc2f964a8a0da05db833c9e24bd71cd512ea6ba6db714",
+      "bytes": 126
+    },
+    {
+      "path": "/home/melashri/projects/txm/docs/evidence/phase6-signals-race.txt",
+      "sha256": "e8994dc02a4ef0840ef1b5f24b73f97fbdd70c6008153fd3033c7bbc2dda107b",
+      "bytes": 2151
+    },
+    {
+      "path": "/home/melashri/projects/txm/docs/evidence/phase6-signals.txt",
+      "sha256": "dbec282c4e94ece8d4110b71f696de4538720ce85cfc613203a045a57252c758",
+      "bytes": 2150
+    },
+    {
+      "path": "/home/melashri/projects/txm/docs/evidence/phase6-smoke-race.json",
+      "sha256": "b7b697773191dc9985f3e9b6780ced6cea359c24e9de4b4a31add12f4980c906",
+      "bytes": 1273
+    },
+    {
+      "path": "/home/melashri/projects/txm/docs/evidence/phase6-smoke.json",
+      "sha256": "5c956ac8289d803ce0b45b588944905ffb0e185df2eba942ed7c6d5988337230",
+      "bytes": 1269
+    },
+    {
+      "path": "/home/melashri/projects/txm/docs/evidence/phase6-validation.json",
+      "sha256": "667e4d77ebbc2a5506a6e4a3e8a2cacaecdcb22326554a1a260ee07a8022cecf",
+      "bytes": 52243
+    },
+    {
+      "path": "/home/melashri/projects/txm/docs/evidence/phase7-archive-build.txt",
+      "sha256": "60ebca7d84262ab8744236ae43881c431267b093295063676bbd06b0adda7fa7",
+      "bytes": 1666
+    },
+    {
+      "path": "/home/melashri/projects/txm/docs/evidence/phase7-archive-gnu-runtime.txt",
+      "sha256": "23be210c18fbdc25c9634ea3655fd33d009a3623acec1a87748f260a38e52d7b",
+      "bytes": 11122
+    },
+    {
+      "path": "/home/melashri/projects/txm/docs/evidence/phase7-archive-gnu.json",
+      "sha256": "66933a2eeda8744789db9d514596ff5faf9749f8b5a36f8a0194d9979ba7f72e",
+      "bytes": 481
+    },
+    {
+      "path": "/home/melashri/projects/txm/docs/evidence/phase7-archive-musl-runtime.txt",
+      "sha256": "5d1d5c6ad7f52a9286c0b180724659ba79e6faf490bc06daa64de0d651b3eda6",
+      "bytes": 11135
+    },
+    {
+      "path": "/home/melashri/projects/txm/docs/evidence/phase7-archive-musl.json",
+      "sha256": "1561b63e8d67db486bf6baed353c12990d5de86d648237ad80957e6754ff7889",
+      "bytes": 486
+    },
+    {
+      "path": "/home/melashri/projects/txm/docs/evidence/phase7-dashboard-gnu-metrics.json",
+      "sha256": "d73dff1f24afabefcfa062e1119aa9a63998c739d63e6135bb86b9f8c7fdd8d2",
+      "bytes": 416
+    },
+    {
+      "path": "/home/melashri/projects/txm/docs/evidence/phase7-dashboard-metrics.json",
+      "sha256": "51d92e5b020cd464f4e6548f42066e201d82b3a1cecf154391c6b68fc3e58a41",
+      "bytes": 414
+    },
+    {
+      "path": "/home/melashri/projects/txm/docs/evidence/phase7-dashboard-musl-metrics.json",
+      "sha256": "b6f5d8143113fd9b18d8a9d2665702123cab6b7d52cab8e34037903d52b6fdba",
+      "bytes": 416
+    },
+    {
+      "path": "/home/melashri/projects/txm/docs/evidence/phase7-dashboard-race-metrics.json",
+      "sha256": "e243e7f2ab1fc704c5837e176fde0229be14e08b72d664fd4562c9995785ce25",
+      "bytes": 415
+    },
+    {
+      "path": "/home/melashri/projects/txm/docs/evidence/phase7-extensions-race.txt",
+      "sha256": "e640e61a7e2d70778a0adf7a3ef364750539ae1cc150b8a935ff66273e1c1b19",
+      "bytes": 1742
+    },
+    {
+      "path": "/home/melashri/projects/txm/docs/evidence/phase7-extensions.txt",
+      "sha256": "c7838ded85ffb35290a1cc53b566ea5aeb293f77edc48acfb24d6db889d10e1e",
+      "bytes": 1742
+    },
+    {
+      "path": "/home/melashri/projects/txm/docs/evidence/phase7-fuzz.txt",
+      "sha256": "271a65cc8d56863dcacc91ad9384f795e3271d233c0aaf72480bd43f8d1619e6",
+      "bytes": 3112
+    },
+    {
+      "path": "/home/melashri/projects/txm/docs/evidence/phase7-go-race.txt",
+      "sha256": "355767f54198d0e3a2db3bd83a0d9f7ac06fa05758ad174f04814c5ea6e383a1",
+      "bytes": 1079
+    },
+    {
+      "path": "/home/melashri/projects/txm/docs/evidence/phase7-go.txt",
+      "sha256": "18068eabd45d42ac0ce72dd7dcc2cd2db8beac9dbdba18bd1f50fc8aa6930ff9",
+      "bytes": 1079
+    },
+    {
+      "path": "/home/melashri/projects/txm/docs/evidence/phase7-go126.txt",
+      "sha256": "18068eabd45d42ac0ce72dd7dcc2cd2db8beac9dbdba18bd1f50fc8aa6930ff9",
+      "bytes": 1079
+    },
+    {
+      "path": "/home/melashri/projects/txm/docs/evidence/phase7-harness.txt",
+      "sha256": "57bdaf6100a49786f5528988489e0369ed1b45adc20045209ef4c5a198141c9a",
+      "bytes": 1373
+    },
+    {
+      "path": "/home/melashri/projects/txm/docs/evidence/phase7-lint.txt",
+      "sha256": "e92606b0bf483111dff0a120c315ea165821348f31365020e2468a0059095c47",
+      "bytes": 10
+    },
+    {
+      "path": "/home/melashri/projects/txm/docs/evidence/phase7-linux-smoke.yml",
+      "sha256": "18e4c053a4d39ae6aa2bdf9658e6a04056822cee38faee5d16a1a8d95591ba50",
+      "bytes": 2758
+    },
+    {
+      "path": "/home/melashri/projects/txm/docs/evidence/phase7-mod-verify.txt",
+      "sha256": "b4537ed75f533f993f371954de47e42a793b8e5b0587577de7e27fb3e50696bd",
+      "bytes": 21
+    },
+    {
+      "path": "/home/melashri/projects/txm/docs/evidence/phase7-nocgo.json",
+      "sha256": "c75956eead5c3d1983d258575732e549598595ea65e93f34471bd58e090cbb03",
+      "bytes": 365
+    },
+    {
+      "path": "/home/melashri/projects/txm/docs/evidence/phase7-performance.json",
+      "sha256": "5b3c729612b9b5f8c5697c612ee9c240dc35b656a3f437a09eba028c0868e23f",
+      "bytes": 457
+    },
+    {
+      "path": "/home/melashri/projects/txm/docs/evidence/phase7-regressions.txt",
+      "sha256": "d7bab70c0e4b2d8b27a5508b59768c1c7748cc3a9e0d3d088e5e1b8147eb01b1",
+      "bytes": 17596
+    },
+    {
+      "path": "/home/melashri/projects/txm/docs/evidence/phase7-ssh-config.json",
+      "sha256": "11d0998d8f75ce1b9dc19d7249877ad471bed6312b2cb599b1a92e13c737b037",
+      "bytes": 735
+    },
+    {
+      "path": "/home/melashri/projects/txm/docs/evidence/phase7-validation.json",
+      "sha256": "eb7b35ce8b44d2e848859d6d8853cc5c779f39c0c44f2adda407f49ed343e28b",
+      "bytes": 50885
+    },
+    {
+      "path": "/home/melashri/projects/txm/docs/evidence/phase8-archive-0-runtime.txt",
+      "sha256": "979944c455f980c43457da9381c8077a2229de847e6010698bb6a4f8c31d2e79",
+      "bytes": 10822
+    },
+    {
+      "path": "/home/melashri/projects/txm/docs/evidence/phase8-archive-1-runtime.txt",
+      "sha256": "1018f822a2d1a8e953926a65d8406ee21915b5ed590ac00ee5be5392e0b365f6",
+      "bytes": 10822
+    },
+    {
+      "path": "/home/melashri/projects/txm/docs/evidence/phase8-archive-build.txt",
+      "sha256": "7f4faa7d7c55afd731a199bff5601611d9bde988387e5b735ec91e9492d4ac50",
+      "bytes": 1694
+    },
+    {
+      "path": "/home/melashri/projects/txm/docs/evidence/phase8-archive-gnu.json",
+      "sha256": "29e9fb9d8d38e58c6184b0f5062b3c2c51c8bcedba6cfadd81c8273be60790bf",
+      "bytes": 485
+    },
+    {
+      "path": "/home/melashri/projects/txm/docs/evidence/phase8-archive-musl.json",
+      "sha256": "c186dd28356a2f5b780ff0716b8fabcd40818f4355373ec79a2caf90e580692f",
+      "bytes": 490
+    },
+    {
+      "path": "/home/melashri/projects/txm/docs/evidence/phase8-dashboard-gnu-metrics.json",
+      "sha256": "4af6fea0ca3b3c655453a62357e3747ae23d638369be5f07dbbb54c46cf982b6",
+      "bytes": 414
+    },
+    {
+      "path": "/home/melashri/projects/txm/docs/evidence/phase8-dashboard-metrics.json",
+      "sha256": "1a5914376a008c8f891e46442784a5abc0889486a7b3c26117797cf892904fd7",
+      "bytes": 416
+    },
+    {
+      "path": "/home/melashri/projects/txm/docs/evidence/phase8-dashboard-musl-metrics.json",
+      "sha256": "40ff9d2f028dbe5112407118db9712c2ddebc09a28ce6a5b5205e342b387e456",
+      "bytes": 413
+    },
+    {
+      "path": "/home/melashri/projects/txm/docs/evidence/phase8-dashboard-race-metrics.json",
+      "sha256": "4ad490dcb160dcb0a703d3b235cdd2be02381d77c2ab9a9631a8d087e5e70b18",
+      "bytes": 414
+    },
+    {
+      "path": "/home/melashri/projects/txm/docs/evidence/phase8-elf.json",
+      "sha256": "9a5604e28da8a10547837cf061eeff930c14f8ed9f21476970512b7c581ff631",
+      "bytes": 440
+    },
+    {
+      "path": "/home/melashri/projects/txm/docs/evidence/phase8-envelope-after.txt",
+      "sha256": "3df7832fcfd87220da0524ee62811c2e2a788d32466916fb9f42de42446d2f6b",
+      "bytes": 53
+    },
+    {
+      "path": "/home/melashri/projects/txm/docs/evidence/phase8-envelope-before.txt",
+      "sha256": "b216fc5377148f31a540ab906e57337f9c1bea2afe09f6166923371732e17999",
+      "bytes": 362
+    },
+    {
+      "path": "/home/melashri/projects/txm/docs/evidence/phase8-extensions-race.txt",
+      "sha256": "e22abc7d6fdcefa6c23f92bad16b27d71ce20f137a13dcf0f1190b7bd3192e72",
+      "bytes": 1867
+    },
+    {
+      "path": "/home/melashri/projects/txm/docs/evidence/phase8-extensions.txt",
+      "sha256": "f97f0956e0be98255963c7c780993204017fb412087e6dacb81502a773a20ec5",
+      "bytes": 1867
+    },
+    {
+      "path": "/home/melashri/projects/txm/docs/evidence/phase8-foreign-uid.txt",
+      "sha256": "69a94f21fe3e9c94ba16f3556a260952b7935f0d2aeee8d70adfe8777f197004",
+      "bytes": 44
+    },
+    {
+      "path": "/home/melashri/projects/txm/docs/evidence/phase8-fuzz.txt",
+      "sha256": "74adeb1b2be38ec9b2ea111a0e0a4d1629a025bceef7e3f13d555625fe2110bb",
+      "bytes": 3109
+    },
+    {
+      "path": "/home/melashri/projects/txm/docs/evidence/phase8-go-race.txt",
+      "sha256": "e04bb5c833e1c5ffa3e1bd92e3386dbeec95c99c5c981d22583a5d52d84654dd",
+      "bytes": 1077
+    },
+    {
+      "path": "/home/melashri/projects/txm/docs/evidence/phase8-go.txt",
+      "sha256": "1d447bd663fda15d0bad5493734a1932aad3126fdd5fd3b47164b204848b56f3",
+      "bytes": 1077
+    },
+    {
+      "path": "/home/melashri/projects/txm/docs/evidence/phase8-go126.txt",
+      "sha256": "931395588e88c495862603b0b48358acf8df85d96cbe76b7bf900e2bb002d0f1",
+      "bytes": 1077
+    },
+    {
+      "path": "/home/melashri/projects/txm/docs/evidence/phase8-harness.txt",
+      "sha256": "03125521463149730600dfd0e6e1943429d8905b08fefa1069235d6b8e1b9a95",
+      "bytes": 2175
+    },
+    {
+      "path": "/home/melashri/projects/txm/docs/evidence/phase8-linkage.txt",
+      "sha256": "3d32f04f98e1ee18ffa66cb48d5d30721f56535abb9ead35a13770d284de8634",
+      "bytes": 6558
+    },
+    {
+      "path": "/home/melashri/projects/txm/docs/evidence/phase8-lint.txt",
+      "sha256": "e92606b0bf483111dff0a120c315ea165821348f31365020e2468a0059095c47",
+      "bytes": 10
+    },
+    {
+      "path": "/home/melashri/projects/txm/docs/evidence/phase8-linux-smoke.yml",
+      "sha256": "18e4c053a4d39ae6aa2bdf9658e6a04056822cee38faee5d16a1a8d95591ba50",
+      "bytes": 2758
+    },
+    {
+      "path": "/home/melashri/projects/txm/docs/evidence/phase8-mod-tidy-diff.txt",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "/home/melashri/projects/txm/docs/evidence/phase8-mod-verify.txt",
+      "sha256": "b4537ed75f533f993f371954de47e42a793b8e5b0587577de7e27fb3e50696bd",
+      "bytes": 21
+    },
+    {
+      "path": "/home/melashri/projects/txm/docs/evidence/phase8-nocgo.json",
+      "sha256": "06a9a10a9e4a9edbbe7d9d16eb0de57d8c2f838e6a124433f04c8d3e3f457500",
+      "bytes": 365
+    },
+    {
+      "path": "/home/melashri/projects/txm/docs/evidence/phase8-normal-runtime.txt",
+      "sha256": "39761339949d2be0f7e83ef29f860244f5cb97aee2e9b09d2f0490073c666417",
+      "bytes": 10795
+    },
+    {
+      "path": "/home/melashri/projects/txm/docs/evidence/phase8-performance.json",
+      "sha256": "cc7b2654bb78312c9fe4ddfa513c08694451e124f27848278eea81add59a6a2d",
+      "bytes": 457
+    },
+    {
+      "path": "/home/melashri/projects/txm/docs/evidence/phase8-privacy.json",
+      "sha256": "495101e5eb96596b46b7edd36ca5804b027155cab7236881752e4d0959d05a54",
+      "bytes": 67144
+    },
+    {
+      "path": "/home/melashri/projects/txm/docs/evidence/phase8-race-runtime.txt",
+      "sha256": "368803571e6a4548374fd1a683bfd782f23f0e5f0aa674068830b681ec599412",
+      "bytes": 10781
+    },
+    {
+      "path": "/home/melashri/projects/txm/docs/evidence/phase8-registry-loss-before.txt",
+      "sha256": "acebde7f4e744dee83bdf9ff850ebffbfad32d4aa3447872b5971a36ff78bc4f",
+      "bytes": 2081
+    },
+    {
+      "path": "/home/melashri/projects/txm/docs/evidence/phase8-smoke-isolated.json",
+      "sha256": "e312ad6c38dad75c28b966da9542204f228b958c12c17267eefcae0115415964",
+      "bytes": 1269
+    },
+    {
+      "path": "/home/melashri/projects/txm/docs/evidence/phase8-ssh-config.json",
+      "sha256": "f6b19251d17755be5e9a85ad27a1e8f7e45f72edf8580db8fdb2cf2f7f9a4e62",
+      "bytes": 735
+    },
+    {
+      "path": "/home/melashri/projects/txm/docs/evidence/phase8-validation.json",
+      "sha256": "7560aaa68e7fe4f29bd48d30f72e247ae1692b12a83f764a26e2c785af8d43b1",
+      "bytes": 60611
+    },
+    {
+      "path": "/home/melashri/projects/txm/docs/evidence/phase8-validator-negative.json",
+      "sha256": "9044ecba94fa0ab28a83f001840f76dec2aa3391ed7564a07f4075c528a2c185",
+      "bytes": 159
+    },
+    {
+      "path": "/home/melashri/projects/txm/docs/evidence/phase8-versions.json",
+      "sha256": "3fac4283014a3d771708bad13c5b7680586c6245478737ad5f65dd937f0e1c1b",
+      "bytes": 1415
+    },
+    {
+      "path": "/home/melashri/projects/txm/docs/extensions-readiness.md",
+      "sha256": "af068e16d2169885514278b533044595f6d95c358ac17765ae855c60fa41ef30",
+      "bytes": 3264
+    },
+    {
+      "path": "/home/melashri/projects/txm/docs/extensions.md",
+      "sha256": "34452f5d09c7ac9f1d1f0e557315e8e76f160cb5cb78bc754d6ba53186b844c6",
+      "bytes": 7625
+    },
+    {
+      "path": "/home/melashri/projects/txm/docs/final-audit.md",
+      "sha256": "a24b01a5016c6cf778e66f878607ec25df4894c60a81c4eacea7603bbf2afc89",
+      "bytes": 9219
+    },
+    {
+      "path": "/home/melashri/projects/txm/docs/linux-followup.md",
+      "sha256": "d4c21a9b6256272e64b3675228296af5c2d509eb15b3658a1075921dca5aeeb7",
+      "bytes": 6666
+    },
+    {
+      "path": "/home/melashri/projects/txm/docs/m1-readiness.md",
+      "sha256": "3ca304eb59a1192a0ef5c85616a9462a3df38173df637e4a8a98401654fb8285",
+      "bytes": 3463
+    },
+    {
+      "path": "/home/melashri/projects/txm/docs/m2-readiness.md",
+      "sha256": "fd9964f4473f6f86b46b22241c82103542199c18cb0673abeb7a3d52e9754798",
+      "bytes": 5264
+    },
+    {
+      "path": "/home/melashri/projects/txm/docs/m3-readiness.md",
+      "sha256": "93c3965c04f98b012245cb7f81dda5fe8c97ad64ddbad496b05356c1bb422bcd",
+      "bytes": 6546
+    },
+    {
+      "path": "/home/melashri/projects/txm/docs/native-protocol.md",
+      "sha256": "6f1c552e2fe22fdbd72b4b379df93d2f62bb035511440b3a0116e1e494d0df28",
+      "bytes": 12223
+    },
+    {
+      "path": "/home/melashri/projects/txm/docs/testing.md",
+      "sha256": "a7911535ae792f2c3be892f6776197b1509d86e427b3e596089a488eda7700eb",
+      "bytes": 55545
+    },
+    {
+      "path": "/home/melashri/projects/txm/docs/txm.1",
+      "sha256": "b949c2c9e036c6aaf2dc4a64459f9fdee7a9a9548ab214086a215a071b64d027",
+      "bytes": 18067
+    },
+    {
+      "path": "/home/melashri/projects/txm/docs/user-guide.md",
+      "sha256": "6b2ff9aca86ecb27480f2f0b46fdb24ff942bdfab6423b74238df334ba9708f8",
+      "bytes": 35284
+    },
+    {
+      "path": "/home/melashri/projects/txm/go.mod",
+      "sha256": "19316286e942291afdc1fe3a6543f3b3f916df5cee53c56fdb7b350ba1794911",
+      "bytes": 890
+    },
+    {
+      "path": "/home/melashri/projects/txm/go.sum",
+      "sha256": "a9ddc9af97fd80e110dfb8f27179b56e3c82afd4f9b82c6f42a92bce12301e4a",
+      "bytes": 7110
+    },
+    {
+      "path": "/home/melashri/projects/txm/main.go",
+      "sha256": "d4f7b27cadcd299c014f88e785a1fff6dd956b4861b53d4a00d0c8b4df4d5bbf",
+      "bytes": 93
+    },
+    {
+      "path": "/home/melashri/projects/txm/pkg/agent/client.go",
+      "sha256": "2cace81bbe1b28f2d35c0e095cc646337695238a1611c7c9d62301299015b320",
+      "bytes": 4332
+    },
+    {
+      "path": "/home/melashri/projects/txm/pkg/agent/events.go",
+      "sha256": "3ee07212127339647c5140673240148fdc404b025706360c2d399949f94f97ef",
+      "bytes": 2737
+    },
+    {
+      "path": "/home/melashri/projects/txm/pkg/agent/events_unix.go",
+      "sha256": "62bc8dbecdac448d24ff1ff4355e008c17ef05c94664e7073edcb1d259c9002b",
+      "bytes": 4344
+    },
+    {
+      "path": "/home/melashri/projects/txm/pkg/agent/hooks.go",
+      "sha256": "c7e01cc0af58da30a6290b8186f317ced0d78bea7d79522374dce4e811201c79",
+      "bytes": 9170
+    },
+    {
+      "path": "/home/melashri/projects/txm/pkg/agent/hooks_test.go",
+      "sha256": "83961361af07a9ffa48acfd8c658a3dc629a5e9b441daa83ae4f158fc9113887",
+      "bytes": 3467
+    },
+    {
+      "path": "/home/melashri/projects/txm/pkg/agent/hooks_unix.go",
+      "sha256": "0a6e2f0c3f135842d0aa6f5badb2589c83efced083ff6f950a53582e62c5ca08",
+      "bytes": 4670
+    },
+    {
+      "path": "/home/melashri/projects/txm/pkg/agent/notifications.go",
+      "sha256": "813888ba048c2fffdb89d1c9f9b2f80de783bb7a32726a22195df247cab318e5",
+      "bytes": 2462
+    },
+    {
+      "path": "/home/melashri/projects/txm/pkg/agent/provider.go",
+      "sha256": "5d91ccf0e45074470bc3f6d0f7c7ed362a7961ea4628da1d8ec9c78fa087fb95",
+      "bytes": 1313
+    },
+    {
+      "path": "/home/melashri/projects/txm/pkg/agent/prune_unix.go",
+      "sha256": "13d57e8fa6591ecd442bbaaf6b74747942a9be3930c5729e08d87badf0420ef8",
+      "bytes": 2673
+    },
+    {
+      "path": "/home/melashri/projects/txm/pkg/agent/server_unix.go",
+      "sha256": "4a10079a680778d8f3750d706b3972ed6153fad23c40138308e49729714ec7e0",
+      "bytes": 14393
+    },
+    {
+      "path": "/home/melashri/projects/txm/pkg/agent/server_unsupported.go",
+      "sha256": "ce2a4e820660fe9ecd0b5dcc2a2fd2951fc5203a51d6bbc1c9dbfa10ca8db31c",
+      "bytes": 466
+    },
+    {
+      "path": "/home/melashri/projects/txm/pkg/agent/start_unix.go",
+      "sha256": "1c6308ac278c0447a3df72446b0e7883c1d0e6d92048906d2f493cfd2690557e",
+      "bytes": 1654
+    },
+    {
+      "path": "/home/melashri/projects/txm/pkg/agent/stream.go",
+      "sha256": "15e92a9746ee7304f7e3b39fbbe4e82a2f43ad78a64eafee92cfb392a88c26df",
+      "bytes": 6024
+    },
+    {
+      "path": "/home/melashri/projects/txm/pkg/agent/terminate_unix.go",
+      "sha256": "5e5d105e9a4dcf519873dafd5badaa1f56050f6970cd043f917ad61e23397660",
+      "bytes": 1184
+    },
+    {
+      "path": "/home/melashri/projects/txm/pkg/agent/types.go",
+      "sha256": "5a3518479e1087807656530a29039eb15d6ecadc8f30a8f815fec926c21ec633",
+      "bytes": 9204
+    },
+    {
+      "path": "/home/melashri/projects/txm/pkg/agent/types_test.go",
+      "sha256": "22d26c2355e2eb5d4f99721a0b69181c1c1f992df5d24925991edc011cd5766b",
+      "bytes": 2007
+    },
+    {
+      "path": "/home/melashri/projects/txm/pkg/backend/backend.go",
+      "sha256": "22fa7d40987bdef17cd0eec227e724d47aabfd852732a0d623b70b7ddeff9d4b",
+      "bytes": 4540
+    },
+    {
+      "path": "/home/melashri/projects/txm/pkg/backend/command.go",
+      "sha256": "c1398e8388b964d866be0e64d83796cce909794121ba8075e8cc51c9c2a9338c",
+      "bytes": 3700
+    },
+    {
+      "path": "/home/melashri/projects/txm/pkg/backend/command_test.go",
+      "sha256": "1d4c5bf715bfaf7cac9390600862b1f177bfdaf1b07e955e3882556c4e821032",
+      "bytes": 3456
+    },
+    {
+      "path": "/home/melashri/projects/txm/pkg/backend/dashboard.go",
+      "sha256": "7e31fd5b6a44cc649158f5da45c3330675c6610bdb28c100f8992704bed26b59",
+      "bytes": 3784
+    },
+    {
+      "path": "/home/melashri/projects/txm/pkg/backend/data.go",
+      "sha256": "72a0712a15018de213f92a6be03fea010df06ab68048d85a2dad1aa1ba1aa0cd",
+      "bytes": 7812
+    },
+    {
+      "path": "/home/melashri/projects/txm/pkg/backend/managed.go",
+      "sha256": "10312c7e004baa962fb7aba506a97b96ee284545f226fc58015925aad0c0cfc1",
+      "bytes": 6860
+    },
+    {
+      "path": "/home/melashri/projects/txm/pkg/backend/native.go",
+      "sha256": "24d8b740c869f4a04804779cf47fdae72fa9337f13261d713003bf5d03f6f8ba",
+      "bytes": 9291
+    },
+    {
+      "path": "/home/melashri/projects/txm/pkg/backend/native_cgo.go",
+      "sha256": "99e39a3b3986c757ef076911dffab553f411ff1b3d13b33f7ed92d76e2990d9d",
+      "bytes": 104
+    },
+    {
+      "path": "/home/melashri/projects/txm/pkg/backend/native_nocgo.go",
+      "sha256": "b73dc145efcef87af6d35bdcd7e9260fac1895115c2a5a0628f5d7a9a4a431cc",
+      "bytes": 108
+    },
+    {
+      "path": "/home/melashri/projects/txm/pkg/backend/native_unix.go",
+      "sha256": "e864c132190f4c490d0ffc253890d701a87ba34347d87d357dba21ff3459c689",
+      "bytes": 8138
+    },
+    {
+      "path": "/home/melashri/projects/txm/pkg/backend/native_unsupported.go",
+      "sha256": "e30553bcc517b8f51c98289f776e769120a8b5ae663226b9892b823422e782b2",
+      "bytes": 694
+    },
+    {
+      "path": "/home/melashri/projects/txm/pkg/backend/profile.go",
+      "sha256": "0e128ceef67b1892a64078ce0695ebcc859ee7a460a265fcab31b26ba2a4e03c",
+      "bytes": 10238
+    },
+    {
+      "path": "/home/melashri/projects/txm/pkg/backend/profile_native.go",
+      "sha256": "f62b279da51c7dbfa2b812dc8fc97478fa50fa7e766bbacf95015280ae8a8157",
+      "bytes": 2913
+    },
+    {
+      "path": "/home/melashri/projects/txm/pkg/backend/screen.go",
+      "sha256": "51cc30a2c46845604ec08375f37718069f78dedc52e51db3b9962a03e20ed677",
+      "bytes": 7048
+    },
+    {
+      "path": "/home/melashri/projects/txm/pkg/backend/tmux.go",
+      "sha256": "8298329f89c13a43139d0de50538813caee4de98f84b4a2f95ab41483503ab25",
+      "bytes": 15983
+    },
+    {
+      "path": "/home/melashri/projects/txm/pkg/backend/zellij.go",
+      "sha256": "72e427bd3b753a5adf6daff2b53385ed5fcab94471183090373e5c18a0ac8078",
+      "bytes": 5970
+    },
+    {
+      "path": "/home/melashri/projects/txm/pkg/cmd/agent.go",
+      "sha256": "978d039f1fe5ef52804035e8c56d4dcae44033f76d38fd91abd439f92ea72f89",
+      "bytes": 7626
+    },
+    {
+      "path": "/home/melashri/projects/txm/pkg/cmd/agent_signals.go",
+      "sha256": "cd13eeeb2aa472fc17bb0ddc8d0fc698572144059ac0de3dc56f499225c67b84",
+      "bytes": 9938
+    },
+    {
+      "path": "/home/melashri/projects/txm/pkg/cmd/dashboard.go",
+      "sha256": "c1b83900c0ebd031d29a2ea4b48d63d3730e6935991d52b8947c3aadb6c93ec7",
+      "bytes": 2740
+    },
+    {
+      "path": "/home/melashri/projects/txm/pkg/cmd/environment_test.go",
+      "sha256": "7e0627a12cea2e241922a3afb796577332581f616a5467b7fa5f01a4bfefe648",
+      "bytes": 1707
+    },
+    {
+      "path": "/home/melashri/projects/txm/pkg/cmd/extensions.go",
+      "sha256": "b8fc5bac9f5583302efc3a9732bdc798f6a3299b0c2ced4a69cee7b3f97292b6",
+      "bytes": 674
+    },
+    {
+      "path": "/home/melashri/projects/txm/pkg/cmd/helpers.go",
+      "sha256": "0be21fffd666253ff7ad5d00423f27422b912af2ad5325b857b4084c5b8cc6b8",
+      "bytes": 1288
+    },
+    {
+      "path": "/home/melashri/projects/txm/pkg/cmd/misc.go",
+      "sha256": "8e14b071e624bc63a2f8e12cf4aeaca74aedacdb90e1cc27064d3680bfa62c6c",
+      "bytes": 18310
+    },
+    {
+      "path": "/home/melashri/projects/txm/pkg/cmd/pane.go",
+      "sha256": "7d757f148c04a523f9ec38ee77d127b12477a8272def18f80ee3a8190327c8ec",
+      "bytes": 2252
+    },
+    {
+      "path": "/home/melashri/projects/txm/pkg/cmd/profile.go",
+      "sha256": "c500b140aee0019c74484c3a1c94aadcfe62ece65fa9cae7e29613e079dd16b5",
+      "bytes": 5209
+    },
+    {
+      "path": "/home/melashri/projects/txm/pkg/cmd/prune.go",
+      "sha256": "af6dd30c29016ba360eb46a16b2d423b9e87e453e6e19e25f1b49a9150f92b3a",
+      "bytes": 1674
+    },
+    {
+      "path": "/home/melashri/projects/txm/pkg/cmd/queries.go",
+      "sha256": "749bc2958eb95094f48907272267eb6fff8c0dbf1359729ea2598c563351e1f1",
+      "bytes": 15140
+    },
+    {
+      "path": "/home/melashri/projects/txm/pkg/cmd/remote.go",
+      "sha256": "d6aa0744e97de335a411b08986ab6563eea5a51961e1770f7a773107bf829dfe",
+      "bytes": 6072
+    },
+    {
+      "path": "/home/melashri/projects/txm/pkg/cmd/root.go",
+      "sha256": "3ee7ff39e3b9e6db08d1297dd4efee9022a02ee312ff34667c48499d307b057b",
+      "bytes": 9813
+    },
+    {
+      "path": "/home/melashri/projects/txm/pkg/cmd/root_test.go",
+      "sha256": "ab46bbfd39015a5609ca7bce7f9105acdf5570d0be426d288c6467ccee87d647",
+      "bytes": 718
+    },
+    {
+      "path": "/home/melashri/projects/txm/pkg/cmd/server.go",
+      "sha256": "21d1077c5e4d0e733e1b09ccf621a14afe2fa5907ad9146b5481f1d8fe51abfa",
+      "bytes": 3463
+    },
+    {
+      "path": "/home/melashri/projects/txm/pkg/cmd/session.go",
+      "sha256": "56c641c5bc4508f9e78a515db63dbba7376267afa6a820ab133c5f20767fcd8e",
+      "bytes": 7173
+    },
+    {
+      "path": "/home/melashri/projects/txm/pkg/cmd/task.go",
+      "sha256": "a8f4f33d000a49414843b33c4d029efb439536d142ea098c27d0269609a7ce23",
+      "bytes": 3976
+    },
+    {
+      "path": "/home/melashri/projects/txm/pkg/cmd/window.go",
+      "sha256": "17a98d171c60ce07282b92e28dcb449aa8b1a11834584e1d2eceaf543aaf1ed5",
+      "bytes": 5399
+    },
+    {
+      "path": "/home/melashri/projects/txm/pkg/config/config.go",
+      "sha256": "3bab1f5fd9503f8cc6d68285f3648c6c0b052b92efb9550a37617692eca16dfd",
+      "bytes": 4397
+    },
+    {
+      "path": "/home/melashri/projects/txm/pkg/config/config_test.go",
+      "sha256": "d72f83de2a5eb356bdfbe7d4dc06ec823914240f96977fed7d751e3fbc08dda0",
+      "bytes": 813
+    },
+    {
+      "path": "/home/melashri/projects/txm/pkg/config/profile.go",
+      "sha256": "b2a4820681fd5b97b2250b8b9a6b5fc07f4ca31ce5a2cc7adaba2721b78c05af",
+      "bytes": 1425
+    },
+    {
+      "path": "/home/melashri/projects/txm/pkg/config/profile_file_other.go",
+      "sha256": "59c933de4219c4857010986507cb8939736def3deca4ecd9b0d39310a9643d3a",
+      "bytes": 294
+    },
+    {
+      "path": "/home/melashri/projects/txm/pkg/config/profile_file_unix.go",
+      "sha256": "91d49037dcc681b37b24e4d05d30aea51655a3dea3bd1bf1035f5507d394fb72",
+      "bytes": 484
+    },
+    {
+      "path": "/home/melashri/projects/txm/pkg/config/profile_test.go",
+      "sha256": "fb70ea021910062cb64f3c0d2f2535b9db85aa43e474418d27f15ec1041f69a2",
+      "bytes": 2830
+    },
+    {
+      "path": "/home/melashri/projects/txm/pkg/core/contracts_test.go",
+      "sha256": "f6d5f2706d9be9e94b925a5ea030067e39d592018660eb02f5baf6bef3489d93",
+      "bytes": 4707
+    },
+    {
+      "path": "/home/melashri/projects/txm/pkg/core/errors.go",
+      "sha256": "684aa3db11b325d8cd6951c4ee46ebf905f0d41aefb1bfcc1eb28ff740d0608a",
+      "bytes": 2454
+    },
+    {
+      "path": "/home/melashri/projects/txm/pkg/core/models.go",
+      "sha256": "032d985b7cfeb46f2efafe2819703c8949a8f862f53501f191b1a3c40663fffc",
+      "bytes": 2863
+    },
+    {
+      "path": "/home/melashri/projects/txm/pkg/core/output.go",
+      "sha256": "ad32a9e1f81ef0a5109b2546df5a54cbf8686a1cb1d8bf2874aa3409e61c233e",
+      "bytes": 2620
+    },
+    {
+      "path": "/home/melashri/projects/txm/pkg/core/testdata/empty.json",
+      "sha256": "e2441b00de4bd53f87070d65ade7d3e5e755e9d931f4572745268d6874949440",
+      "bytes": 72
+    },
+    {
+      "path": "/home/melashri/projects/txm/pkg/core/testdata/error.json",
+      "sha256": "92dcc92c6bb024526f5716a02eb393400f092fd6a26cdec2ec2951676ade4b7c",
+      "bytes": 165
+    },
+    {
+      "path": "/home/melashri/projects/txm/pkg/core/testdata/partial.json",
+      "sha256": "85b446f9106ea8ec6ac4920b862d543f97d2489005751590251a5abc80fe9184",
+      "bytes": 195
+    },
+    {
+      "path": "/home/melashri/projects/txm/pkg/core/testdata/raw.json",
+      "sha256": "eed9061929a1241bd1bbefbe18ccf40fb3185dc73929c97965f7a52e8548be00",
+      "bytes": 302
+    },
+    {
+      "path": "/home/melashri/projects/txm/pkg/core/testdata/success.json",
+      "sha256": "80a9c58dd19fd76fb5fd5454f491502206fbde55019c735c6f3b41147fbf62f9",
+      "bytes": 375
+    },
+    {
+      "path": "/home/melashri/projects/txm/pkg/dashboard/ancestry_linux.go",
+      "sha256": "90f74b326ef0e700c19901d0709e234ee918e06676e0c3bf9fec57fc1202deeb",
+      "bytes": 2148
+    },
+    {
+      "path": "/home/melashri/projects/txm/pkg/dashboard/ancestry_linux_test.go",
+      "sha256": "44573ff9592a4e99253066813eeb9802193f3c9b470b51540ed197fdede749a6",
+      "bytes": 1553
+    },
+    {
+      "path": "/home/melashri/projects/txm/pkg/dashboard/ancestry_other.go",
+      "sha256": "ce9c9e67c21bad18759aeb8740331bf8eac9e3db2068bf40bcf093312455385f",
+      "bytes": 232
+    },
+    {
+      "path": "/home/melashri/projects/txm/pkg/dashboard/dashboard_test.go",
+      "sha256": "d060f70d3e473e431b44f96ea3ff84213c60bf4f03abc1ade52c3a6a35ac51c6",
+      "bytes": 9932
+    },
+    {
+      "path": "/home/melashri/projects/txm/pkg/dashboard/model.go",
+      "sha256": "ba73c1485b107a896d10cff51fca2bcb18547c613d64e296cb8aa65aa4a91c84",
+      "bytes": 6745
+    },
+    {
+      "path": "/home/melashri/projects/txm/pkg/dashboard/render.go",
+      "sha256": "fcf350cf6746800830dabf1d0bade68cca3971c2172858d1b7d7f4949245a520",
+      "bytes": 7172
+    },
+    {
+      "path": "/home/melashri/projects/txm/pkg/dashboard/run.go",
+      "sha256": "aed4b0cb4f63334b5ba5f715e55416bbfc98d27d9c7674325a159b17e8fea40f",
+      "bytes": 10203
+    },
+    {
+      "path": "/home/melashri/projects/txm/pkg/dashboard/source.go",
+      "sha256": "0ba86772f10867c221fb6c8193ac1c2e7a7015104f11e3099b1758400c2e3fd6",
+      "bytes": 1633
+    },
+    {
+      "path": "/home/melashri/projects/txm/pkg/dashboard/terminal_other.go",
+      "sha256": "c6df290ab14031186db53316c9898d3608a0e59f8d7b933668ba685bb9e64fe8",
+      "bytes": 173
+    },
+    {
+      "path": "/home/melashri/projects/txm/pkg/dashboard/terminal_unix.go",
+      "sha256": "97839d9ea123573fc29cd18720339bb7d03f00db564c751a3361261d2423b0a0",
+      "bytes": 786
+    },
+    {
+      "path": "/home/melashri/projects/txm/pkg/extension/identity_other.go",
+      "sha256": "fd1b1d89ac7da25899c6f74ec6b7a8ea1a19e26bbc36d568bc2218d6a18d74bd",
+      "bytes": 352
+    },
+    {
+      "path": "/home/melashri/projects/txm/pkg/extension/identity_unix.go",
+      "sha256": "62fbcaa1ebcac78b4f399ddf6469f4a1e7affc4244edab805c7a268c0994710c",
+      "bytes": 714
+    },
+    {
+      "path": "/home/melashri/projects/txm/pkg/extension/io.go",
+      "sha256": "831984980fe58bbd3dbb8cc872064f4d9498f92f61b1c0afb616545a1d4aa519",
+      "bytes": 2387
+    },
+    {
+      "path": "/home/melashri/projects/txm/pkg/extension/io_test.go",
+      "sha256": "8b6043ba10bdd5a9e09c9cd6a356444167420c2b8d47bb424c34bce4e07772f8",
+      "bytes": 1092
+    },
+    {
+      "path": "/home/melashri/projects/txm/pkg/extension/store.go",
+      "sha256": "4bd3fea1e6b6e5060a6cecf3cd06442f4930017b587b3aa16321dfe08d7cad3e",
+      "bytes": 617
+    },
+    {
+      "path": "/home/melashri/projects/txm/pkg/extension/terminal_other.go",
+      "sha256": "a6dddbe1befbd21b4012fff4ddd74f9b822071f29808716938a83b22e5affd1f",
+      "bytes": 98
+    },
+    {
+      "path": "/home/melashri/projects/txm/pkg/extension/terminal_unix.go",
+      "sha256": "f2811a98df8e8c0af4d51a59104b3d1d9acb1ceb9b2876d89968025fd65b9d00",
+      "bytes": 576
+    },
+    {
+      "path": "/home/melashri/projects/txm/pkg/localipc/framing.go",
+      "sha256": "530387db49e739f22d3e16ec0ec81651dacbd6e70ad3f197ee8e60dbdf659068",
+      "bytes": 1364
+    },
+    {
+      "path": "/home/melashri/projects/txm/pkg/localipc/framing_test.go",
+      "sha256": "795e186e22d6fd06a5ffae309e3af61550cc4e103e918fc3bf65b6ff914c4c60",
+      "bytes": 2111
+    },
+    {
+      "path": "/home/melashri/projects/txm/pkg/logger/logger.go",
+      "sha256": "988d54cc3c52674c8106f35c1174a7fd8868e417dd35e1240b49a7f3463db55b",
+      "bytes": 3031
+    },
+    {
+      "path": "/home/melashri/projects/txm/pkg/nativeprocess/wait_unix.go",
+      "sha256": "17a5392559957f46a2b17c043eb0aebfd52744d6e27b78c037625a7382968472",
+      "bytes": 1303
+    },
+    {
+      "path": "/home/melashri/projects/txm/pkg/nativeprocess/wait_unix_test.go",
+      "sha256": "69dd5857cd7ff3ef1fa0dc2ce1c7a1bc8f3ac5a8f33c90a4db818018e24aaab9",
+      "bytes": 717
+    },
+    {
+      "path": "/home/melashri/projects/txm/pkg/nativeprocess/wait_unsupported.go",
+      "sha256": "a34fdea503a327189b600075cdd6f111c6d243368b2bfda125f201071319bc52",
+      "bytes": 288
+    },
+    {
+      "path": "/home/melashri/projects/txm/pkg/nativeprotocol/client.go",
+      "sha256": "1758d7f34fb3a208be68324ae02a9af55543fa4445f624c64199053f975685d9",
+      "bytes": 4512
+    },
+    {
+      "path": "/home/melashri/projects/txm/pkg/nativeprotocol/protocol.go",
+      "sha256": "d475249ac1a38abcf66b516690e3dd1bb39d4d8d9f4f04c3c6d3e9a499ce1fcf",
+      "bytes": 8277
+    },
+    {
+      "path": "/home/melashri/projects/txm/pkg/nativeprotocol/protocol_test.go",
+      "sha256": "6e0f6036abdb19936c8c99590026294e2987cb8d884272e5ac8529f63c54c4cd",
+      "bytes": 2502
+    },
+    {
+      "path": "/home/melashri/projects/txm/pkg/nativeserver/options.go",
+      "sha256": "ea895365d031ef06be343c3090b988921bcf64a40d77beeb3f4376be397853dc",
+      "bytes": 347
+    },
+    {
+      "path": "/home/melashri/projects/txm/pkg/nativeserver/server_unix.go",
+      "sha256": "f5d721f5dc2f86ebdeba2b02322290f546c5c46e8d1da59a35ae53deb9463a81",
+      "bytes": 23166
+    },
+    {
+      "path": "/home/melashri/projects/txm/pkg/nativeserver/server_unix_test.go",
+      "sha256": "7ba7019eb9e2279181d9a4d1a2bdfa39cc92c082ceeae3d71209030d9febd766",
+      "bytes": 6244
+    },
+    {
+      "path": "/home/melashri/projects/txm/pkg/nativeserver/server_unsupported.go",
+      "sha256": "d99e3c47535b5c3c59f36afe3794736377cfebff26359122c295254f26528e05",
+      "bytes": 286
+    },
+    {
+      "path": "/home/melashri/projects/txm/pkg/profile/access_other.go",
+      "sha256": "239c9a08786dc3221b486506b2ab4fbb89ea184986079b9ff49b5232a2da9b3d",
+      "bytes": 92
+    },
+    {
+      "path": "/home/melashri/projects/txm/pkg/profile/access_unix.go",
+      "sha256": "266101543b4148c6d7bb472962c7962d44ad9c2a49edafabfbbbb592375cf9b3",
+      "bytes": 152
+    },
+    {
+      "path": "/home/melashri/projects/txm/pkg/profile/plan.go",
+      "sha256": "94729984a022a1aea2db360cadc1e281215ee442c31ef388494b54c4af676ed9",
+      "bytes": 4724
+    },
+    {
+      "path": "/home/melashri/projects/txm/pkg/profile/plan_test.go",
+      "sha256": "22518de181a84bcb98394359127b9ff56064d67518f2370679799d9a744ac49c",
+      "bytes": 3084
+    },
+    {
+      "path": "/home/melashri/projects/txm/pkg/remote/hosts.go",
+      "sha256": "14ec45e0f791d3cfa45c0e2d2b6bad1db48f8a6e13161e5f01cf919791186f13",
+      "bytes": 3969
+    },
+    {
+      "path": "/home/melashri/projects/txm/pkg/remote/protocol.go",
+      "sha256": "7d7eaba1b5cf659387441a3b5185d1548923968c1a5f9ef9eedc4cc1a0639396",
+      "bytes": 5745
+    },
+    {
+      "path": "/home/melashri/projects/txm/pkg/remote/remote_test.go",
+      "sha256": "4a45d79415126c197cdd768934b3ac1eb5a55ec40a276c906757d2a12fd6eb9e",
+      "bytes": 6590
+    },
+    {
+      "path": "/home/melashri/projects/txm/pkg/remote/transport.go",
+      "sha256": "46399661bc23ba59d8f318a814ea5d28a6ff67a9a25ba11aa4e01fdd9683b751",
+      "bytes": 6295
+    },
+    {
+      "path": "/home/melashri/projects/txm/pkg/runtimepath/files_unix.go",
+      "sha256": "8846889a9d6f50dd02b8e17effb293c3ec6446b5cfb698df590b78b3447f9105",
+      "bytes": 3925
+    },
+    {
+      "path": "/home/melashri/projects/txm/pkg/runtimepath/files_unix_test.go",
+      "sha256": "1fac478bb7285fe5b665d4c2b23d19f7af054b69037e76249d127ba473ccf4ee",
+      "bytes": 2081
+    },
+    {
+      "path": "/home/melashri/projects/txm/pkg/runtimepath/files_unsupported.go",
+      "sha256": "e5d5ff36d5bc41505abc9ce9816f3cdca624bc75f4d16e34abc8b9e362b59892",
+      "bytes": 580
+    },
+    {
+      "path": "/home/melashri/projects/txm/pkg/runtimepath/peer_darwin.go",
+      "sha256": "40bd55ab090446ac41cc171fa3a2aa6387ad5fdfbfbcc6d922c58732159b255b",
+      "bytes": 308
+    },
+    {
+      "path": "/home/melashri/projects/txm/pkg/runtimepath/peer_linux.go",
+      "sha256": "efcddda4526cefe8fa302c9e26d252a90fb12562d9cdbce5f0dc81dfcb4e9d9f",
+      "bytes": 305
+    },
+    {
+      "path": "/home/melashri/projects/txm/pkg/runtimepath/publish_darwin.go",
+      "sha256": "60a4f4b67e8cd240997cdd98f9c450df8e0f32b51d63c3190fb569bb57e07980",
+      "bytes": 370
+    },
+    {
+      "path": "/home/melashri/projects/txm/pkg/runtimepath/publish_linux.go",
+      "sha256": "004d8ca31fcd9ca3eed2e324857a933e4ddfe6ef22d3dcf42c65f82954cd2d50",
+      "bytes": 255
+    },
+    {
+      "path": "/home/melashri/projects/txm/pkg/runtimepath/runtime.go",
+      "sha256": "04900c3924288cc0dd1a63e5f0317f2d2db37928760cac455322bf545f0a32f2",
+      "bytes": 1994
+    },
+    {
+      "path": "/home/melashri/projects/txm/pkg/runtimepath/runtime_unix.go",
+      "sha256": "cdd41ed9d7ac621c0a3d0857f89b863012615c16f45977fa1bdbe027a21092ab",
+      "bytes": 5713
+    },
+    {
+      "path": "/home/melashri/projects/txm/pkg/runtimepath/runtime_unix_test.go",
+      "sha256": "d3bc3f46699d270f1573a89f15c42528a0bc193c65843c4846bb9c8940570b7d",
+      "bytes": 3177
+    },
+    {
+      "path": "/home/melashri/projects/txm/pkg/runtimepath/runtime_unsupported.go",
+      "sha256": "a96fba452592a288098ce96b93bffe1a93712f21a49241cff27c0da3c3c43668",
+      "bytes": 754
+    },
+    {
+      "path": "/home/melashri/projects/txm/pkg/runtimepath/state_unix.go",
+      "sha256": "9e90962b3ca5aad261079daefd93aba8234d73d696814ecfb262ecd7dcd1924c",
+      "bytes": 4735
+    },
+    {
+      "path": "/home/melashri/projects/txm/pkg/runtimepath/state_unix_test.go",
+      "sha256": "f70940475596c58cca7c56f407f9d46aa82166d7082f2c912909adcc68f9c965",
+      "bytes": 2705
+    },
+    {
+      "path": "/home/melashri/projects/txm/pkg/runtimepath/state_unsupported.go",
+      "sha256": "fdfa8838765511f4e3c3c59672353d5a0420c500c87847288055e89319e8e83c",
+      "bytes": 266
+    },
+    {
+      "path": "/home/melashri/projects/txm/pkg/supervisor/probe.go",
+      "sha256": "902552dd1aa182a7d31a2d530a8bb2572a2b6d2f80391de1e21c4d4bf71b282c",
+      "bytes": 1338
+    },
+    {
+      "path": "/home/melashri/projects/txm/pkg/supervisor/run_unix.go",
+      "sha256": "2bf5cc4e8faf94cc0fe797a9a4903e0e5019553078970c204f5aac8b883436aa",
+      "bytes": 5673
+    },
+    {
+      "path": "/home/melashri/projects/txm/pkg/supervisor/run_unsupported.go",
+      "sha256": "270df2222869ce3cad70ed9c7ed1c7a2eb82f6352fabe2cdb867d58a859062be",
+      "bytes": 287
+    },
+    {
+      "path": "/home/melashri/projects/txm/pkg/supervisor/types.go",
+      "sha256": "c04edd072d7a15611694500b7317b1727ea8d3c75d7eb764dd07037ef02fa304",
+      "bytes": 5440
+    },
+    {
+      "path": "/home/melashri/projects/txm/pkg/supervisor/types_test.go",
+      "sha256": "8718e24f6b8247dda4ba937a5d5c24b0fd5c951fc83d9b3019492653c9840ecb",
+      "bytes": 2281
+    },
+    {
+      "path": "/home/melashri/projects/txm/pkg/task/git.go",
+      "sha256": "c05bf2970bea01d74875350f887e1d8dfe763ba2c173a41ecee5abdb071a57d2",
+      "bytes": 2378
+    },
+    {
+      "path": "/home/melashri/projects/txm/pkg/task/git_test.go",
+      "sha256": "e18f687b8afdee0194314a25ede6c56696daf5161431ff5941817d8e89498d6b",
+      "bytes": 2973
+    },
+    {
+      "path": "/home/melashri/projects/txm/pkg/task/recovery.go",
+      "sha256": "bc8f39794c58b5bf6f2c3c465dccef5afab35309a7989a23d76422fd80ab2bed",
+      "bytes": 1793
+    },
+    {
+      "path": "/home/melashri/projects/txm/pkg/task/store.go",
+      "sha256": "c833c5d4a0e8f596ccc96baecef9589b9c87d85d59206f59d79e86ccdf88287f",
+      "bytes": 6388
+    },
+    {
+      "path": "/home/melashri/projects/txm/pkg/task/task.go",
+      "sha256": "c4058557a0b9c3b2aa8d7be9f29143e5e9d3170e8f2c0dfdb8d7a37b122e0d6a",
+      "bytes": 11139
+    },
+    {
+      "path": "/home/melashri/projects/txm/plan.md",
+      "sha256": "b74983167e56e2d186a5ebd4d69b80a9d30cbc388928bcb0b30f2904078e7e04",
+      "bytes": 94399
+    },
+    {
+      "path": "/home/melashri/projects/txm/scripts/audit-artifacts.py",
+      "sha256": "dfe71d5a5f226c24a1510dcf986146381348c6409df8ee11c1e805435d15ea97",
+      "bytes": 3424
+    },
+    {
+      "path": "/home/melashri/projects/txm/scripts/build-deps.sh",
+      "sha256": "d56b92352f66692f2c4a65501961c3b56e42738873405c160f07d3725c54e0f1",
+      "bytes": 2781
+    },
+    {
+      "path": "/home/melashri/projects/txm/scripts/dependencies.env",
+      "sha256": "44cc5539ba7b23d35caa87fc74aa217e7c1da2159d7d98eff6b91edd2e348a5e",
+      "bytes": 233
+    },
+    {
+      "path": "/home/melashri/projects/txm/scripts/generate-completions.sh",
+      "sha256": "828ac5b00357664ac7a98bdb9116081ea3e84e591166245a42a7f08feacac54d",
+      "bytes": 437
+    },
+    {
+      "path": "/home/melashri/projects/txm/scripts/install-ci-zig.sh",
+      "sha256": "910b597405a322fd3a042e46e2943d5c0b5d55f2a48f1c220bde7b0a663ef513",
+      "bytes": 1135
+    },
+    {
+      "path": "/home/melashri/projects/txm/scripts/validate-linux.py",
+      "sha256": "10b5f04020fc08ca6b5f2f1fd1a706fecde70e73df98f7576e77701139c9fdf6",
+      "bytes": 8684
+    },
+    {
+      "path": "/home/melashri/projects/txm/scripts/validate-runtime.py",
+      "sha256": "270345bf72658658fd04e2360a9815c126fdd9ecf84bb79218438accbd9e9633",
+      "bytes": 8272
+    },
+    {
+      "path": "/home/melashri/projects/txm/tests/agent_checks.py",
+      "sha256": "59cd299d9f8e25ec96a146732b307f5d295ee835a95117cbb2d1e49c483caa23",
+      "bytes": 29281
+    },
+    {
+      "path": "/home/melashri/projects/txm/tests/agent_events_checks.py",
+      "sha256": "e272e25e48a4faf1d70b3b90fedfd37fc850500e7639782b4d4482cf6b8fe95e",
+      "bytes": 19474
+    },
+    {
+      "path": "/home/melashri/projects/txm/tests/archive_checks.py",
+      "sha256": "a6e8c7ce08221bec35ab675b9058d8607bd962629988d015ed6418afd95cf80f",
+      "bytes": 4468
+    },
+    {
+      "path": "/home/melashri/projects/txm/tests/cli_errors.py",
+      "sha256": "609d4b0d116c38ee4c1f1ce080c4c2da5e1ae9440142ec1760cd1ebbfd7cca1b",
+      "bytes": 4800
+    },
+    {
+      "path": "/home/melashri/projects/txm/tests/containers/Dockerfile.linux",
+      "sha256": "8281e40304c7adabb5f32d36e6afe5f86f31cfe0f297de759ef75252e8d10463",
+      "bytes": 774
+    },
+    {
+      "path": "/home/melashri/projects/txm/tests/dashboard_checks.py",
+      "sha256": "4aed06474c51ad035d8db5ab9fe8c796cdfbaab9a2bd9d8273f8a985c3226b65",
+      "bytes": 17347
+    },
+    {
+      "path": "/home/melashri/projects/txm/tests/extension_checks.py",
+      "sha256": "851502c8df1a9f51deb759676fb76dcbce773032652bf71401664feef4da22f9",
+      "bytes": 23507
+    },
+    {
+      "path": "/home/melashri/projects/txm/tests/integration.py",
+      "sha256": "a82eba930085603ceb34140eadfd33395902a94ce29c1a4d84ca5a70147ce611",
+      "bytes": 11296
+    },
+    {
+      "path": "/home/melashri/projects/txm/tests/linux_followup_checks.py",
+      "sha256": "3e6340a8dc2a5b845008555234f5043053396e19611da4f63851f57253a51183",
+      "bytes": 26757
+    },
+    {
+      "path": "/home/melashri/projects/txm/tests/native_checks.py",
+      "sha256": "a0ed241d5284891aac31a317ee6f90934fdb2f2e209a6fdc8475add5680a14da",
+      "bytes": 19240
+    },
+    {
+      "path": "/home/melashri/projects/txm/tests/performance.py",
+      "sha256": "ac767f4311791b8f3609d329b3cbf0b48d53f6873b5570dbb72da809b534dab5",
+      "bytes": 2963
+    },
+    {
+      "path": "/home/melashri/projects/txm/tests/profile_checks.py",
+      "sha256": "79196c2e125ffa5a29203744d6e643abbc2c09f8bbf307d57340ac470a5c4728",
+      "bytes": 19974
+    },
+    {
+      "path": "/home/melashri/projects/txm/tests/prune_checks.py",
+      "sha256": "c9dda266cdd790a67f0aaa94ccc9fe99b32cc723b02da75549039e2f74434085",
+      "bytes": 5876
+    },
+    {
+      "path": "/home/melashri/projects/txm/tests/record_dashboard.py",
+      "sha256": "beb180a1cab04c2637ce0487f923931d732c8250e1c8af0a2f3938dba676e3ef",
+      "bytes": 4141
+    },
+    {
+      "path": "/home/melashri/projects/txm/tests/sandbox.py",
+      "sha256": "ec59bb2dcf348045380a3aec1604345ac599c8690bb98b435f6b0181ca94f345",
+      "bytes": 10406
+    },
+    {
+      "path": "/home/melashri/projects/txm/tests/structured_checks.py",
+      "sha256": "f4d53f29e7003aa4bdd718b5780a408c5ed8e22e3396174bd7e3869f85662cb2",
+      "bytes": 19425
+    },
+    {
+      "path": "/home/melashri/projects/txm/tests/test_build_deps.py",
+      "sha256": "d2dcaada9355e567e75d680d6016be5b0a364c62dd0e657aa9eacb74e4215017",
+      "bytes": 6159
+    },
+    {
+      "path": "/home/melashri/projects/txm/tests/test_sandbox.py",
+      "sha256": "741845a6b661dcb5b2b22bd87f4241747f1bb158ed8ebe815ccb5be9c6bf382c",
+      "bytes": 3016
+    },
+    {
+      "path": "/home/melashri/projects/txm/tests/test_validation.py",
+      "sha256": "a212b48c8c02a1f57a372932a26dc167a08d6a2b9a51121a006079d01046eac1",
+      "bytes": 4135
+    },
+    {
+      "path": "/home/melashri/projects/txm/tests/wire.py",
+      "sha256": "9694e7395f67bfe5dac1e371c04b91da6c969a3d77598d560d2973f78bfa15cb",
+      "bytes": 2978
+    },
+    {
+      "path": "/tmp/txm-linux-followup/final/archive-build-final.log",
+      "sha256": "78677e2b17f19f4ff4dceab802ae6e09f9e9f67d192c3de5ec2ff1427e67f1d8",
+      "bytes": 1201
+    },
+    {
+      "path": "/tmp/txm-linux-followup/final/archive-build-results.json",
+      "sha256": "ce112abeee83b39f19625aa2860705453c8a9856122c5ec8ec781b91fd5f6cb2",
+      "bytes": 1650
+    },
+    {
+      "path": "/tmp/txm-linux-followup/final/artifact-checks.json",
+      "sha256": "81e48f600f6bdf54ea87b8153786d9b6a1d65b5854f3c117f1940fa75ae6686c",
+      "bytes": 456
+    },
+    {
+      "path": "/tmp/txm-linux-followup/final/build-final.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "/tmp/txm-linux-followup/final/cleanup.json",
+      "sha256": "c56a5349c5be39c5838b59fddeb7f6ae3c055050ff5785ff530edceeda0a0df8",
+      "bytes": 574
+    },
+    {
+      "path": "/tmp/txm-linux-followup/final/clone.log",
+      "sha256": "dcabf9cf86142fceea0eaf9566032bc4e87657b3d6c011327e73fc637db9346e",
+      "bytes": 59
+    },
+    {
+      "path": "/tmp/txm-linux-followup/final/completions.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "/tmp/txm-linux-followup/final/darwin-nocgo-amd64.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "/tmp/txm-linux-followup/final/darwin-nocgo-arm64.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "/tmp/txm-linux-followup/final/fuzz-core.log",
+      "sha256": "66ed8977b17a92c45c4d01d90131da14eeb4b2fbb9d67af005546591038280a8",
+      "bytes": 511
+    },
+    {
+      "path": "/tmp/txm-linux-followup/final/fuzz-localipc.log",
+      "sha256": "9aa9d3a459ec3091f5fb41805a9cfb72e688fc5c42034994dc640fc40a665e28",
+      "bytes": 690
+    },
+    {
+      "path": "/tmp/txm-linux-followup/final/fuzz-nativeprotocol.log",
+      "sha256": "3a1fd7ac0a2c32ad86e38078e5b7ce653f5e0e2aa007bae8b8f7be4b5e0cb103",
+      "bytes": 1073
+    },
+    {
+      "path": "/tmp/txm-linux-followup/final/fuzz-remote.log",
+      "sha256": "c86ba7b9b21210f10e8f35c5b5c82358de1f92511687cbafb5335df3fb65629c",
+      "bytes": 653
+    },
+    {
+      "path": "/tmp/txm-linux-followup/final/fuzz-results.json",
+      "sha256": "ee9ae391282e03503da52f72fa00cebbd131f715de69973a22b255deacc525f7",
+      "bytes": 1142
+    },
+    {
+      "path": "/tmp/txm-linux-followup/final/go-final.log",
+      "sha256": "f474e870fa17397734a574b738d810d6a5fcd917ea938b4d2e1cbef75a030489",
+      "bytes": 1071
+    },
+    {
+      "path": "/tmp/txm-linux-followup/final/go-race-final.log",
+      "sha256": "b834a6a302ea8c969a3576a23a884cdbf2c34fd3b642d873074b45664cd6cf1b",
+      "bytes": 1069
+    },
+    {
+      "path": "/tmp/txm-linux-followup/final/go-results.json",
+      "sha256": "732d368af273688006e74e493ce8c74313f254ffec0ce80ef11ad5c39018df33",
+      "bytes": 3012
+    },
+    {
+      "path": "/tmp/txm-linux-followup/final/go126-final.log",
+      "sha256": "9aa5750e7aa3de9ebff857061b85278806dd3f1fd7713397c7278ce8cd66b6b1",
+      "bytes": 1069
+    },
+    {
+      "path": "/tmp/txm-linux-followup/final/goreleaser-check.log",
+      "sha256": "f9ae884d9a58c3c9dab298229f2fe32f860762d494a71e965995f4a08d976432",
+      "bytes": 145
+    },
+    {
+      "path": "/tmp/txm-linux-followup/final/lint-final.log",
+      "sha256": "e92606b0bf483111dff0a120c315ea165821348f31365020e2468a0059095c47",
+      "bytes": 10
+    },
+    {
+      "path": "/tmp/txm-linux-followup/final/linux-amd64-dependency.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "/tmp/txm-linux-followup/final/linux-musl-amd64-dependency.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "/tmp/txm-linux-followup/final/mod-tidy-diff.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "/tmp/txm-linux-followup/final/mod-verify.log",
+      "sha256": "b4537ed75f533f993f371954de47e42a793b8e5b0587577de7e27fb3e50696bd",
+      "bytes": 21
+    },
+    {
+      "path": "/tmp/txm-linux-followup/final/nocgo-build.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "/tmp/txm-linux-followup/final/race-build-final.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "/tmp/txm-linux-followup/final/repo/dist/txm_Linux_x86_64-musl.zip",
+      "sha256": "1846371c9516d16001f6630b45d28edd54d701f5c49b9dacfa433e995abdb4b6",
+      "bytes": 11467153
+    },
+    {
+      "path": "/tmp/txm-linux-followup/final/repo/dist/txm_Linux_x86_64.zip",
+      "sha256": "adc08bca7a78d0f76a14817ce6c16f023d0c410e7182f9bfa07f9c3c28adcf47",
+      "bytes": 11217837
+    },
+    {
+      "path": "/tmp/txm-linux-followup/final/txm",
+      "sha256": "488edad2a955b33cf9d06f7ae60caec0a76c75a28ae4d72dd99de5124f9ea0cc",
+      "bytes": 30536848
+    },
+    {
+      "path": "/tmp/txm-linux-followup/final/txm-darwin-nocgo-amd64",
+      "sha256": "bdbabcadd8b3c4ab42a0afdaf59dcdcd8daff13b1b98a9af8b8ae20b034a5553",
+      "bytes": 13743152
+    },
+    {
+      "path": "/tmp/txm-linux-followup/final/txm-darwin-nocgo-arm64",
+      "sha256": "fe3fed899686c1042c0ca4204a5e31ffe41ba970b6b3abf87039bd3d7edd6fe4",
+      "bytes": 12827074
+    },
+    {
+      "path": "/tmp/txm-linux-followup/final/txm-nocgo",
+      "sha256": "6001320af7b66254efda51b2a83cf6e3db07a69b5eea51132113c154fb5a3573",
+      "bytes": 13971965
+    },
+    {
+      "path": "/tmp/txm-linux-followup/final/txm-race",
+      "sha256": "7144863ad9cc1fcad7909845991fc9df1399f93b2f1938403142c812f92d5b70",
+      "bytes": 34533896
+    },
+    {
+      "path": "/tmp/txm-linux-followup/final/txm-windows-amd64.exe",
+      "sha256": "e6a385e85aeaf4c3441e3fd07cb8ba6838177dc007935196a7877e8a88decd1c",
+      "bytes": 13847552
+    },
+    {
+      "path": "/tmp/txm-linux-followup/final/txm-windows-arm64.exe",
+      "sha256": "f761059aca5cbae9397fb83931ee28c36f4983ebdaaabff5f33946087f813189",
+      "bytes": 12667392
+    },
+    {
+      "path": "/tmp/txm-linux-followup/final/windows-amd64.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "/tmp/txm-linux-followup/final/windows-arm64.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "/tmp/txm-linux-followup/linux-final-3/archive-0.log",
+      "sha256": "afdbabdc6b68344da9fe2cf749ad4e8660f3e07a5ca4e827b094fd521686efee",
+      "bytes": 1487
+    },
+    {
+      "path": "/tmp/txm-linux-followup/linux-final-3/archive-1.log",
+      "sha256": "99266ac31d40f90423423f009e0cc55acebbcccca5967907ff0c57e66f388b67",
+      "bytes": 1487
+    },
+    {
+      "path": "/tmp/txm-linux-followup/linux-final-3/claude-init.log",
+      "sha256": "c1a2ae796aeb946d6e50af403c790fe02970bb06bbf6c22175697ec6dd15d0ef",
+      "bytes": 247
+    },
+    {
+      "path": "/tmp/txm-linux-followup/linux-final-3/image-build.log",
+      "sha256": "372a8f26f9dd98eac61594d0829280edaa27f502833f26999aed9cd93312e9ea",
+      "bytes": 1879
+    },
+    {
+      "path": "/tmp/txm-linux-followup/linux-final-3/normal.log",
+      "sha256": "a73adc2bb63b3bc8d5574a2db653dbf2ec35aece73c55f3ab3ed2db9562a59b1",
+      "bytes": 1487
+    },
+    {
+      "path": "/tmp/txm-linux-followup/linux-final-3/race.log",
+      "sha256": "fab98b58af2d6f3229a830b850ba5790155ccede586b49bb21dcc9bf380f5e69",
+      "bytes": 1488
+    },
+    {
+      "path": "/tmp/txm-linux-followup/linux-final-3/report.json",
+      "sha256": "f2da0d51a2d0ffe20582138bfd68449a003fd743f3f8eb33ccf19d5ae7961cf7",
+      "bytes": 26743
+    },
+    {
+      "path": "/tmp/txm-linux-followup/runtime-final/archive-0-agent_checks.log",
+      "sha256": "2fb9275ead87786da50aee359e2513dfc439d1309394be7f00ec3c670139dff0",
+      "bytes": 2746
+    },
+    {
+      "path": "/tmp/txm-linux-followup/runtime-final/archive-0-agent_events_checks.log",
+      "sha256": "c735c1b9645af2e725307e4c097a97b94cfe258ba9470eb104451f075d460a02",
+      "bytes": 2208
+    },
+    {
+      "path": "/tmp/txm-linux-followup/runtime-final/archive-0-cli_errors.log",
+      "sha256": "79a1006b722177aa25a07f6a1494eab0156da1286eb280d1f536084d80a68eb1",
+      "bytes": 102
+    },
+    {
+      "path": "/tmp/txm-linux-followup/runtime-final/archive-0-dashboard_checks.json",
+      "sha256": "ca89b96e7e1db1c178a9cc239929e2ddde28e8cbf86ff9d627d9e93ebc39dac0",
+      "bytes": 416
+    },
+    {
+      "path": "/tmp/txm-linux-followup/runtime-final/archive-0-dashboard_checks.log",
+      "sha256": "ece02fd0e876ba6aefcd625a694b0ae2d1dc4da1d649f77557b9cdbe1305015a",
+      "bytes": 2272
+    },
+    {
+      "path": "/tmp/txm-linux-followup/runtime-final/archive-0-extension_checks.log",
+      "sha256": "8dea2425d14aef926ce2cd73d9f7238e9ab6ce402b82f32bb03f898cb4f89dc0",
+      "bytes": 1867
+    },
+    {
+      "path": "/tmp/txm-linux-followup/runtime-final/archive-0-install.json",
+      "sha256": "66456f75de109413af041a6858b4be9c0dcb9bcae57f686b173e84ba89dd7e74",
+      "bytes": 489
+    },
+    {
+      "path": "/tmp/txm-linux-followup/runtime-final/archive-0-install.log",
+      "sha256": "3ef85e565a108556ca297ec7eb751fadaf33015bd92177f46ccb6d1c69182c86",
+      "bytes": 439
+    },
+    {
+      "path": "/tmp/txm-linux-followup/runtime-final/archive-0-integration.json",
+      "sha256": "90a33b96838c7f9d02b3f03219884928d7ec722efe1520e62a97eb8afe4736eb",
+      "bytes": 1273
+    },
+    {
+      "path": "/tmp/txm-linux-followup/runtime-final/archive-0-integration.log",
+      "sha256": "43b93e6b975c8f03c98ed58889e9dbe097bf9c4284dfde661d84804f8d067308",
+      "bytes": 744
+    },
+    {
+      "path": "/tmp/txm-linux-followup/runtime-final/archive-0-native_checks.log",
+      "sha256": "f7dc2d06e19730a656af7b872de28389f1d9b85984bd3d4f550a7149cfe7ce13",
+      "bytes": 111
+    },
+    {
+      "path": "/tmp/txm-linux-followup/runtime-final/archive-0-profile_checks.log",
+      "sha256": "ab200ff8d6e4c655a8be92d25fbe8046861e01d181785182fcdd5a3474acea03",
+      "bytes": 116
+    },
+    {
+      "path": "/tmp/txm-linux-followup/runtime-final/archive-0-prune_checks.log",
+      "sha256": "842e3dae95b4b4b599310b9952b95fe2377773075d0e1005d2235b7871c02f8f",
+      "bytes": 718
+    },
+    {
+      "path": "/tmp/txm-linux-followup/runtime-final/archive-0-structured_checks.log",
+      "sha256": "0e5430d977a40f53829acc895b810bc70377835a9ffc7e0c9b0e1702506deaff",
+      "bytes": 115
+    },
+    {
+      "path": "/tmp/txm-linux-followup/runtime-final/archive-1-agent_checks.log",
+      "sha256": "527d0a24a46e0e18bfd9d0fa5152b036d08c5b43380e183ed16a9aa1fbefbbee",
+      "bytes": 2746
+    },
+    {
+      "path": "/tmp/txm-linux-followup/runtime-final/archive-1-agent_events_checks.log",
+      "sha256": "86f793c3015bdbc9b6399dc1eea90a327e1edb5f0ad1786a919a87472db225f9",
+      "bytes": 2208
+    },
+    {
+      "path": "/tmp/txm-linux-followup/runtime-final/archive-1-cli_errors.log",
+      "sha256": "0cebc07561641ec0ff62d2886f96ff070aaca0fae1e6a2630c29b00d61703a3e",
+      "bytes": 102
+    },
+    {
+      "path": "/tmp/txm-linux-followup/runtime-final/archive-1-dashboard_checks.json",
+      "sha256": "a9b82bcc91b59453129246d12159fa0910434c1fc31ec83718178ba174ee34f4",
+      "bytes": 415
+    },
+    {
+      "path": "/tmp/txm-linux-followup/runtime-final/archive-1-dashboard_checks.log",
+      "sha256": "49bc69916b3165cf979f70a403773f247aecc606d928c46a4a86b4e749de3d1a",
+      "bytes": 2272
+    },
+    {
+      "path": "/tmp/txm-linux-followup/runtime-final/archive-1-extension_checks.log",
+      "sha256": "ca07ca6307271b9469f1b746258e21f2b845df581421356918864e0f2e5de00b",
+      "bytes": 1867
+    },
+    {
+      "path": "/tmp/txm-linux-followup/runtime-final/archive-1-install.json",
+      "sha256": "c51bee9af5f6187e64187f3af25bcd0ad97b9bc27f3c5eeecaca4630d19841ae",
+      "bytes": 494
+    },
+    {
+      "path": "/tmp/txm-linux-followup/runtime-final/archive-1-install.log",
+      "sha256": "956e26ac5cd276c21a7239f644e9eb3e04a929fbf3629a6d324fa8d69dfa471b",
+      "bytes": 444
+    },
+    {
+      "path": "/tmp/txm-linux-followup/runtime-final/archive-1-integration.json",
+      "sha256": "7f8a0ce96fdeddabaf71261fa1d57171044e253421979b30116bcf84a2c7cf71",
+      "bytes": 1271
+    },
+    {
+      "path": "/tmp/txm-linux-followup/runtime-final/archive-1-integration.log",
+      "sha256": "a99319164340ea8d173d4f1359dd682fac68c514343be43bb81c9ef7ab0a07f3",
+      "bytes": 742
+    },
+    {
+      "path": "/tmp/txm-linux-followup/runtime-final/archive-1-native_checks.log",
+      "sha256": "fbcdf47a1bf31cf3d171bd3c636a12f71442e5adfb23703a1caa8c7b8f2aef56",
+      "bytes": 111
+    },
+    {
+      "path": "/tmp/txm-linux-followup/runtime-final/archive-1-profile_checks.log",
+      "sha256": "8ab8c6124e2e9f579b97ce140cf478526ef7cc08673d7b349fdec39cf9c49d22",
+      "bytes": 116
+    },
+    {
+      "path": "/tmp/txm-linux-followup/runtime-final/archive-1-prune_checks.log",
+      "sha256": "21bc5b020d98744a08478a916227e4b046891208ccb85474db7a539ae2d12a0f",
+      "bytes": 718
+    },
+    {
+      "path": "/tmp/txm-linux-followup/runtime-final/archive-1-structured_checks.log",
+      "sha256": "7215573bbcd07e6dc6cd7442bc9dae8a4f8a32cdea469fad2a4d83b6eb048cf2",
+      "bytes": 115
+    },
+    {
+      "path": "/tmp/txm-linux-followup/runtime-final/harness.log",
+      "sha256": "ec409e147551e80fdf1f1fe678f151e25b1650dd918055c37c83bf32ce6df16b",
+      "bytes": 2175
+    },
+    {
+      "path": "/tmp/txm-linux-followup/runtime-final/normal-agent_checks.log",
+      "sha256": "3ba1dc6bcadc0f7f691bac102ee68ac4a77eddc334d8dde3fbf83242cce594fb",
+      "bytes": 2746
+    },
+    {
+      "path": "/tmp/txm-linux-followup/runtime-final/normal-agent_events_checks.log",
+      "sha256": "59ffa30936896359a8c23f65aefa8d0d78b555ff30021eaede3b47b466e066d7",
+      "bytes": 2208
+    },
+    {
+      "path": "/tmp/txm-linux-followup/runtime-final/normal-cli_errors.log",
+      "sha256": "3d3e3e6cd4a07370fccc6c694d118c25c65ad49ad3f225b6be770c5434181eb5",
+      "bytes": 102
+    },
+    {
+      "path": "/tmp/txm-linux-followup/runtime-final/normal-dashboard_checks.json",
+      "sha256": "61b44575a80f8ece4c28bf0cf65a0e4c5cabb5e93d9cccf7974fb6944c953717",
+      "bytes": 413
+    },
+    {
+      "path": "/tmp/txm-linux-followup/runtime-final/normal-dashboard_checks.log",
+      "sha256": "55353e30f7a36d49c280a520fdf586aee94d9311eb495bf6827c88953c661aa9",
+      "bytes": 2272
+    },
+    {
+      "path": "/tmp/txm-linux-followup/runtime-final/normal-extension_checks.log",
+      "sha256": "784aaab511d777887dc0e2bc694898a1543e1fa44906287ae4531004e0dbfe68",
+      "bytes": 1867
+    },
+    {
+      "path": "/tmp/txm-linux-followup/runtime-final/normal-integration.json",
+      "sha256": "7fa9014f3bb59f18146863bd585f47e19cc7cbd19e0d2c0076f4c06b6370c179",
+      "bytes": 1271
+    },
+    {
+      "path": "/tmp/txm-linux-followup/runtime-final/normal-integration.log",
+      "sha256": "fd48f957ca221954e4d0f56ccd17be673498950200494e26006290ee48df7e9d",
+      "bytes": 742
+    },
+    {
+      "path": "/tmp/txm-linux-followup/runtime-final/normal-native_checks.log",
+      "sha256": "5788fdd676781bae3935d499e0daafdf40ffa2e9bc562124e3a396c8d72a62fc",
+      "bytes": 111
+    },
+    {
+      "path": "/tmp/txm-linux-followup/runtime-final/normal-profile_checks.log",
+      "sha256": "d94696c237281740e8fee6bea00c7cf3215d240504f3d6dc19ed5bfe87224165",
+      "bytes": 116
+    },
+    {
+      "path": "/tmp/txm-linux-followup/runtime-final/normal-prune_checks.log",
+      "sha256": "241a9a53406c4ffc61e3a3c377f9f6cdf8e69abb869c2bc770d3ca99986c1d2c",
+      "bytes": 718
+    },
+    {
+      "path": "/tmp/txm-linux-followup/runtime-final/normal-structured_checks.log",
+      "sha256": "455fe13aa4d723e74b08af46d3e168ec334a199be62424630cf308e87e07bcc8",
+      "bytes": 115
+    },
+    {
+      "path": "/tmp/txm-linux-followup/runtime-final/performance.json",
+      "sha256": "d449399d7135a5ab89ae46a1e28b599b3e7698c4bf4a0a12656f8d656a1edb78",
+      "bytes": 454
+    },
+    {
+      "path": "/tmp/txm-linux-followup/runtime-final/performance.log",
+      "sha256": "08b7a283e5290275b9be7e0228b5faf236b02b025233f58ab151ef18f123a445",
+      "bytes": 206
+    },
+    {
+      "path": "/tmp/txm-linux-followup/runtime-final/race-agent_checks.log",
+      "sha256": "0ee727c301939271290c4d2a3b04f69fcf1a5b1eba76cafebf57b0ec1170fd4f",
+      "bytes": 2747
+    },
+    {
+      "path": "/tmp/txm-linux-followup/runtime-final/race-agent_events_checks.log",
+      "sha256": "0de2c0de0524963462ecbfcde7b09871a8769322626e605e7236f8772a15f5e7",
+      "bytes": 2209
+    },
+    {
+      "path": "/tmp/txm-linux-followup/runtime-final/race-cli_errors.log",
+      "sha256": "c6059a353648bd7e79c924909193ee19806fd58fb5b586df4debd4b19ac1cd7b",
+      "bytes": 102
+    },
+    {
+      "path": "/tmp/txm-linux-followup/runtime-final/race-dashboard_checks.json",
+      "sha256": "0cd8e22761746f0412a000477a66e4680272b064463008935851d9970d45b21d",
+      "bytes": 415
+    },
+    {
+      "path": "/tmp/txm-linux-followup/runtime-final/race-dashboard_checks.log",
+      "sha256": "e4b13d312d55ea8e0899fe719f921e82ccd4588fd5252181beae07d6621c3670",
+      "bytes": 2272
+    },
+    {
+      "path": "/tmp/txm-linux-followup/runtime-final/race-extension_checks.log",
+      "sha256": "8a5705a1e0f6baec33e9ab1e9a79d250754c5d17dee70f34161b79317a1bb6ed",
+      "bytes": 1867
+    },
+    {
+      "path": "/tmp/txm-linux-followup/runtime-final/race-integration.json",
+      "sha256": "7e927609d3eb9cdb98cc1fe984309269a21f3b9c53dbb182699242ebe8ab9016",
+      "bytes": 1272
+    },
+    {
+      "path": "/tmp/txm-linux-followup/runtime-final/race-integration.log",
+      "sha256": "a6ed19c90ab88c4b13816075681a61e14da1510518ac489a1e32287a87766c42",
+      "bytes": 743
+    },
+    {
+      "path": "/tmp/txm-linux-followup/runtime-final/race-native_checks.log",
+      "sha256": "57a493d88d6ee9b3f610968e64e7e37d216f373a3def058ef4b95300d50316bc",
+      "bytes": 111
+    },
+    {
+      "path": "/tmp/txm-linux-followup/runtime-final/race-profile_checks.log",
+      "sha256": "26806ded84ccf3de4d5ee1098169b8cd84143b1c53775aefe549b218b4dcc9ff",
+      "bytes": 116
+    },
+    {
+      "path": "/tmp/txm-linux-followup/runtime-final/race-prune_checks.log",
+      "sha256": "97247c4935ff097a4192d132312025c56df03485fc2e4baa19b72fe9d0fdf723",
+      "bytes": 719
+    },
+    {
+      "path": "/tmp/txm-linux-followup/runtime-final/race-structured_checks.log",
+      "sha256": "5ca427f45b759c11a2d2e63b004693171bb652630bf2e200e45e0047e99c3717",
+      "bytes": 115
+    },
+    {
+      "path": "/tmp/txm-linux-followup/runtime-final/report.json",
+      "sha256": "486cd290d5c18697bcb622a12bb6f4486efe597215f0019802e53ef1cd2fa94e",
+      "bytes": 25001
+    },
+    {
+      "path": "/tmp/txm-linux-followup/runtime-final/txm-archive-0",
+      "sha256": "dd153f27e9ad2b6ebea3e0b86d9bfebb1df6fb393f1d01d87dcf72c321363d75",
+      "bytes": 45009096
+    },
+    {
+      "path": "/tmp/txm-linux-followup/runtime-final/txm-archive-1",
+      "sha256": "cdc7f9c5eca1cac35c6356ecc2fc9982237d7683e84e2913030f8918c50641c4",
+      "bytes": 45729304
+    }
+  ],
+  "findings": [],
+  "passed": true
+}

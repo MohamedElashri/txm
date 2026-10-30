@@ -1,0 +1,8 @@
+--- FAIL: TestSSHEnvelopeRequiredFields (0.01s)
+    --- FAIL: TestSSHEnvelopeRequiredFields/missing_partial (0.00s)
+        remote_test.go:184: want protocol_error, got <nil>
+    --- FAIL: TestSSHEnvelopeRequiredFields/null_partial (0.00s)
+        remote_test.go:184: want protocol_error, got <nil>
+FAIL
+FAIL	github.com/MohamedElashri/txm/pkg/remote	0.015s
+FAIL

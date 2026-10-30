@@ -1,0 +1,1280 @@
+{
+  "schema_version": 1,
+  "phase": 5,
+  "recorded_at": "2026-10-30T03:11:05.825132+00:00",
+  "baseline_sha": "f2606d240912ffa2269569cd642a7f83e5457f74",
+  "source_state": "Uncommitted working tree; earlier phase work/evidence preserved. No staging, commit, PR, tag, push, publication or Phase 6.",
+  "implementation_status": "PR 5A/5B/5C complete for tested Linux amd64 development; M2 release gate remains Blocked by inherited M1 platform gaps. Provider runtime claims are limited below.",
+  "phase4_prerequisite": {
+    "verified_at_start": true,
+    "go_and_embedded_sources_sha256": "6cef1230d86f14a39306e464bdb2f490d1cedc82110027083f67f63c24da8d75",
+    "harness_and_goldens_sha256": "22f9bb122cf9a3a8e581e0ad47d551391cca1b686ab3b5904e621afe8ccd2f50",
+    "build_sources_sha256": "0fd976298aaaea07e4278b566f2291d8ed2a8c42e8f8035616006c7c953a8cd6",
+    "documentation_sources_sha256": "ff92c3a9ef2ec7bb435cf1c84dc2ddfddecb667531d727a558271996e9123747",
+    "gate_deviation": "Explicit Phase 5 request authorizes Linux development while unrun M1 platform release gates remain Blocked."
+  },
+  "host": {
+    "os": "Linux",
+    "architecture": "amd64",
+    "kernel": "7.0.0-38-generic",
+    "go": [
+      "1.27.3",
+      "1.26.10"
+    ],
+    "tmux": "3.4",
+    "zig": "0.16.0",
+    "golangci_lint": "2.15.0",
+    "goreleaser": "2.19.0",
+    "ghostty": "36ec90a07fcb58e3033296c06c82438bf30d2e42",
+    "libghostty_go": "c1ee3183994d21df2b9eae4f11336aca2da1e8e6"
+  },
+  "unit_environment": {
+    "PKG_CONFIG_PATH": "/tmp/txm-p0-Yso5Rk/prefix-compatible/share/pkgconfig",
+    "CGO_ENABLED": "1",
+    "GOCACHE": "/tmp/txm-plan-review-go-cache",
+    "GOPROXY": "off",
+    "GOTOOLCHAIN": "local",
+    "GOLANGCI_LINT_CACHE": "/tmp/txm-phase5/lint-cache"
+  },
+  "minimum_go_environment": {
+    "GOROOT": "/home/melashri/go/pkg/mod/golang.org/toolchain@v0.0.1-go1.26.10.linux-amd64",
+    "GOCACHE": "/tmp/txm-p0-Yso5Rk/go126-cache"
+  },
+  "fingerprint_algorithm": "SHA-256 over sorted relative POSIX path + NUL + raw file bytes + NUL for each file.",
+  "go_and_embedded_sources": {
+    "sha256": "da94548bc6e9320684851898fe0949b604c28ae6896703d143eafae495a50534",
+    "files": [
+      "docs/embeds.go",
+      "docs/txm.1",
+      "go.mod",
+      "go.sum",
+      "main.go",
+      "pkg/agent/client.go",
+      "pkg/agent/events.go",
+      "pkg/agent/events_unix.go",
+      "pkg/agent/hooks.go",
+      "pkg/agent/hooks_test.go",
+      "pkg/agent/hooks_unix.go",
+      "pkg/agent/notifications.go",
+      "pkg/agent/provider.go",
+      "pkg/agent/server_unix.go",
+      "pkg/agent/server_unsupported.go",
+      "pkg/agent/start_unix.go",
+      "pkg/agent/stream.go",
+      "pkg/agent/types.go",
+      "pkg/agent/types_test.go",
+      "pkg/backend/backend.go",
+      "pkg/backend/command.go",
+      "pkg/backend/command_test.go",
+      "pkg/backend/data.go",
+      "pkg/backend/managed.go",
+      "pkg/backend/native.go",
+      "pkg/backend/native_cgo.go",
+      "pkg/backend/native_nocgo.go",
+      "pkg/backend/native_unix.go",
+      "pkg/backend/native_unsupported.go",
+      "pkg/backend/profile.go",
+      "pkg/backend/profile_native.go",
+      "pkg/backend/screen.go",
+      "pkg/backend/tmux.go",
+      "pkg/backend/zellij.go",
+      "pkg/cmd/agent.go",
+      "pkg/cmd/agent_signals.go",
+      "pkg/cmd/environment_test.go",
+      "pkg/cmd/helpers.go",
+      "pkg/cmd/misc.go",
+      "pkg/cmd/pane.go",
+      "pkg/cmd/profile.go",
+      "pkg/cmd/queries.go",
+      "pkg/cmd/root.go",
+      "pkg/cmd/root_test.go",
+      "pkg/cmd/server.go",
+      "pkg/cmd/session.go",
+      "pkg/cmd/window.go",
+      "pkg/config/config.go",
+      "pkg/config/config_test.go",
+      "pkg/config/profile.go",
+      "pkg/config/profile_file_other.go",
+      "pkg/config/profile_file_unix.go",
+      "pkg/config/profile_test.go",
+      "pkg/core/contracts_test.go",
+      "pkg/core/errors.go",
+      "pkg/core/models.go",
+      "pkg/core/output.go",
+      "pkg/localipc/framing.go",
+      "pkg/localipc/framing_test.go",
+      "pkg/logger/logger.go",
+      "pkg/nativeprocess/wait_unix.go",
+      "pkg/nativeprocess/wait_unix_test.go",
+      "pkg/nativeprocess/wait_unsupported.go",
+      "pkg/nativeprotocol/client.go",
+      "pkg/nativeprotocol/protocol.go",
+      "pkg/nativeprotocol/protocol_test.go",
+      "pkg/nativeserver/options.go",
+      "pkg/nativeserver/server_unix.go",
+      "pkg/nativeserver/server_unix_test.go",
+      "pkg/nativeserver/server_unsupported.go",
+      "pkg/profile/access_other.go",
+      "pkg/profile/access_unix.go",
+      "pkg/profile/plan.go",
+      "pkg/profile/plan_test.go",
+      "pkg/runtimepath/files_unix.go",
+      "pkg/runtimepath/files_unix_test.go",
+      "pkg/runtimepath/files_unsupported.go",
+      "pkg/runtimepath/peer_darwin.go",
+      "pkg/runtimepath/peer_linux.go",
+      "pkg/runtimepath/publish_darwin.go",
+      "pkg/runtimepath/publish_linux.go",
+      "pkg/runtimepath/runtime.go",
+      "pkg/runtimepath/runtime_unix.go",
+      "pkg/runtimepath/runtime_unix_test.go",
+      "pkg/runtimepath/runtime_unsupported.go",
+      "pkg/runtimepath/state_unix.go",
+      "pkg/runtimepath/state_unix_test.go",
+      "pkg/runtimepath/state_unsupported.go",
+      "pkg/supervisor/probe.go",
+      "pkg/supervisor/run_unix.go",
+      "pkg/supervisor/run_unsupported.go",
+      "pkg/supervisor/types.go",
+      "pkg/supervisor/types_test.go"
+    ]
+  },
+  "harness_and_goldens": {
+    "sha256": "4fa15721e46bc20992b4f7e3de7fd6bd597f077166d0da44bad4eafbed53269b",
+    "files": [
+      "pkg/core/testdata/empty.json",
+      "pkg/core/testdata/error.json",
+      "pkg/core/testdata/partial.json",
+      "pkg/core/testdata/raw.json",
+      "pkg/core/testdata/success.json",
+      "tests/agent_checks.py",
+      "tests/agent_events_checks.py",
+      "tests/archive_checks.py",
+      "tests/cli_errors.py",
+      "tests/integration.py",
+      "tests/native_checks.py",
+      "tests/performance.py",
+      "tests/profile_checks.py",
+      "tests/sandbox.py",
+      "tests/structured_checks.py",
+      "tests/test_build_deps.py",
+      "tests/test_sandbox.py",
+      "tests/wire.py"
+    ]
+  },
+  "build_sources": {
+    "sha256": "f375886446cb44a9dfccee86bc1d42900ec5ee89d5fed9f2a1d09d07a03ab879",
+    "files": [
+      ".github/scripts/build-ghostty.sh",
+      ".github/workflows/ci.yml",
+      ".github/workflows/release.yml",
+      ".goreleaser.yaml",
+      "Makefile",
+      "scripts/build-deps.sh",
+      "scripts/dependencies.env",
+      "scripts/generate-completions.sh",
+      "scripts/install-ci-zig.sh"
+    ]
+  },
+  "documentation_sources": {
+    "sha256": "0769735ed620c1b6774bed0bbf0adc575abb142b51137c4c87fede67eb0ec391",
+    "files": [
+      "README.md",
+      "docs/CHANGELOG.md",
+      "docs/ROADMAP.md",
+      "docs/architecture.md",
+      "docs/contracts.md",
+      "docs/m1-readiness.md",
+      "docs/m2-readiness.md",
+      "docs/native-protocol.md",
+      "docs/testing.md",
+      "docs/user-guide.md",
+      "plan.md"
+    ]
+  },
+  "archived_go_and_embedded_sources": {
+    "sha256": "da94548bc6e9320684851898fe0949b604c28ae6896703d143eafae495a50534",
+    "files": [
+      "docs/embeds.go",
+      "docs/txm.1",
+      "go.mod",
+      "go.sum",
+      "main.go",
+      "pkg/agent/client.go",
+      "pkg/agent/events.go",
+      "pkg/agent/events_unix.go",
+      "pkg/agent/hooks.go",
+      "pkg/agent/hooks_test.go",
+      "pkg/agent/hooks_unix.go",
+      "pkg/agent/notifications.go",
+      "pkg/agent/provider.go",
+      "pkg/agent/server_unix.go",
+      "pkg/agent/server_unsupported.go",
+      "pkg/agent/start_unix.go",
+      "pkg/agent/stream.go",
+      "pkg/agent/types.go",
+      "pkg/agent/types_test.go",
+      "pkg/backend/backend.go",
+      "pkg/backend/command.go",
+      "pkg/backend/command_test.go",
+      "pkg/backend/data.go",
+      "pkg/backend/managed.go",
+      "pkg/backend/native.go",
+      "pkg/backend/native_cgo.go",
+      "pkg/backend/native_nocgo.go",
+      "pkg/backend/native_unix.go",
+      "pkg/backend/native_unsupported.go",
+      "pkg/backend/profile.go",
+      "pkg/backend/profile_native.go",
+      "pkg/backend/screen.go",
+      "pkg/backend/tmux.go",
+      "pkg/backend/zellij.go",
+      "pkg/cmd/agent.go",
+      "pkg/cmd/agent_signals.go",
+      "pkg/cmd/environment_test.go",
+      "pkg/cmd/helpers.go",
+      "pkg/cmd/misc.go",
+      "pkg/cmd/pane.go",
+      "pkg/cmd/profile.go",
+      "pkg/cmd/queries.go",
+      "pkg/cmd/root.go",
+      "pkg/cmd/root_test.go",
+      "pkg/cmd/server.go",
+      "pkg/cmd/session.go",
+      "pkg/cmd/window.go",
+      "pkg/config/config.go",
+      "pkg/config/config_test.go",
+      "pkg/config/profile.go",
+      "pkg/config/profile_file_other.go",
+      "pkg/config/profile_file_unix.go",
+      "pkg/config/profile_test.go",
+      "pkg/core/contracts_test.go",
+      "pkg/core/errors.go",
+      "pkg/core/models.go",
+      "pkg/core/output.go",
+      "pkg/localipc/framing.go",
+      "pkg/localipc/framing_test.go",
+      "pkg/logger/logger.go",
+      "pkg/nativeprocess/wait_unix.go",
+      "pkg/nativeprocess/wait_unix_test.go",
+      "pkg/nativeprocess/wait_unsupported.go",
+      "pkg/nativeprotocol/client.go",
+      "pkg/nativeprotocol/protocol.go",
+      "pkg/nativeprotocol/protocol_test.go",
+      "pkg/nativeserver/options.go",
+      "pkg/nativeserver/server_unix.go",
+      "pkg/nativeserver/server_unix_test.go",
+      "pkg/nativeserver/server_unsupported.go",
+      "pkg/profile/access_other.go",
+      "pkg/profile/access_unix.go",
+      "pkg/profile/plan.go",
+      "pkg/profile/plan_test.go",
+      "pkg/runtimepath/files_unix.go",
+      "pkg/runtimepath/files_unix_test.go",
+      "pkg/runtimepath/files_unsupported.go",
+      "pkg/runtimepath/peer_darwin.go",
+      "pkg/runtimepath/peer_linux.go",
+      "pkg/runtimepath/publish_darwin.go",
+      "pkg/runtimepath/publish_linux.go",
+      "pkg/runtimepath/runtime.go",
+      "pkg/runtimepath/runtime_unix.go",
+      "pkg/runtimepath/runtime_unix_test.go",
+      "pkg/runtimepath/runtime_unsupported.go",
+      "pkg/runtimepath/state_unix.go",
+      "pkg/runtimepath/state_unix_test.go",
+      "pkg/runtimepath/state_unsupported.go",
+      "pkg/supervisor/probe.go",
+      "pkg/supervisor/run_unix.go",
+      "pkg/supervisor/run_unsupported.go",
+      "pkg/supervisor/types.go",
+      "pkg/supervisor/types_test.go"
+    ]
+  },
+  "archived_harness_and_goldens": {
+    "sha256": "4fa15721e46bc20992b4f7e3de7fd6bd597f077166d0da44bad4eafbed53269b",
+    "files": [
+      "pkg/core/testdata/empty.json",
+      "pkg/core/testdata/error.json",
+      "pkg/core/testdata/partial.json",
+      "pkg/core/testdata/raw.json",
+      "pkg/core/testdata/success.json",
+      "tests/agent_checks.py",
+      "tests/agent_events_checks.py",
+      "tests/archive_checks.py",
+      "tests/cli_errors.py",
+      "tests/integration.py",
+      "tests/native_checks.py",
+      "tests/performance.py",
+      "tests/profile_checks.py",
+      "tests/sandbox.py",
+      "tests/structured_checks.py",
+      "tests/test_build_deps.py",
+      "tests/test_sandbox.py",
+      "tests/wire.py"
+    ]
+  },
+  "checks": {
+    "go-results": [
+      {
+        "name": "go-final",
+        "argv": [
+          "go",
+          "test",
+          "./..."
+        ],
+        "exit_code": 0,
+        "started": 1793329126.7639966,
+        "finished": 1793329128.6540112
+      },
+      {
+        "name": "go-race-final",
+        "argv": [
+          "go",
+          "test",
+          "-race",
+          "./..."
+        ],
+        "exit_code": 0,
+        "started": 1793329128.6542928,
+        "finished": 1793329131.957658
+      },
+      {
+        "name": "go126-final",
+        "argv": [
+          "/home/melashri/go/pkg/mod/golang.org/toolchain@v0.0.1-go1.26.10.linux-amd64/bin/go",
+          "test",
+          "./..."
+        ],
+        "exit_code": 0,
+        "started": 1793329131.9579747,
+        "finished": 1793329133.7282662
+      },
+      {
+        "name": "lint-final",
+        "argv": [
+          "golangci-lint",
+          "run"
+        ],
+        "exit_code": 0,
+        "started": 1793329133.728571,
+        "finished": 1793329134.697767
+      },
+      {
+        "name": "mod-verify",
+        "argv": [
+          "go",
+          "mod",
+          "verify"
+        ],
+        "exit_code": 0,
+        "started": 1793329134.6979806,
+        "finished": 1793329134.9182107
+      },
+      {
+        "name": "build-final",
+        "argv": [
+          "go",
+          "build",
+          "-o",
+          "/tmp/txm-phase5/txm",
+          "."
+        ],
+        "exit_code": 0,
+        "started": 1793329134.918536,
+        "finished": 1793329136.245044
+      },
+      {
+        "name": "race-build-final",
+        "argv": [
+          "go",
+          "build",
+          "-race",
+          "-o",
+          "/tmp/txm-phase5/txm-race",
+          "."
+        ],
+        "exit_code": 0,
+        "started": 1793329136.2454162,
+        "finished": 1793329137.5922499
+      },
+      {
+        "name": "windows-amd64",
+        "argv": [
+          "go",
+          "build",
+          "-o",
+          "/tmp/txm-phase5/txm-windows-amd64.exe",
+          "."
+        ],
+        "exit_code": 0,
+        "started": 1793329137.5925624,
+        "finished": 1793329138.2470253
+      },
+      {
+        "name": "windows-arm64",
+        "argv": [
+          "go",
+          "build",
+          "-o",
+          "/tmp/txm-phase5/txm-windows-arm64.exe",
+          "."
+        ],
+        "exit_code": 0,
+        "started": 1793329138.2472503,
+        "finished": 1793329138.8996954
+      },
+      {
+        "name": "nocgo-build",
+        "argv": [
+          "go",
+          "build",
+          "-o",
+          "/tmp/txm-phase5/txm-nocgo",
+          "."
+        ],
+        "exit_code": 0,
+        "started": 1793329138.9000478,
+        "finished": 1793329139.5848882
+      }
+    ],
+    "runtime-results": [
+      {
+        "name": "harness-final",
+        "argv": [
+          "python3",
+          "-m",
+          "unittest",
+          "discover",
+          "-s",
+          "tests",
+          "-p",
+          "test_*.py",
+          "-v"
+        ],
+        "exit_code": 0,
+        "started": 1793329241.836323,
+        "finished": 1793329242.7107356
+      },
+      {
+        "name": "integration-normal-final",
+        "argv": [
+          "python3",
+          "tests/integration.py",
+          "--binary",
+          "/tmp/txm-phase5/txm",
+          "--report",
+          "/tmp/txm-phase5/smoke-normal.json"
+        ],
+        "exit_code": 0,
+        "started": 1793329242.7110915,
+        "finished": 1793329252.601853
+      },
+      {
+        "name": "cli_errors-normal-final",
+        "argv": [
+          "python3",
+          "tests/cli_errors.py",
+          "--binary",
+          "/tmp/txm-phase5/txm"
+        ],
+        "exit_code": 0,
+        "started": 1793329252.6022427,
+        "finished": 1793329253.1870756
+      },
+      {
+        "name": "native_checks-normal-final",
+        "argv": [
+          "python3",
+          "tests/native_checks.py",
+          "--binary",
+          "/tmp/txm-phase5/txm"
+        ],
+        "exit_code": 0,
+        "started": 1793329253.1873019,
+        "finished": 1793329278.8274274
+      },
+      {
+        "name": "structured_checks-normal-final",
+        "argv": [
+          "python3",
+          "tests/structured_checks.py",
+          "--binary",
+          "/tmp/txm-phase5/txm"
+        ],
+        "exit_code": 0,
+        "started": 1793329278.8278334,
+        "finished": 1793329298.217181
+      },
+      {
+        "name": "profile_checks-normal-final",
+        "argv": [
+          "python3",
+          "tests/profile_checks.py",
+          "--binary",
+          "/tmp/txm-phase5/txm"
+        ],
+        "exit_code": 0,
+        "started": 1793329298.2176077,
+        "finished": 1793329310.3096662
+      },
+      {
+        "name": "agent_checks-normal-final",
+        "argv": [
+          "python3",
+          "tests/agent_checks.py",
+          "--binary",
+          "/tmp/txm-phase5/txm",
+          "-v"
+        ],
+        "exit_code": 0,
+        "started": 1793329310.310098,
+        "finished": 1793329336.0399246
+      },
+      {
+        "name": "agent_events_checks-normal-final",
+        "argv": [
+          "python3",
+          "tests/agent_events_checks.py",
+          "--binary",
+          "/tmp/txm-phase5/txm",
+          "--real-claude",
+          "/home/linuxbrew/.linuxbrew/bin/claude",
+          "-v"
+        ],
+        "exit_code": 0,
+        "started": 1793329336.0402465,
+        "finished": 1793329370.3146088
+      },
+      {
+        "name": "integration-race-final",
+        "argv": [
+          "python3",
+          "tests/integration.py",
+          "--binary",
+          "/tmp/txm-phase5/txm-race",
+          "--report",
+          "/tmp/txm-phase5/smoke-race.json"
+        ],
+        "exit_code": 0,
+        "started": 1793329370.3148785,
+        "finished": 1793329397.5676398
+      },
+      {
+        "name": "cli_errors-race-final",
+        "argv": [
+          "python3",
+          "tests/cli_errors.py",
+          "--binary",
+          "/tmp/txm-phase5/txm-race"
+        ],
+        "exit_code": 0,
+        "started": 1793329397.5680377,
+        "finished": 1793329405.738967
+      },
+      {
+        "name": "native_checks-race-final",
+        "argv": [
+          "python3",
+          "tests/native_checks.py",
+          "--binary",
+          "/tmp/txm-phase5/txm-race"
+        ],
+        "exit_code": 0,
+        "started": 1793329405.739217,
+        "finished": 1793329453.9459374
+      },
+      {
+        "name": "structured_checks-race-final",
+        "argv": [
+          "python3",
+          "tests/structured_checks.py",
+          "--binary",
+          "/tmp/txm-phase5/txm-race"
+        ],
+        "exit_code": 0,
+        "started": 1793329453.946176,
+        "finished": 1793329516.5705488
+      },
+      {
+        "name": "profile_checks-race-final",
+        "argv": [
+          "python3",
+          "tests/profile_checks.py",
+          "--binary",
+          "/tmp/txm-phase5/txm-race"
+        ],
+        "exit_code": 0,
+        "started": 1793329516.5709374,
+        "finished": 1793329542.305194
+      },
+      {
+        "name": "agent_checks-race-final",
+        "argv": [
+          "python3",
+          "tests/agent_checks.py",
+          "--binary",
+          "/tmp/txm-phase5/txm-race",
+          "-v"
+        ],
+        "exit_code": 0,
+        "started": 1793329542.305491,
+        "finished": 1793329666.7099245
+      },
+      {
+        "name": "agent_events_checks-race-final",
+        "argv": [
+          "python3",
+          "tests/agent_events_checks.py",
+          "--binary",
+          "/tmp/txm-phase5/txm-race",
+          "--real-claude",
+          "/home/linuxbrew/.linuxbrew/bin/claude",
+          "-v"
+        ],
+        "exit_code": 0,
+        "started": 1793329666.7102919,
+        "finished": 1793329792.0461066
+      },
+      {
+        "name": "performance-final",
+        "argv": [
+          "python3",
+          "tests/performance.py",
+          "--binary",
+          "/tmp/txm-phase5/txm",
+          "--report",
+          "/tmp/txm-phase5/performance-final.json"
+        ],
+        "exit_code": 0,
+        "started": 1793329792.0463965,
+        "finished": 1793329796.4443474
+      }
+    ],
+    "archive-build-results": [
+      {
+        "name": "clone",
+        "argv": [
+          "git",
+          "clone",
+          "--local",
+          "--no-hardlinks",
+          "/home/melashri/projects/txm",
+          "/tmp/txm-phase5/repo"
+        ],
+        "cwd": "/tmp/txm-phase5",
+        "exit_code": 0,
+        "started": 1793329202.4806278,
+        "finished": 1793329202.6427705
+      },
+      {
+        "name": "linux-amd64-dependency",
+        "argv": [
+          "zig",
+          "build",
+          "-Demit-lib-vt",
+          "--prefix",
+          "/tmp/txm-phase5/repo/.ghostty-release/linux-amd64",
+          "-Dtarget=x86_64-linux-gnu",
+          "-j2"
+        ],
+        "cwd": "/tmp/txm-p0-Yso5Rk/ghostty",
+        "exit_code": 0,
+        "started": 1793329202.6879985,
+        "finished": 1793329202.8745146
+      },
+      {
+        "name": "linux-musl-amd64-dependency",
+        "argv": [
+          "zig",
+          "build",
+          "-Demit-lib-vt",
+          "--prefix",
+          "/tmp/txm-phase5/repo/.ghostty-release/linux-musl-amd64",
+          "-Dtarget=x86_64-linux-musl",
+          "-j2"
+        ],
+        "cwd": "/tmp/txm-p0-Yso5Rk/ghostty",
+        "exit_code": 0,
+        "started": 1793329202.874879,
+        "finished": 1793329203.0623193
+      },
+      {
+        "name": "completions",
+        "argv": [
+          "bash",
+          "scripts/generate-completions.sh"
+        ],
+        "cwd": "/tmp/txm-phase5/repo",
+        "exit_code": 0,
+        "started": 1793329203.0626853,
+        "finished": 1793329210.626912
+      },
+      {
+        "name": "goreleaser-check",
+        "argv": [
+          "goreleaser",
+          "check"
+        ],
+        "cwd": "/tmp/txm-phase5/repo",
+        "exit_code": 0,
+        "started": 1793329210.6272573,
+        "finished": 1793329210.6580734
+      },
+      {
+        "name": "archive-build-final",
+        "argv": [
+          "goreleaser",
+          "release",
+          "--snapshot",
+          "--skip=before",
+          "--config",
+          "linux-smoke.yml",
+          "--clean",
+          "--parallelism",
+          "2"
+        ],
+        "cwd": "/tmp/txm-phase5/repo",
+        "exit_code": 0,
+        "started": 1793329210.6584342,
+        "finished": 1793329224.784852
+      }
+    ],
+    "archive-gnu-results": [
+      {
+        "name": "archive-gnu-install",
+        "argv": [
+          "python3",
+          "tests/archive_checks.py",
+          "--archive",
+          "/tmp/txm-phase5/repo/dist/txm_Linux_x86_64.zip",
+          "--report",
+          "/tmp/txm-phase5/archive-gnu.json"
+        ],
+        "exit_code": 0,
+        "started": 1793329351.9902594,
+        "finished": 1793329352.3259933
+      },
+      {
+        "name": "archive-gnu-integration",
+        "argv": [
+          "python3",
+          "tests/integration.py",
+          "--binary",
+          "/tmp/txm-phase5/archive-binaries/txm-gnu",
+          "--report",
+          "/tmp/txm-phase5/archive-gnu-smoke.json"
+        ],
+        "exit_code": 0,
+        "started": 1793329352.3261862,
+        "finished": 1793329362.5390058
+      },
+      {
+        "name": "archive-gnu-cli_errors",
+        "argv": [
+          "python3",
+          "tests/cli_errors.py",
+          "--binary",
+          "/tmp/txm-phase5/archive-binaries/txm-gnu"
+        ],
+        "exit_code": 0,
+        "started": 1793329362.5391927,
+        "finished": 1793329363.1752768
+      },
+      {
+        "name": "archive-gnu-native_checks",
+        "argv": [
+          "python3",
+          "tests/native_checks.py",
+          "--binary",
+          "/tmp/txm-phase5/archive-binaries/txm-gnu"
+        ],
+        "exit_code": 0,
+        "started": 1793329363.1755478,
+        "finished": 1793329388.8624122
+      },
+      {
+        "name": "archive-gnu-structured_checks",
+        "argv": [
+          "python3",
+          "tests/structured_checks.py",
+          "--binary",
+          "/tmp/txm-phase5/archive-binaries/txm-gnu"
+        ],
+        "exit_code": 0,
+        "started": 1793329388.862827,
+        "finished": 1793329407.7298136
+      },
+      {
+        "name": "archive-gnu-profile_checks",
+        "argv": [
+          "python3",
+          "tests/profile_checks.py",
+          "--binary",
+          "/tmp/txm-phase5/archive-binaries/txm-gnu"
+        ],
+        "exit_code": 0,
+        "started": 1793329407.7301066,
+        "finished": 1793329419.109163
+      },
+      {
+        "name": "archive-gnu-agent_checks",
+        "argv": [
+          "python3",
+          "tests/agent_checks.py",
+          "--binary",
+          "/tmp/txm-phase5/archive-binaries/txm-gnu",
+          "-v"
+        ],
+        "exit_code": 0,
+        "started": 1793329419.109414,
+        "finished": 1793329444.3386116
+      },
+      {
+        "name": "archive-gnu-agent_events_checks",
+        "argv": [
+          "python3",
+          "tests/agent_events_checks.py",
+          "--binary",
+          "/tmp/txm-phase5/archive-binaries/txm-gnu",
+          "--real-claude",
+          "/home/linuxbrew/.linuxbrew/bin/claude",
+          "-v"
+        ],
+        "exit_code": 0,
+        "started": 1793329444.3389523,
+        "finished": 1793329478.5672598
+      }
+    ],
+    "archive-musl-results": [
+      {
+        "name": "archive-musl-install",
+        "argv": [
+          "python3",
+          "tests/archive_checks.py",
+          "--archive",
+          "/tmp/txm-phase5/repo/dist/txm_Linux_x86_64-musl.zip",
+          "--report",
+          "/tmp/txm-phase5/archive-musl.json"
+        ],
+        "exit_code": 0,
+        "started": 1793329351.990335,
+        "finished": 1793329352.320412
+      },
+      {
+        "name": "archive-musl-integration",
+        "argv": [
+          "python3",
+          "tests/integration.py",
+          "--binary",
+          "/tmp/txm-phase5/archive-binaries/txm-musl",
+          "--report",
+          "/tmp/txm-phase5/archive-musl-smoke.json"
+        ],
+        "exit_code": 0,
+        "started": 1793329352.3207335,
+        "finished": 1793329362.6179082
+      },
+      {
+        "name": "archive-musl-cli_errors",
+        "argv": [
+          "python3",
+          "tests/cli_errors.py",
+          "--binary",
+          "/tmp/txm-phase5/archive-binaries/txm-musl"
+        ],
+        "exit_code": 0,
+        "started": 1793329362.618112,
+        "finished": 1793329363.2240307
+      },
+      {
+        "name": "archive-musl-native_checks",
+        "argv": [
+          "python3",
+          "tests/native_checks.py",
+          "--binary",
+          "/tmp/txm-phase5/archive-binaries/txm-musl"
+        ],
+        "exit_code": 0,
+        "started": 1793329363.2243218,
+        "finished": 1793329388.8892903
+      },
+      {
+        "name": "archive-musl-structured_checks",
+        "argv": [
+          "python3",
+          "tests/structured_checks.py",
+          "--binary",
+          "/tmp/txm-phase5/archive-binaries/txm-musl"
+        ],
+        "exit_code": 0,
+        "started": 1793329388.8896258,
+        "finished": 1793329407.6824174
+      },
+      {
+        "name": "archive-musl-profile_checks",
+        "argv": [
+          "python3",
+          "tests/profile_checks.py",
+          "--binary",
+          "/tmp/txm-phase5/archive-binaries/txm-musl"
+        ],
+        "exit_code": 0,
+        "started": 1793329407.6828022,
+        "finished": 1793329419.0215597
+      },
+      {
+        "name": "archive-musl-agent_checks",
+        "argv": [
+          "python3",
+          "tests/agent_checks.py",
+          "--binary",
+          "/tmp/txm-phase5/archive-binaries/txm-musl",
+          "-v"
+        ],
+        "exit_code": 0,
+        "started": 1793329419.021849,
+        "finished": 1793329443.7196703
+      },
+      {
+        "name": "archive-musl-agent_events_checks",
+        "argv": [
+          "python3",
+          "tests/agent_events_checks.py",
+          "--binary",
+          "/tmp/txm-phase5/archive-binaries/txm-musl",
+          "--real-claude",
+          "/home/linuxbrew/.linuxbrew/bin/claude",
+          "-v"
+        ],
+        "exit_code": 0,
+        "started": 1793329443.720032,
+        "finished": 1793329477.4217498
+      }
+    ],
+    "fuzz-results": [
+      {
+        "name": "FuzzNativeFrame",
+        "argv": [
+          "go",
+          "test",
+          "./pkg/nativeprotocol",
+          "-run=^$",
+          "-fuzz=FuzzNativeFrame",
+          "-fuzztime=30s",
+          "-parallel=2"
+        ],
+        "exit_code": 0,
+        "started": 1793329282.1670718,
+        "finished": 1793329312.4975524
+      },
+      {
+        "name": "FuzzPlain",
+        "argv": [
+          "go",
+          "test",
+          "./pkg/core",
+          "-run=^$",
+          "-fuzz=FuzzPlain",
+          "-fuzztime=10s",
+          "-parallel=2"
+        ],
+        "exit_code": 0,
+        "started": 1793329312.4978385,
+        "finished": 1793329323.8112266
+      },
+      {
+        "name": "FuzzLocalFrame",
+        "argv": [
+          "go",
+          "test",
+          "./pkg/localipc",
+          "-run=^$",
+          "-fuzz=FuzzLocalFrame",
+          "-fuzztime=15s",
+          "-parallel=2"
+        ],
+        "exit_code": 0,
+        "started": 1793329323.8117228,
+        "finished": 1793329340.1070285
+      }
+    ]
+  },
+  "counts": {
+    "harness_guards": 10,
+    "smoke_per_executable": 5,
+    "cli_groups": 4,
+    "native_cases": 11,
+    "structured_groups": 15,
+    "profile_groups": 16,
+    "agent_phase4_groups": 19,
+    "agent_phase5_groups": 14,
+    "normal_and_race": true,
+    "each_actual_archive_runs_all_groups": true
+  },
+  "provider_inventory": {
+    "claude": {
+      "path": "/home/linuxbrew/.linuxbrew/bin/claude",
+      "resolved_path": "/home/linuxbrew/.linuxbrew/Caskroom/claude-code/2.1.308/claude",
+      "--version": {
+        "code": 0,
+        "text": "2.1.308 (Claude Code)\n"
+      },
+      "--help": {
+        "code": 0,
+        "text": "saved help output"
+      }
+    },
+    "codex": {
+      "path": "/home/linuxbrew/.linuxbrew/bin/codex",
+      "resolved_path": "/home/linuxbrew/.linuxbrew/Caskroom/codex/0.165.0/bin/codex",
+      "--version": {
+        "code": 0,
+        "text": "codex-cli 0.165.0\n"
+      },
+      "--help": {
+        "code": 0,
+        "text": "saved help output"
+      }
+    },
+    "opencode": {
+      "path": "/home/linuxbrew/.linuxbrew/bin/opencode",
+      "resolved_path": "/home/linuxbrew/.linuxbrew/Cellar/opencode-v2/2.2.1/bin/opencode",
+      "--version": {
+        "code": 0,
+        "text": "opencode v2.2.1\n"
+      },
+      "--help": {
+        "code": 0,
+        "text": "saved help output"
+      }
+    }
+  },
+  "provider_sources": [
+    "https://code.claude.com/docs/en/hooks",
+    "https://learn.chatgpt.com/docs/hooks",
+    "https://opencode.ai/v2/docs/build/plugins/",
+    "https://opencode.ai/v2/docs/build/plugins/server/"
+  ],
+  "provider_runtime": {
+    "generic": "Real native/tmux supervised child signals/waits, no provider required.",
+    "claude": "2.1.308: real --init-only SessionStart in private HOME/settings, no model/auth, normal/race and both actual archives. Full prompt/tool/permission lifecycle unrun.",
+    "codex": "0.165.0 installed version/help, hooks stable/enabled feature inventory; observational schema/config/session-binding fixtures. Normal manual trust review required; actual trusted provider lifecycle unrun. No trust bypass.",
+    "opencode": "2.2.1 installed version/help and v2 docs reviewed; runtime/session association unverified, explicitly unsupported."
+  },
+  "archive_build": {
+    "command": "goreleaser release --snapshot --skip=before --config linux-smoke.yml --clean --parallelism 2",
+    "cwd": "/tmp/txm-phase5/repo",
+    "scope": "Production configuration narrowed only to Linux amd64 GNU/musl. Actual ZIPs, private user installation and full runtime suites; no all-platform or publication claim.",
+    "configuration": "phase5-linux-smoke.yml",
+    "configuration_sha256": "18e4c053a4d39ae6aa2bdf9658e6a04056822cee38faee5d16a1a8d95591ba50",
+    "environment": {
+      "HOME": "/tmp/txm-phase5/package-home",
+      "PATH": "/tmp/txm-p0-Yso5Rk/zig-x86_64-linux-0.16.0:/home/linuxbrew/.linuxbrew/bin:/usr/bin:/bin",
+      "SHELL": "/bin/sh",
+      "LANG": "C",
+      "GOMODCACHE": "/home/melashri/go/pkg/mod",
+      "GOPROXY": "off",
+      "GOTOOLCHAIN": "local",
+      "GOCACHE": "/tmp/txm-phase5/release-go-cache",
+      "TXM_RELEASE_ROOT": "/tmp/txm-phase5/repo",
+      "ZIG_GLOBAL_CACHE_DIR": "/tmp/txm-p0-Yso5Rk/zig-cache"
+    },
+    "dependency_source": "/tmp/txm-p0-Yso5Rk/ghostty",
+    "dependency_revision": "36ec90a07fcb58e3033296c06c82438bf30d2e42",
+    "before_replacement": "Explicit matching GNU/musl -Demit-lib-vt -Dtarget builds at new prefixes, then explicit completion generation; original ignored ghostty/bin untouched.",
+    "published": false
+  },
+  "performance": {
+    "scope": "Linux amd64, Debug VT, private idle sessions; not a release SLA",
+    "budgets": {
+      "version_median_ms": 20,
+      "list_1_ms": 50,
+      "list_10_ms": 250,
+      "list_100_ms": 2000,
+      "max_server_rss_kib": 32768
+    },
+    "metrics": {
+      "version_median_ms": 5.0489939749240875,
+      "list_1_ms": 7.372243970166892,
+      "max_server_rss_kib": 25344,
+      "list_10_ms": 17.598944017663598,
+      "list_100_ms": 102.23020502598956
+    },
+    "passed": true
+  },
+  "fuzz_executions": {
+    "nativeprotocol": 1520064,
+    "core": 45361,
+    "localipc": 587795
+  },
+  "artifacts": [
+    {
+      "path": "/tmp/txm-phase5/txm",
+      "sha256": "4a0af63a92ce61de34746c41901a3201796bc9f9c37bde1f37eb6da6b4f064a7",
+      "bytes": 29900400
+    },
+    {
+      "path": "/tmp/txm-phase5/txm-race",
+      "sha256": "4e1a671fab804e45f02939b88102312f6826ef82d1f34fea916172ea3962be55",
+      "bytes": 33733352
+    },
+    {
+      "path": "/tmp/txm-phase5/txm-nocgo",
+      "sha256": "5ea414e6db37941cdf6b7f4ce7a24cf86c8db59397c048415272afbbbbc3f395",
+      "bytes": 13368515
+    },
+    {
+      "path": "/tmp/txm-phase5/txm-windows-amd64.exe",
+      "sha256": "de37e934702952ad14ec500d9eaaa08c3d53da098c1456e958c3332162aea495",
+      "bytes": 13665792
+    },
+    {
+      "path": "/tmp/txm-phase5/txm-windows-arm64.exe",
+      "sha256": "ab5a4e0cb660790a157efc19b80e1b646a6f454eb70eaa2619357d4cee70864d",
+      "bytes": 12512768
+    },
+    {
+      "path": "/tmp/txm-phase5/archive-binaries/txm-gnu",
+      "sha256": "dd46683cc4e9f5e165807aae59e54f47a18fb12c1704c6c531d60ab1071c06f5",
+      "bytes": 44449240
+    },
+    {
+      "path": "/tmp/txm-phase5/archive-binaries/txm-musl",
+      "sha256": "36c3c6fb7baf9c3fa7291482ace891df245dbe6741f728ccd717afb5fce2f9f1",
+      "bytes": 45169448
+    },
+    {
+      "path": "/tmp/txm-phase5/repo/dist/txm_Linux_x86_64.zip",
+      "sha256": "5b8d965492740613719b94d9c188d366c5bfb511f33246a402629c05ebb7a911",
+      "bytes": 11048108
+    },
+    {
+      "path": "/tmp/txm-phase5/repo/dist/txm_Linux_x86_64-musl.zip",
+      "sha256": "734b6084b6deb10519d728d765fc12310bc12647c5e6da36d31fc45bfa209a9a",
+      "bytes": 11299305
+    }
+  ],
+  "evidence_files": [
+    {
+      "path": "docs/evidence/phase5-go.txt",
+      "sha256": "e557039bb9a9210b2a790e68c553977418cc1dd00b168de1c7b6c05cb8554069"
+    },
+    {
+      "path": "docs/evidence/phase5-go-race.txt",
+      "sha256": "de61347b546f5e6e5eb39cebfb2f0f88fe060f50e55b6ae6ce9af04491587c28"
+    },
+    {
+      "path": "docs/evidence/phase5-go126.txt",
+      "sha256": "8e4df4c095971d317e5ec7452888909ee0f91118372b13d87e05707f8dff7285"
+    },
+    {
+      "path": "docs/evidence/phase5-lint.txt",
+      "sha256": "e92606b0bf483111dff0a120c315ea165821348f31365020e2468a0059095c47"
+    },
+    {
+      "path": "docs/evidence/phase5-mod-verify.txt",
+      "sha256": "b4537ed75f533f993f371954de47e42a793b8e5b0587577de7e27fb3e50696bd"
+    },
+    {
+      "path": "docs/evidence/phase5-agents.txt",
+      "sha256": "429f8a6da59ab3b7e39f93de3811b69fcac5af1b1bf44a3da7dd59e8112844f8"
+    },
+    {
+      "path": "docs/evidence/phase5-agents-race.txt",
+      "sha256": "82a384769e506c728d252bd8a3ce82dd15ede02260230ee3bcc47ea272dfd532"
+    },
+    {
+      "path": "docs/evidence/phase5-signals.txt",
+      "sha256": "0be2609408160876a3f679a2200bb8f0b7165154bc23d27a765fe307a6823a8e"
+    },
+    {
+      "path": "docs/evidence/phase5-signals-race.txt",
+      "sha256": "1b2fcf751d9154d09d52251f268da39b8127c4ad9ee27b1445f6dd6579c05319"
+    },
+    {
+      "path": "docs/evidence/phase5-harness.txt",
+      "sha256": "066f45a2de86d5e9531e37f55fe094c918478fb337488c04f118f8b7a009a83f"
+    },
+    {
+      "path": "docs/evidence/phase5-providers.json",
+      "sha256": "a95124c2fcd87fa89bfd40be2ecfcd9c5dc4cb366297432dec6252e8fb4de342"
+    },
+    {
+      "path": "docs/evidence/phase5-performance.json",
+      "sha256": "84aee088a7626708af7d45c0d4b8371c0f4992a0b0f3964661a55a50cf79c9e0"
+    },
+    {
+      "path": "docs/evidence/phase5-nocgo.json",
+      "sha256": "29d6496f0ba94797c95c5869a4e03fd9c5d4e6de82fb187d3aa7ead2b03ed462"
+    },
+    {
+      "path": "docs/evidence/phase5-linux-smoke.yml",
+      "sha256": "18e4c053a4d39ae6aa2bdf9658e6a04056822cee38faee5d16a1a8d95591ba50"
+    },
+    {
+      "path": "docs/evidence/phase5-archive-gnu.json",
+      "sha256": "271106819f2f42545eab829775d9573f6fb7856f9b258555a10cc432350a27c0"
+    },
+    {
+      "path": "docs/evidence/phase5-archive-musl.json",
+      "sha256": "3dd8f738e697628b07c964be1aaccbbbcfe5458553907044052a34ba0a089848"
+    },
+    {
+      "path": "docs/evidence/phase5-smoke.json",
+      "sha256": "1c5c6e3111a0c24513eef715ed33e991d4ded65d437b62eadce37b33e61266b3"
+    },
+    {
+      "path": "docs/evidence/phase5-smoke-race.json",
+      "sha256": "81346a2ec37ecf0b887de9afb4d6e2613238fef31fd0018d3fec5066e1d485d1"
+    },
+    {
+      "path": "docs/evidence/phase5-archive-gnu-smoke.json",
+      "sha256": "9f6630d5e882577a62732eb12d2e6b18bbb35c7f901a4d5944ecfc6a9abdc28c"
+    },
+    {
+      "path": "docs/evidence/phase5-archive-musl-smoke.json",
+      "sha256": "ad1d3f7b3c24f32795639ecbfdb382138efbaa293f7bcaa9ba98baa8b05132db"
+    },
+    {
+      "path": "docs/evidence/phase5-integration.txt",
+      "sha256": "665bd9243db64544e0cbf74a2e9f957aaebda625b5c5dfa21038b4a4167ee725"
+    },
+    {
+      "path": "docs/evidence/phase5-archive-gnu-runtime.txt",
+      "sha256": "e51633ccd07f75cd7626e8710755dcf40c2af8b0a92e80cffe19d4b9b7dd3fcf"
+    },
+    {
+      "path": "docs/evidence/phase5-archive-musl-runtime.txt",
+      "sha256": "7f55139748f3ded3db73b5df72761c949ffe4851852b677e7738b0daa10e1acc"
+    },
+    {
+      "path": "docs/evidence/phase5-archive-build.txt",
+      "sha256": "2f9997530f23afb28995137de74c5dfa1ea62cdb7981cb1665da8af53fca97fb"
+    },
+    {
+      "path": "docs/evidence/phase5-fuzz.txt",
+      "sha256": "30ffd2f65df7de33d2eb62fdc7f701ed909bc5f7dffa37bce991bcb39054e236"
+    }
+  ],
+  "known_limits": [
+    "Inherited M1 macOS/Linux arm64/Windows external runtime/archive/install and foreign-UID end-to-end gates remain unrun. Cross-builds are build-only.",
+    "Codex trusted runtime/model conversations and full Claude conversations unrun. OpenCode v2/other versions unsupported. Provider absence does not block generic use.",
+    "Broker overflow tested deterministically at queue level, not by assuming OS socket buffer size; no replay/exactly-once guarantee.",
+    "Only configured hook clients receive expiring sourced attention. Signals cannot establish process exit; missing proof remains unknown.",
+    "Same UID is trust boundary; no isolation from malicious same-user processes. No desktop popups tested; explicit fixture action scripts only.",
+    "256 registry entries, no automatic pruning; backend environments can predate clients; escaped process groups are not contained. No coordinator-scale SLA.",
+    "CLI/coordinator development IPC requires matching schema/build; stop an older experimental coordinator using its matching binary before upgrade. No automatic protocol fallback or relaunch."
+  ],
+  "setup_attempts": [
+    "First Python child fixture signal.py shadowed standard library; renamed send_hook.py and all final checks pass.",
+    "Initial minimum-Go attempt inherited host GOROOT; corrected explicit Go 1.26 GOROOT/cache. Failed log: /tmp/txm-phase5/go126-environment-failed.log.",
+    "Initial lint used a read-only user cache; final cache is /tmp/txm-phase5/lint-cache and lint reports zero issues.",
+    "One automatic permission approval review timed out for private runtime test invocation. Its allowed retry succeeded. No rejected action remains blocked."
+  ],
+  "final_review": [
+    "No dependency versions changed in Phase 5.",
+    "Actual archive and current Go/embedded/harness fingerprints match.",
+    "No original ignored bin/ghostty changes, real session/worktree/provider-settings changes or model/auth calls.",
+    "git diff --check clean; nothing staged; HEAD unchanged."
+  ]
+}

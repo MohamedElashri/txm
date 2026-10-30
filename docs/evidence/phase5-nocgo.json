@@ -1,0 +1,31 @@
+[
+  {
+    "args": [
+      "--json",
+      "agent",
+      "wait",
+      "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "--timeout",
+      "1s"
+    ],
+    "exit_code": 4
+  },
+  {
+    "args": [
+      "--json",
+      "agent",
+      "start",
+      "bad",
+      "--",
+      "/bin/true"
+    ],
+    "exit_code": 4
+  },
+  {
+    "args": [
+      "events",
+      "--jsonl"
+    ],
+    "exit_code": 4
+  }
+]

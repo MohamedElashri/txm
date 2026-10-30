@@ -1,0 +1,27 @@
+  • starting release
+  • skipping announce, before, publish, and validate...
+  • cleaning distribution directory
+  • loading environment variables
+  • getting and validating git state
+    • using tags                                     previous=v1.3.0 current=v1.3.1
+    • pipe skipped or partially skipped              reason=disabled during snapshot mode
+  • parsing tag
+  • setting defaults
+  • snapshotting
+    • building snapshot...                           version=1.3.2-next
+  • ensuring distribution directory
+  • setting up metadata
+  • writing release metadata
+  • loading go mod information
+  • build prerequisites
+  • building binaries
+    • building                                       paths=. binaries=txm target=linux_amd64_v1
+    • building                                       paths=. binaries=txm target=linux_amd64_v1
+      • took: 32s
+  • archives
+    • archiving                                      name=dist/txm_Linux_x86_64-musl.zip
+    • archiving                                      name=dist/txm_Linux_x86_64.zip
+  • calculating checksums
+  • writing artifacts metadata
+  • release succeeded after 37s
+  • thanks for using GoReleaser!

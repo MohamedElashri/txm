@@ -1,0 +1,11 @@
+?   	github.com/MohamedElashri/txm	[no test files]
+?   	github.com/MohamedElashri/txm/docs	[no test files]
+ok  	github.com/MohamedElashri/txm/pkg/backend	(cached)
+ok  	github.com/MohamedElashri/txm/pkg/cmd	1.023s
+ok  	github.com/MohamedElashri/txm/pkg/config	(cached)
+ok  	github.com/MohamedElashri/txm/pkg/core	(cached)
+?   	github.com/MohamedElashri/txm/pkg/logger	[no test files]
+ok  	github.com/MohamedElashri/txm/pkg/nativeprocess	(cached)
+ok  	github.com/MohamedElashri/txm/pkg/nativeprotocol	(cached)
+ok  	github.com/MohamedElashri/txm/pkg/nativeserver	(cached)
+ok  	github.com/MohamedElashri/txm/pkg/runtimepath	(cached)

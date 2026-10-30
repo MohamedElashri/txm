@@ -5,6 +5,112 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Validation and hardening
+
+- Added disposable Linux container gates for actual foreign-UID IPC rejection,
+  real loopback SSH/PTY/ControlMaster and Screen 4.09.01/Zellij 0.45.1 basic
+  lifecycle/attach, preserving their degraded capability limits.
+- Remote operation exit 1 retains its operation-failure classification; OpenSSH
+  authentication/network failures remain transport failures.
+- Added explicit full-ID-confirmed `task prune` and `agent prune`, dry-run,
+  supervised exit/cleaned-worktree checks, retained receipts/branches, bounded
+  retired-ID replay prevention and event subscriber resync.
+
+- Final Linux validation runner records exact source/artifact hashes, command
+  results and fixture logs, and rejects uninstrumented race binaries or reused
+  output directories. Added bounded credential-pattern checks with redacted findings.
+- Remote JSON now rejects missing/null completeness flags and missing data fields;
+  malformed envelopes cannot appear as complete results. Schema remains version 1.
+- Task cleanup no longer treats a missing managed registration as proof of an
+  orphan. Tasks pin supervisor instances and require exact exit receipts after
+  registry loss; unknown/lost replies fail closed even with force. Name collisions
+  are preflighted before creating worktrees.
+- Build-helper tests use a private HOME and constructed environment; inherited
+  Git routing variables or credentials cannot redirect their temporary repositories.
+- Archive smoke verifies task/remote completions as well as existing workflows.
+  Unrun platform/provider/actual SSH gates remain explicit release blockers.
+
+### Added
+- Opt-in Git task start/list/inspect/stop/cleanup, private owned worktrees,
+  redacted dry-run, fresh branches, exact managed IDs and receipt-gated cleanup.
+  Dirty/untracked/ignored removal requires force plus full-ID confirmation;
+  branches/commits remain, and interrupted launches are never replayed.
+- Explicit SSH alias allowlist/pinning, protocol probe, bounded partial remote
+  listing and exact native/tmux attachment through encoded requests.
+  Reuses OpenSSH authentication/configuration; ordinary workflows need no Git/SSH.
+  Fake SSH coverage plus isolated real OpenSSH loopback/PTY checks; no external-host or other-platform claim.
+- Separate keyboard-first `dashboard` with typed session/agent observations,
+  search/backend/state filters, freshness/source/capability details, independent
+  cancellable refresh, safe bounded preview and native/tmux attach/read-only actions.
+- Explicit dashboard `--agents` subscriptions; ordinary dashboard and bare picker
+  remain independent of the coordinator. Registrations are never joined by name.
+- Original TTY/file-flag restoration across dashboard exit, cancellation and
+  external attach failures, plus a synthetic recording and workflow examples.
+- Authenticated per-instance/generation attention and turn signals, private hook
+  credentials, replay/freshness checks and explicit provider associations.
+- Bounded `events --jsonl` with atomic initial snapshots, overflow/reconnect
+  resync and epoch/sequence metadata; deterministic `agent wait` with finite
+  deadlines and optional child failure propagation.
+- Explicit `agent notify -- EXECUTABLE [ARGS...]` actions with safe stdin metadata,
+  deadlines, throttling and no snapshot replay. Notifications default off.
+- Generic managed hook context and isolated real Claude initialization-hook
+  coverage. Codex hooks require manual trust review; OpenCode v2 is unsupported.
+- Opt-in `agent start/register/list/status` and `stop-coordinator`, with private
+  single-writer registry, exact backend bindings and restart reconciliation.
+- Native/tmux structured supervised launches with one-use argv/cwd manifests,
+  filtered child environment, foreground PTY process groups and immutable exit
+  receipts. Missing proof remains unknown; registration is unsupervised.
+- Strict profile preflight, redacted `--dry-run`, `--detach`, explicit
+  `--attach-existing` and read-only existing-profile attachment.
+- Exact tmux 3.4+ profile application using returned IDs, per-pane cwd, named
+  layouts and ownership-checked rollback; native single-terminal cwd profiles.
+- Strict `--backend`, explicit `--all-backends` read aggregation, qualified
+  `backend/name` targets, `session inspect`, and `backend capabilities`.
+- Versioned `--json` envelopes for session list/inspect/output and capabilities,
+  classified failure exits, explicit partial results, and private local host IDs.
+- Bounded `session output` with safe plain text, explicit raw snapshots and
+  tmux history. Picker previews and hidden dump use the same capture service.
+
+### Fixed
+- Profile commands no longer depend on focus or guessed indexes, ignore cwd and
+  layout, or reapply automatically to an existing session. Partial/uncertain
+  creations are disclosed and left intact when cleanup ownership cannot be proven.
+- Exact tmux input refuses pane synchronization; profiles disable it only on
+  newly created panes. Profile shells override tmux default-command explicitly.
+- Relative native TMPDIR is rejected before runtime creation.
+- Release pkg-config paths are absolute; archives include man/completion files
+  and use current GoReleaser keys. Linux archive checks remain separate from
+  unverified platform/release gates.
+- CLI/backend failures return nonzero and print diagnostics to stderr once;
+  invalid config no longer panics or silently overwrites configuration.
+- Native framed IPC validates complete messages, roles, peer UID and bounds;
+  standalone input/kill requests are acknowledged and kill waits for shutdown.
+- Native duplicate startup cannot replace a live socket; private runtime paths,
+  stable name locks and instance readiness replace pathname-only discovery.
+- PTY process-group cleanup reserves the child identity until reaping. Client
+  queues, input cancellation, resize rollback and attach/detach TTY restoration
+  prevent slow viewers and abandoned input goroutines from stalling the session.
+- Read-only attach is enforced for native/tmux and never creates sessions.
+- tmux resolves exact session/window/pane IDs before mutations, including
+  duplicate names, nondefault indexes and focus changes. Literal input preserves
+  key names, leading dashes, Unicode and semicolons without claiming completion.
+
+### Changed
+- Native protocol v1 coexists with untouched legacy sessions; keep the old binary
+  to finish them. Native nuke refuses incompatible legacy candidates.
+- Native input uses terminal 0/0; input acceptance never claims command completion.
+  Native logging is opt-in, native-only and requires private regular files.
+- Native Windows persistence is explicitly unavailable. Linux amd64 validation is
+  recorded; macOS runtime evidence is still required before its release claim.
+- Shared pinned Ghostty/Zig builds and guarded integration/race/fuzz test targets.
+- Screen/Zellij unsafe exact pane, close/rename/split and placeholder-preview
+  operations now return unsupported; Screen retains full session IDs. Their
+  real-runtime support remains unverified. Their profiles return unsupported.
+- Human tmux lists render typed session names and attachment counts. Hidden dump
+  defaults to plain text; raw snapshot sequences require `--raw` explicitly.
+
 ## [1.3.1] - 2026-09-17
 
 ### Added

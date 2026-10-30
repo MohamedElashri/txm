@@ -1,0 +1,39 @@
+
+linux-amd64-dependency.log
+
+linux-musl-amd64-dependency.log
+
+completions.log
+
+goreleaser-check.log
+  • checking                                  path=.goreleaser.yaml
+  • 1 configuration file(s) validated
+  • thanks for using GoReleaser!
+
+archive-build-final.log
+  • starting release
+  • skipping announce, before, publish, and validate...
+  • cleaning distribution directory
+  • loading environment variables
+  • getting and validating git state
+    • using tags                                     previous=v1.3.0 current=v1.3.1
+    • pipe skipped or partially skipped              reason=disabled during snapshot mode
+  • parsing tag
+  • setting defaults
+  • snapshotting
+    • building snapshot...                           version=1.3.2-next
+  • ensuring distribution directory
+  • setting up metadata
+  • writing release metadata
+  • loading go mod information
+  • build prerequisites
+  • building binaries
+    • building                                       paths=. binaries=txm target=linux_amd64_v1
+    • building                                       paths=. binaries=txm target=linux_amd64_v1
+  • archives
+    • archiving                                      name=dist/txm_Linux_x86_64-musl.zip
+    • archiving                                      name=dist/txm_Linux_x86_64.zip
+  • calculating checksums
+  • writing artifacts metadata
+  • release succeeded after 14s
+  • thanks for using GoReleaser!

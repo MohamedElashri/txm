@@ -1,0 +1,1000 @@
+{
+  "schema_version": 1,
+  "recorded_at": "2026-10-30T11:21:10.255292+00:00",
+  "scope": "Explicitly requested locally feasible Linux follow-up; no whole-project release certification",
+  "baseline_sha": "f2606d240912ffa2269569cd642a7f83e5457f74",
+  "source_state": "Previous Phases 0-8 and this follow-up are uncommitted; no staging/commit/PR/push/tag/publication.",
+  "phase8_prerequisite": {
+    "head": "f2606d240912ffa2269569cd642a7f83e5457f74",
+    "verified": {
+      "go_and_embedded_sources": "4c203eef8633d16d0b4b1b6c857e410fcf781e0a8370b2f26924020690d66e42",
+      "harness_and_goldens": "d7160ce5a6093590fbbc5d10f913790315dfa9464cc9155b36a65a9e2ae587a4",
+      "build_sources": "bb7dae555948b35034305496df04d4571f0cb57e3e173571fb95bf2c729187ef",
+      "documentation_sources": "aafd2e255a61706a7372d9f4e51285dece0bcb0fc87a5c4c40a88cfb46b5ad95"
+    }
+  },
+  "fingerprint_algorithm": "SHA-256 over sorted relative POSIX path + NUL + raw file bytes + NUL for each file.",
+  "go_and_embedded_sources": {
+    "sha256": "af022ac4ca5cb0a36796df502ac2f0c935928ed60c5708e6e1fade3b78da472c",
+    "files": [
+      "docs/embeds.go",
+      "docs/txm.1",
+      "go.mod",
+      "go.sum",
+      "main.go",
+      "pkg/agent/client.go",
+      "pkg/agent/events.go",
+      "pkg/agent/events_unix.go",
+      "pkg/agent/hooks.go",
+      "pkg/agent/hooks_test.go",
+      "pkg/agent/hooks_unix.go",
+      "pkg/agent/notifications.go",
+      "pkg/agent/provider.go",
+      "pkg/agent/prune_unix.go",
+      "pkg/agent/server_unix.go",
+      "pkg/agent/server_unsupported.go",
+      "pkg/agent/start_unix.go",
+      "pkg/agent/stream.go",
+      "pkg/agent/terminate_unix.go",
+      "pkg/agent/types.go",
+      "pkg/agent/types_test.go",
+      "pkg/backend/backend.go",
+      "pkg/backend/command.go",
+      "pkg/backend/command_test.go",
+      "pkg/backend/dashboard.go",
+      "pkg/backend/data.go",
+      "pkg/backend/managed.go",
+      "pkg/backend/native.go",
+      "pkg/backend/native_cgo.go",
+      "pkg/backend/native_nocgo.go",
+      "pkg/backend/native_unix.go",
+      "pkg/backend/native_unsupported.go",
+      "pkg/backend/profile.go",
+      "pkg/backend/profile_native.go",
+      "pkg/backend/screen.go",
+      "pkg/backend/tmux.go",
+      "pkg/backend/zellij.go",
+      "pkg/cmd/agent.go",
+      "pkg/cmd/agent_signals.go",
+      "pkg/cmd/dashboard.go",
+      "pkg/cmd/environment_test.go",
+      "pkg/cmd/extensions.go",
+      "pkg/cmd/helpers.go",
+      "pkg/cmd/misc.go",
+      "pkg/cmd/pane.go",
+      "pkg/cmd/profile.go",
+      "pkg/cmd/prune.go",
+      "pkg/cmd/queries.go",
+      "pkg/cmd/remote.go",
+      "pkg/cmd/root.go",
+      "pkg/cmd/root_test.go",
+      "pkg/cmd/server.go",
+      "pkg/cmd/session.go",
+      "pkg/cmd/task.go",
+      "pkg/cmd/window.go",
+      "pkg/config/config.go",
+      "pkg/config/config_test.go",
+      "pkg/config/profile.go",
+      "pkg/config/profile_file_other.go",
+      "pkg/config/profile_file_unix.go",
+      "pkg/config/profile_test.go",
+      "pkg/core/contracts_test.go",
+      "pkg/core/errors.go",
+      "pkg/core/models.go",
+      "pkg/core/output.go",
+      "pkg/dashboard/ancestry_linux.go",
+      "pkg/dashboard/ancestry_linux_test.go",
+      "pkg/dashboard/ancestry_other.go",
+      "pkg/dashboard/dashboard_test.go",
+      "pkg/dashboard/model.go",
+      "pkg/dashboard/render.go",
+      "pkg/dashboard/run.go",
+      "pkg/dashboard/source.go",
+      "pkg/dashboard/terminal_other.go",
+      "pkg/dashboard/terminal_unix.go",
+      "pkg/extension/identity_other.go",
+      "pkg/extension/identity_unix.go",
+      "pkg/extension/io.go",
+      "pkg/extension/io_test.go",
+      "pkg/extension/store.go",
+      "pkg/extension/terminal_other.go",
+      "pkg/extension/terminal_unix.go",
+      "pkg/localipc/framing.go",
+      "pkg/localipc/framing_test.go",
+      "pkg/logger/logger.go",
+      "pkg/nativeprocess/wait_unix.go",
+      "pkg/nativeprocess/wait_unix_test.go",
+      "pkg/nativeprocess/wait_unsupported.go",
+      "pkg/nativeprotocol/client.go",
+      "pkg/nativeprotocol/protocol.go",
+      "pkg/nativeprotocol/protocol_test.go",
+      "pkg/nativeserver/options.go",
+      "pkg/nativeserver/server_unix.go",
+      "pkg/nativeserver/server_unix_test.go",
+      "pkg/nativeserver/server_unsupported.go",
+      "pkg/profile/access_other.go",
+      "pkg/profile/access_unix.go",
+      "pkg/profile/plan.go",
+      "pkg/profile/plan_test.go",
+      "pkg/remote/hosts.go",
+      "pkg/remote/protocol.go",
+      "pkg/remote/remote_test.go",
+      "pkg/remote/transport.go",
+      "pkg/runtimepath/files_unix.go",
+      "pkg/runtimepath/files_unix_test.go",
+      "pkg/runtimepath/files_unsupported.go",
+      "pkg/runtimepath/peer_darwin.go",
+      "pkg/runtimepath/peer_linux.go",
+      "pkg/runtimepath/publish_darwin.go",
+      "pkg/runtimepath/publish_linux.go",
+      "pkg/runtimepath/runtime.go",
+      "pkg/runtimepath/runtime_unix.go",
+      "pkg/runtimepath/runtime_unix_test.go",
+      "pkg/runtimepath/runtime_unsupported.go",
+      "pkg/runtimepath/state_unix.go",
+      "pkg/runtimepath/state_unix_test.go",
+      "pkg/runtimepath/state_unsupported.go",
+      "pkg/supervisor/probe.go",
+      "pkg/supervisor/run_unix.go",
+      "pkg/supervisor/run_unsupported.go",
+      "pkg/supervisor/types.go",
+      "pkg/supervisor/types_test.go",
+      "pkg/task/git.go",
+      "pkg/task/git_test.go",
+      "pkg/task/recovery.go",
+      "pkg/task/store.go",
+      "pkg/task/task.go"
+    ]
+  },
+  "harness_and_goldens": {
+    "sha256": "432127bcee312ec97845407385b9c13908369bff3ecc5fb7df1886f5e61e20f9",
+    "files": [
+      "pkg/core/testdata/empty.json",
+      "pkg/core/testdata/error.json",
+      "pkg/core/testdata/partial.json",
+      "pkg/core/testdata/raw.json",
+      "pkg/core/testdata/success.json",
+      "tests/agent_checks.py",
+      "tests/agent_events_checks.py",
+      "tests/archive_checks.py",
+      "tests/cli_errors.py",
+      "tests/dashboard_checks.py",
+      "tests/extension_checks.py",
+      "tests/integration.py",
+      "tests/linux_followup_checks.py",
+      "tests/native_checks.py",
+      "tests/performance.py",
+      "tests/profile_checks.py",
+      "tests/prune_checks.py",
+      "tests/record_dashboard.py",
+      "tests/sandbox.py",
+      "tests/structured_checks.py",
+      "tests/test_build_deps.py",
+      "tests/test_sandbox.py",
+      "tests/test_validation.py",
+      "tests/wire.py"
+    ]
+  },
+  "build_sources": {
+    "sha256": "8f48e7bea4d875d6e113de0d61cdf430bc975ab50df0c279dfbe0ac20d820742",
+    "files": [
+      ".github/scripts/build-ghostty.sh",
+      ".github/workflows/ci.yml",
+      ".github/workflows/release.yml",
+      ".goreleaser.yaml",
+      "Makefile",
+      "scripts/audit-artifacts.py",
+      "scripts/build-deps.sh",
+      "scripts/dependencies.env",
+      "scripts/generate-completions.sh",
+      "scripts/install-ci-zig.sh",
+      "scripts/validate-linux.py",
+      "scripts/validate-runtime.py",
+      "tests/containers/Dockerfile.linux"
+    ]
+  },
+  "documentation_sources": {
+    "sha256": "0d385a167e5382ad830479ee18764b3dc6d90b3309c4b197b73aae7e58e3c844",
+    "files": [
+      "README.md",
+      "docs/CHANGELOG.md",
+      "docs/ROADMAP.md",
+      "docs/architecture.md",
+      "docs/contracts.md",
+      "docs/extensions-readiness.md",
+      "docs/extensions.md",
+      "docs/final-audit.md",
+      "docs/linux-followup.md",
+      "docs/m1-readiness.md",
+      "docs/m2-readiness.md",
+      "docs/m3-readiness.md",
+      "docs/native-protocol.md",
+      "docs/testing.md",
+      "docs/user-guide.md",
+      "plan.md"
+    ]
+  },
+  "archived_go_and_embedded_sources": {
+    "sha256": "af022ac4ca5cb0a36796df502ac2f0c935928ed60c5708e6e1fade3b78da472c",
+    "files": [
+      "docs/embeds.go",
+      "docs/txm.1",
+      "go.mod",
+      "go.sum",
+      "main.go",
+      "pkg/agent/client.go",
+      "pkg/agent/events.go",
+      "pkg/agent/events_unix.go",
+      "pkg/agent/hooks.go",
+      "pkg/agent/hooks_test.go",
+      "pkg/agent/hooks_unix.go",
+      "pkg/agent/notifications.go",
+      "pkg/agent/provider.go",
+      "pkg/agent/prune_unix.go",
+      "pkg/agent/server_unix.go",
+      "pkg/agent/server_unsupported.go",
+      "pkg/agent/start_unix.go",
+      "pkg/agent/stream.go",
+      "pkg/agent/terminate_unix.go",
+      "pkg/agent/types.go",
+      "pkg/agent/types_test.go",
+      "pkg/backend/backend.go",
+      "pkg/backend/command.go",
+      "pkg/backend/command_test.go",
+      "pkg/backend/dashboard.go",
+      "pkg/backend/data.go",
+      "pkg/backend/managed.go",
+      "pkg/backend/native.go",
+      "pkg/backend/native_cgo.go",
+      "pkg/backend/native_nocgo.go",
+      "pkg/backend/native_unix.go",
+      "pkg/backend/native_unsupported.go",
+      "pkg/backend/profile.go",
+      "pkg/backend/profile_native.go",
+      "pkg/backend/screen.go",
+      "pkg/backend/tmux.go",
+      "pkg/backend/zellij.go",
+      "pkg/cmd/agent.go",
+      "pkg/cmd/agent_signals.go",
+      "pkg/cmd/dashboard.go",
+      "pkg/cmd/environment_test.go",
+      "pkg/cmd/extensions.go",
+      "pkg/cmd/helpers.go",
+      "pkg/cmd/misc.go",
+      "pkg/cmd/pane.go",
+      "pkg/cmd/profile.go",
+      "pkg/cmd/prune.go",
+      "pkg/cmd/queries.go",
+      "pkg/cmd/remote.go",
+      "pkg/cmd/root.go",
+      "pkg/cmd/root_test.go",
+      "pkg/cmd/server.go",
+      "pkg/cmd/session.go",
+      "pkg/cmd/task.go",
+      "pkg/cmd/window.go",
+      "pkg/config/config.go",
+      "pkg/config/config_test.go",
+      "pkg/config/profile.go",
+      "pkg/config/profile_file_other.go",
+      "pkg/config/profile_file_unix.go",
+      "pkg/config/profile_test.go",
+      "pkg/core/contracts_test.go",
+      "pkg/core/errors.go",
+      "pkg/core/models.go",
+      "pkg/core/output.go",
+      "pkg/dashboard/ancestry_linux.go",
+      "pkg/dashboard/ancestry_linux_test.go",
+      "pkg/dashboard/ancestry_other.go",
+      "pkg/dashboard/dashboard_test.go",
+      "pkg/dashboard/model.go",
+      "pkg/dashboard/render.go",
+      "pkg/dashboard/run.go",
+      "pkg/dashboard/source.go",
+      "pkg/dashboard/terminal_other.go",
+      "pkg/dashboard/terminal_unix.go",
+      "pkg/extension/identity_other.go",
+      "pkg/extension/identity_unix.go",
+      "pkg/extension/io.go",
+      "pkg/extension/io_test.go",
+      "pkg/extension/store.go",
+      "pkg/extension/terminal_other.go",
+      "pkg/extension/terminal_unix.go",
+      "pkg/localipc/framing.go",
+      "pkg/localipc/framing_test.go",
+      "pkg/logger/logger.go",
+      "pkg/nativeprocess/wait_unix.go",
+      "pkg/nativeprocess/wait_unix_test.go",
+      "pkg/nativeprocess/wait_unsupported.go",
+      "pkg/nativeprotocol/client.go",
+      "pkg/nativeprotocol/protocol.go",
+      "pkg/nativeprotocol/protocol_test.go",
+      "pkg/nativeserver/options.go",
+      "pkg/nativeserver/server_unix.go",
+      "pkg/nativeserver/server_unix_test.go",
+      "pkg/nativeserver/server_unsupported.go",
+      "pkg/profile/access_other.go",
+      "pkg/profile/access_unix.go",
+      "pkg/profile/plan.go",
+      "pkg/profile/plan_test.go",
+      "pkg/remote/hosts.go",
+      "pkg/remote/protocol.go",
+      "pkg/remote/remote_test.go",
+      "pkg/remote/transport.go",
+      "pkg/runtimepath/files_unix.go",
+      "pkg/runtimepath/files_unix_test.go",
+      "pkg/runtimepath/files_unsupported.go",
+      "pkg/runtimepath/peer_darwin.go",
+      "pkg/runtimepath/peer_linux.go",
+      "pkg/runtimepath/publish_darwin.go",
+      "pkg/runtimepath/publish_linux.go",
+      "pkg/runtimepath/runtime.go",
+      "pkg/runtimepath/runtime_unix.go",
+      "pkg/runtimepath/runtime_unix_test.go",
+      "pkg/runtimepath/runtime_unsupported.go",
+      "pkg/runtimepath/state_unix.go",
+      "pkg/runtimepath/state_unix_test.go",
+      "pkg/runtimepath/state_unsupported.go",
+      "pkg/supervisor/probe.go",
+      "pkg/supervisor/run_unix.go",
+      "pkg/supervisor/run_unsupported.go",
+      "pkg/supervisor/types.go",
+      "pkg/supervisor/types_test.go",
+      "pkg/task/git.go",
+      "pkg/task/git_test.go",
+      "pkg/task/recovery.go",
+      "pkg/task/store.go",
+      "pkg/task/task.go"
+    ]
+  },
+  "archived_harness_and_goldens": {
+    "sha256": "432127bcee312ec97845407385b9c13908369bff3ecc5fb7df1886f5e61e20f9",
+    "files": [
+      "pkg/core/testdata/empty.json",
+      "pkg/core/testdata/error.json",
+      "pkg/core/testdata/partial.json",
+      "pkg/core/testdata/raw.json",
+      "pkg/core/testdata/success.json",
+      "tests/agent_checks.py",
+      "tests/agent_events_checks.py",
+      "tests/archive_checks.py",
+      "tests/cli_errors.py",
+      "tests/dashboard_checks.py",
+      "tests/extension_checks.py",
+      "tests/integration.py",
+      "tests/linux_followup_checks.py",
+      "tests/native_checks.py",
+      "tests/performance.py",
+      "tests/profile_checks.py",
+      "tests/prune_checks.py",
+      "tests/record_dashboard.py",
+      "tests/sandbox.py",
+      "tests/structured_checks.py",
+      "tests/test_build_deps.py",
+      "tests/test_sandbox.py",
+      "tests/test_validation.py",
+      "tests/wire.py"
+    ]
+  },
+  "archived_build_sources": {
+    "sha256": "8f48e7bea4d875d6e113de0d61cdf430bc975ab50df0c279dfbe0ac20d820742",
+    "files": [
+      ".github/scripts/build-ghostty.sh",
+      ".github/workflows/ci.yml",
+      ".github/workflows/release.yml",
+      ".goreleaser.yaml",
+      "Makefile",
+      "scripts/audit-artifacts.py",
+      "scripts/build-deps.sh",
+      "scripts/dependencies.env",
+      "scripts/generate-completions.sh",
+      "scripts/install-ci-zig.sh",
+      "scripts/validate-linux.py",
+      "scripts/validate-runtime.py",
+      "tests/containers/Dockerfile.linux"
+    ]
+  },
+  "checks": {
+    "go-results": [
+      {
+        "name": "go-final",
+        "argv": [
+          "go",
+          "test",
+          "./..."
+        ],
+        "exit_code": 0,
+        "started": 1793358343.486731,
+        "finished": 1793358347.2106466
+      },
+      {
+        "name": "go-race-final",
+        "argv": [
+          "go",
+          "test",
+          "-race",
+          "./..."
+        ],
+        "exit_code": 0,
+        "started": 1793358347.2108543,
+        "finished": 1793358356.36798
+      },
+      {
+        "name": "go126-final",
+        "argv": [
+          "/home/melashri/go/pkg/mod/golang.org/toolchain@v0.0.1-go1.26.10.linux-amd64/bin/go",
+          "test",
+          "./..."
+        ],
+        "exit_code": 0,
+        "started": 1793358356.368315,
+        "finished": 1793358363.2266598
+      },
+      {
+        "name": "lint-final",
+        "argv": [
+          "golangci-lint",
+          "run"
+        ],
+        "exit_code": 0,
+        "started": 1793358363.227007,
+        "finished": 1793358368.9349203
+      },
+      {
+        "name": "mod-verify",
+        "argv": [
+          "go",
+          "mod",
+          "verify"
+        ],
+        "exit_code": 0,
+        "started": 1793358368.9353104,
+        "finished": 1793358369.2377374
+      },
+      {
+        "name": "mod-tidy-diff",
+        "argv": [
+          "go",
+          "mod",
+          "tidy",
+          "-diff"
+        ],
+        "exit_code": 0,
+        "started": 1793358369.237997,
+        "finished": 1793358369.3847392
+      },
+      {
+        "name": "build-final",
+        "argv": [
+          "go",
+          "build",
+          "-o",
+          "/tmp/txm-linux-followup/final/txm",
+          "."
+        ],
+        "exit_code": 0,
+        "started": 1793358369.3850367,
+        "finished": 1793358371.0473967
+      },
+      {
+        "name": "race-build-final",
+        "argv": [
+          "go",
+          "build",
+          "-race",
+          "-o",
+          "/tmp/txm-linux-followup/final/txm-race",
+          "."
+        ],
+        "exit_code": 0,
+        "started": 1793358371.0476744,
+        "finished": 1793358372.794071
+      },
+      {
+        "name": "windows-amd64",
+        "argv": [
+          "go",
+          "build",
+          "-o",
+          "/tmp/txm-linux-followup/final/txm-windows-amd64.exe",
+          "."
+        ],
+        "exit_code": 0,
+        "started": 1793358372.7944467,
+        "finished": 1793358374.0284908
+      },
+      {
+        "name": "windows-arm64",
+        "argv": [
+          "go",
+          "build",
+          "-o",
+          "/tmp/txm-linux-followup/final/txm-windows-arm64.exe",
+          "."
+        ],
+        "exit_code": 0,
+        "started": 1793358374.028936,
+        "finished": 1793358375.2245767
+      },
+      {
+        "name": "nocgo-build",
+        "argv": [
+          "go",
+          "build",
+          "-o",
+          "/tmp/txm-linux-followup/final/txm-nocgo",
+          "."
+        ],
+        "exit_code": 0,
+        "started": 1793358375.2248695,
+        "finished": 1793358376.4172387
+      },
+      {
+        "name": "darwin-nocgo-amd64",
+        "argv": [
+          "go",
+          "build",
+          "-o",
+          "/tmp/txm-linux-followup/final/txm-darwin-nocgo-amd64",
+          "."
+        ],
+        "exit_code": 0,
+        "started": 1793358376.417637,
+        "finished": 1793358377.630915
+      },
+      {
+        "name": "darwin-nocgo-arm64",
+        "argv": [
+          "go",
+          "build",
+          "-o",
+          "/tmp/txm-linux-followup/final/txm-darwin-nocgo-arm64",
+          "."
+        ],
+        "exit_code": 0,
+        "started": 1793358377.6312165,
+        "finished": 1793358378.9425113
+      }
+    ],
+    "archive-build-results": [
+      {
+        "name": "linux-amd64-dependency",
+        "argv": [
+          "zig",
+          "build",
+          "-Demit-lib-vt",
+          "--prefix",
+          "/tmp/txm-linux-followup/final/repo/.ghostty-release/linux-amd64",
+          "-Dtarget=x86_64-linux-gnu",
+          "-j2"
+        ],
+        "cwd": "/tmp/txm-p0-Yso5Rk/ghostty",
+        "exit_code": 0,
+        "started": 1793358455.0527844,
+        "finished": 1793358455.3323646
+      },
+      {
+        "name": "linux-musl-amd64-dependency",
+        "argv": [
+          "zig",
+          "build",
+          "-Demit-lib-vt",
+          "--prefix",
+          "/tmp/txm-linux-followup/final/repo/.ghostty-release/linux-musl-amd64",
+          "-Dtarget=x86_64-linux-musl",
+          "-j2"
+        ],
+        "cwd": "/tmp/txm-p0-Yso5Rk/ghostty",
+        "exit_code": 0,
+        "started": 1793358455.3327405,
+        "finished": 1793358455.5055685
+      },
+      {
+        "name": "completions",
+        "argv": [
+          "bash",
+          "scripts/generate-completions.sh"
+        ],
+        "cwd": "/tmp/txm-linux-followup/final/repo",
+        "exit_code": 0,
+        "started": 1793358455.5058007,
+        "finished": 1793358455.8438818
+      },
+      {
+        "name": "goreleaser-check",
+        "argv": [
+          "goreleaser",
+          "check"
+        ],
+        "cwd": "/tmp/txm-linux-followup/final/repo",
+        "exit_code": 0,
+        "started": 1793358455.8441334,
+        "finished": 1793358455.881546
+      },
+      {
+        "name": "archive-build-final",
+        "argv": [
+          "goreleaser",
+          "release",
+          "--snapshot",
+          "--skip=before",
+          "--config",
+          "linux-smoke.yml",
+          "--clean",
+          "--parallelism",
+          "2"
+        ],
+        "cwd": "/tmp/txm-linux-followup/final/repo",
+        "exit_code": 0,
+        "started": 1793358455.8819191,
+        "finished": 1793358461.8258064
+      }
+    ],
+    "fuzz-results": [
+      {
+        "name": "FuzzNativeFrame",
+        "argv": [
+          "go",
+          "test",
+          "./pkg/nativeprotocol",
+          "-run=^$",
+          "-fuzz=FuzzNativeFrame",
+          "-fuzztime=30s",
+          "-parallel=2"
+        ],
+        "exit_code": 0,
+        "started": 1793358343.4850142,
+        "finished": 1793358373.8197067
+      },
+      {
+        "name": "FuzzPlain",
+        "argv": [
+          "go",
+          "test",
+          "./pkg/core",
+          "-run=^$",
+          "-fuzz=FuzzPlain",
+          "-fuzztime=10s",
+          "-parallel=2"
+        ],
+        "exit_code": 0,
+        "started": 1793358373.8200364,
+        "finished": 1793358385.112975
+      },
+      {
+        "name": "FuzzLocalFrame",
+        "argv": [
+          "go",
+          "test",
+          "./pkg/localipc",
+          "-run=^$",
+          "-fuzz=FuzzLocalFrame",
+          "-fuzztime=15s",
+          "-parallel=2"
+        ],
+        "exit_code": 0,
+        "started": 1793358385.1133182,
+        "finished": 1793358401.3883402
+      },
+      {
+        "name": "FuzzDecode",
+        "argv": [
+          "go",
+          "test",
+          "./pkg/remote",
+          "-run=^$",
+          "-fuzz=FuzzDecode",
+          "-fuzztime=15s",
+          "-parallel=2"
+        ],
+        "exit_code": 0,
+        "started": 1793358401.388614,
+        "finished": 1793358418.75655
+      }
+    ]
+  },
+  "runtime_report": "linux-followup-runtime-report.json",
+  "container_report": "linux-followup-container-report.json",
+  "counts": {
+    "runtime_checks": 44,
+    "runtime_binaries": 4,
+    "runtime_suites_each": 10,
+    "prune_groups_each": 4,
+    "linux_container_groups_each": 9,
+    "linux_container_groups_total": 36,
+    "offline_claude_init_groups": 1,
+    "go_checks": 13,
+    "fuzz_targets": 4,
+    "harness_groups": 15
+  },
+  "unit_environment": {
+    "PKG_CONFIG_PATH": "/tmp/txm-p0-Yso5Rk/prefix-compatible/share/pkgconfig",
+    "CGO_ENABLED": "1",
+    "GOCACHE": "/tmp/txm-plan-review-go-cache",
+    "GOPROXY": "off",
+    "GOTOOLCHAIN": "local",
+    "GOLANGCI_LINT_CACHE": "/tmp/txm-linux-followup/final/lint-cache"
+  },
+  "minimum_go_environment": {
+    "GOROOT": "/home/melashri/go/pkg/mod/golang.org/toolchain@v0.0.1-go1.26.10.linux-amd64",
+    "GOCACHE": "/tmp/txm-p0-Yso5Rk/go126-cache"
+  },
+  "host": {
+    "os": "Linux",
+    "architecture": "x86_64",
+    "kernel": "7.0.0-38-generic",
+    "python": "3.15.2"
+  },
+  "container_image": "sha256:a1ae1810d255e325182216e3e34781edde1b6aae13575c72b9cd5f3728bf7785",
+  "container_versions": {
+    "sshd": "OpenSSH_9.6p1 Ubuntu-3ubuntu13.20, OpenSSL 3.0.13 30 Jan 2024",
+    "ssh": "OpenSSH_9.6p1 Ubuntu-3ubuntu13.20, OpenSSL 3.0.13 30 Jan 2024",
+    "screen": "Screen version 4.09.01 (GNU) 20-Aug-23",
+    "tmux": "tmux 3.4"
+  },
+  "zellij": {
+    "version": "0.45.1 no-web x86_64 Linux musl",
+    "release_asset_sha256": "d7bda1e18c30a688833ae7627f1d6a253bbba5349a4bc48e4f0ec008aaf75ed1",
+    "binary_sha256": "0ec6ef07b63c6355c02ce18343d40ef5ef5af19e25313ea9009c8fceda29e94f",
+    "source": "https://github.com/zellij-org/zellij/releases/tag/v0.45.1"
+  },
+  "provider_inventory": "linux-followup-providers.json",
+  "provider_guard": "linux-followup-provider-guard.json",
+  "performance": {
+    "scope": "Linux amd64, Debug VT, private idle sessions; not a release SLA",
+    "budgets": {
+      "version_median_ms": 20,
+      "list_1_ms": 50,
+      "list_10_ms": 250,
+      "list_100_ms": 2000,
+      "max_server_rss_kib": 32768
+    },
+    "metrics": {
+      "version_median_ms": 6.09835801878944,
+      "list_1_ms": 8.235924004111439,
+      "max_server_rss_kib": 25700,
+      "list_10_ms": 16.5924439788796,
+      "list_100_ms": 111.6609500022605
+    },
+    "passed": true
+  },
+  "prior_performance": {
+    "source": "phase8-performance.json",
+    "scope": "Prior descriptive comparison; unchanged fixed budgets."
+  },
+  "artifacts": [
+    {
+      "label": "normal",
+      "path": "/tmp/txm-linux-followup/final/txm",
+      "sha256": "488edad2a955b33cf9d06f7ae60caec0a76c75a28ae4d72dd99de5124f9ea0cc"
+    },
+    {
+      "label": "race",
+      "path": "/tmp/txm-linux-followup/final/txm-race",
+      "sha256": "7144863ad9cc1fcad7909845991fc9df1399f93b2f1938403142c812f92d5b70"
+    },
+    {
+      "label": "archive-0",
+      "path": "/tmp/txm-linux-followup/runtime-final/txm-archive-0",
+      "sha256": "dd153f27e9ad2b6ebea3e0b86d9bfebb1df6fb393f1d01d87dcf72c321363d75"
+    },
+    {
+      "label": "archive-1",
+      "path": "/tmp/txm-linux-followup/runtime-final/txm-archive-1",
+      "sha256": "cdc7f9c5eca1cac35c6356ecc2fc9982237d7683e84e2913030f8918c50641c4"
+    },
+    {
+      "label": "zip",
+      "path": "/tmp/txm-linux-followup/final/repo/dist/txm_Linux_x86_64.zip",
+      "sha256": "adc08bca7a78d0f76a14817ce6c16f023d0c410e7182f9bfa07f9c3c28adcf47"
+    },
+    {
+      "label": "zip",
+      "path": "/tmp/txm-linux-followup/final/repo/dist/txm_Linux_x86_64-musl.zip",
+      "sha256": "1846371c9516d16001f6630b45d28edd54d701f5c49b9dacfa433e995abdb4b6"
+    },
+    {
+      "path": "/tmp/txm-linux-followup/final/txm",
+      "sha256": "488edad2a955b33cf9d06f7ae60caec0a76c75a28ae4d72dd99de5124f9ea0cc"
+    },
+    {
+      "path": "/tmp/txm-linux-followup/final/txm-race",
+      "sha256": "7144863ad9cc1fcad7909845991fc9df1399f93b2f1938403142c812f92d5b70"
+    },
+    {
+      "path": "/tmp/txm-linux-followup/linux-final-3/txm-archive-0",
+      "sha256": "dd153f27e9ad2b6ebea3e0b86d9bfebb1df6fb393f1d01d87dcf72c321363d75"
+    },
+    {
+      "path": "/tmp/txm-linux-followup/linux-final-3/txm-archive-1",
+      "sha256": "cdc7f9c5eca1cac35c6356ecc2fc9982237d7683e84e2913030f8918c50641c4"
+    },
+    {
+      "path": "/tmp/txm-linux-followup/final/repo/dist/txm_Linux_x86_64.zip",
+      "sha256": "adc08bca7a78d0f76a14817ce6c16f023d0c410e7182f9bfa07f9c3c28adcf47"
+    },
+    {
+      "path": "/tmp/txm-linux-followup/final/repo/dist/txm_Linux_x86_64-musl.zip",
+      "sha256": "1846371c9516d16001f6630b45d28edd54d701f5c49b9dacfa433e995abdb4b6"
+    },
+    {
+      "path": "/tmp/txm-linux-followup/zellij",
+      "sha256": "0ec6ef07b63c6355c02ce18343d40ef5ef5af19e25313ea9009c8fceda29e94f"
+    },
+    {
+      "path": "/home/linuxbrew/.linuxbrew/Caskroom/claude-code/2.1.308/claude",
+      "sha256": "356733f185fa988e6bf3aa9a555269fdd167982a2e2a80d3c8a78037bb92ad58"
+    }
+  ],
+  "evidence_files": [
+    {
+      "path": "docs/evidence/linux-followup-normal-linux.json",
+      "sha256": "697720be7407fe3a05b8e9e1ea8da9baac57efe84b5b9f0f687e2ac3688fd65d"
+    },
+    {
+      "path": "docs/evidence/linux-followup-normal-linux.txt",
+      "sha256": "a73adc2bb63b3bc8d5574a2db653dbf2ec35aece73c55f3ab3ed2db9562a59b1"
+    },
+    {
+      "path": "docs/evidence/linux-followup-normal-runtime.txt",
+      "sha256": "d34c309863bb9ae42229f8e530bb46fea4dc9aa6b48da561c178ea3e100122df"
+    },
+    {
+      "path": "docs/evidence/linux-followup-normal-dashboard.json",
+      "sha256": "61b44575a80f8ece4c28bf0cf65a0e4c5cabb5e93d9cccf7974fb6944c953717"
+    },
+    {
+      "path": "docs/evidence/linux-followup-race-linux.json",
+      "sha256": "697720be7407fe3a05b8e9e1ea8da9baac57efe84b5b9f0f687e2ac3688fd65d"
+    },
+    {
+      "path": "docs/evidence/linux-followup-race-linux.txt",
+      "sha256": "fab98b58af2d6f3229a830b850ba5790155ccede586b49bb21dcc9bf380f5e69"
+    },
+    {
+      "path": "docs/evidence/linux-followup-race-runtime.txt",
+      "sha256": "cdd631152ee819d6cfafe11deadd3e40e63e3507fa2a0beb6e4041e1f28d8250"
+    },
+    {
+      "path": "docs/evidence/linux-followup-race-dashboard.json",
+      "sha256": "0cd8e22761746f0412a000477a66e4680272b064463008935851d9970d45b21d"
+    },
+    {
+      "path": "docs/evidence/linux-followup-archive-0-linux.json",
+      "sha256": "697720be7407fe3a05b8e9e1ea8da9baac57efe84b5b9f0f687e2ac3688fd65d"
+    },
+    {
+      "path": "docs/evidence/linux-followup-archive-0-linux.txt",
+      "sha256": "afdbabdc6b68344da9fe2cf749ad4e8660f3e07a5ca4e827b094fd521686efee"
+    },
+    {
+      "path": "docs/evidence/linux-followup-archive-0-runtime.txt",
+      "sha256": "cb4acf9dc7edb3a5a7ea9f54d0418d77c0c64ac222ad6a10ffad50c7f144fea3"
+    },
+    {
+      "path": "docs/evidence/linux-followup-archive-0-dashboard.json",
+      "sha256": "ca89b96e7e1db1c178a9cc239929e2ddde28e8cbf86ff9d627d9e93ebc39dac0"
+    },
+    {
+      "path": "docs/evidence/linux-followup-archive-1-linux.json",
+      "sha256": "697720be7407fe3a05b8e9e1ea8da9baac57efe84b5b9f0f687e2ac3688fd65d"
+    },
+    {
+      "path": "docs/evidence/linux-followup-archive-1-linux.txt",
+      "sha256": "99266ac31d40f90423423f009e0cc55acebbcccca5967907ff0c57e66f388b67"
+    },
+    {
+      "path": "docs/evidence/linux-followup-archive-1-runtime.txt",
+      "sha256": "bdbd69a650f2768bd2434a21063324084ef546271c47f09093975a1062952ff0"
+    },
+    {
+      "path": "docs/evidence/linux-followup-archive-1-dashboard.json",
+      "sha256": "a9b82bcc91b59453129246d12159fa0910434c1fc31ec83718178ba174ee34f4"
+    },
+    {
+      "path": "docs/evidence/linux-followup-runtime-report.json",
+      "sha256": "486cd290d5c18697bcb622a12bb6f4486efe597215f0019802e53ef1cd2fa94e"
+    },
+    {
+      "path": "docs/evidence/linux-followup-container-report.json",
+      "sha256": "f2da0d51a2d0ffe20582138bfd68449a003fd743f3f8eb33ccf19d5ae7961cf7"
+    },
+    {
+      "path": "docs/evidence/linux-followup-harness.txt",
+      "sha256": "ec409e147551e80fdf1f1fe678f151e25b1650dd918055c37c83bf32ce6df16b"
+    },
+    {
+      "path": "docs/evidence/linux-followup-performance.json",
+      "sha256": "d449399d7135a5ab89ae46a1e28b599b3e7698c4bf4a0a12656f8d656a1edb78"
+    },
+    {
+      "path": "docs/evidence/linux-followup-archive-gnu.json",
+      "sha256": "66456f75de109413af041a6858b4be9c0dcb9bcae57f686b173e84ba89dd7e74"
+    },
+    {
+      "path": "docs/evidence/linux-followup-archive-musl.json",
+      "sha256": "c51bee9af5f6187e64187f3af25bcd0ad97b9bc27f3c5eeecaca4630d19841ae"
+    },
+    {
+      "path": "docs/evidence/linux-followup-claude-init.txt",
+      "sha256": "c1a2ae796aeb946d6e50af403c790fe02970bb06bbf6c22175697ec6dd15d0ef"
+    },
+    {
+      "path": "docs/evidence/linux-followup-providers.json",
+      "sha256": "e556399e79d819dc9b54c92d41e15163a3fd1e6637a4a53c2827d351ec5f1d0f"
+    },
+    {
+      "path": "docs/evidence/linux-followup-provider-guard.json",
+      "sha256": "b187c388922a8b54d861184fb88162a6f60a3fc186547437c79f72a1f14f2a28"
+    },
+    {
+      "path": "docs/evidence/linux-followup-artifact-checks.json",
+      "sha256": "81e48f600f6bdf54ea87b8153786d9b6a1d65b5854f3c117f1940fa75ae6686c"
+    },
+    {
+      "path": "docs/evidence/linux-followup-privacy.json",
+      "sha256": "c0e035693423cccbee2b6915d52de36bf98689c82bb3832b51aaa417775d905b"
+    },
+    {
+      "path": "docs/evidence/linux-followup-cleanup.json",
+      "sha256": "c56a5349c5be39c5838b59fddeb7f6ae3c055050ff5785ff530edceeda0a0df8"
+    },
+    {
+      "path": "docs/evidence/linux-followup-linux-smoke.yml",
+      "sha256": "18e4c053a4d39ae6aa2bdf9658e6a04056822cee38faee5d16a1a8d95591ba50"
+    },
+    {
+      "path": "docs/evidence/linux-followup-go-checks.txt",
+      "sha256": "471dfedb99cd823db85e108789a7213981e63e595d1bca9482f74773548e69a2"
+    },
+    {
+      "path": "docs/evidence/linux-followup-fuzz.txt",
+      "sha256": "eaf97c16c602c47c3e19a76af80f34566bc9450576243d2979f4734f97d74663"
+    },
+    {
+      "path": "docs/evidence/linux-followup-archive-build.txt",
+      "sha256": "09bfc28c0b05de7a900b2eed2e0de78faf4190ff1bae8642afd51c8c6cac6041"
+    },
+    {
+      "path": "docs/evidence/linux-followup-linkage.txt",
+      "sha256": "1d993f74d1ceafbcd43770a08c81ea7a2b761f4f6c43d932ee078a23205fd160"
+    }
+  ],
+  "privacy": {
+    "passed": true,
+    "scope": "Known credential forms scanned in explicit source/docs/evidence/runtime logs/binaries/ZIP members; fixture prompts synthetic and no model/auth was used. No universal secret detection claim."
+  },
+  "fixes": [
+    "Real SSH remote operation exit 1 preserves operation_failed instead of transport exit 7; SSH 255 remains backend_unavailable.",
+    "Explicit exact-ID task/agent metadata pruning with dry-run, verified cleanup/exit, branch/receipt retention, bounded retired-ID replay protection and event resync."
+  ],
+  "closed_linux_gates": [
+    "Actual UID 65534 filesystem denial and separately reachable SO_PEERCRED native/coordinator rejection; owner and child/registry survive.",
+    "Actual OpenSSH loopback authentication, strict keys, pins, partials, protocol mismatch, timeout/cancel, ControlMaster reuse/reconnect and native/tmux real PTYs.",
+    "Screen 4.09.01 and Zellij 0.45.1 real basic lifecycle, exact names/IDs, scoped nuke/second protected namespace, attach/input/detach/TTY restoration.",
+    "Offline actual Claude 2.1.308 SessionStart initialization without model/auth/network; installed unsupported provider versions refuse hook activation before coordinator state."
+  ],
+  "remaining_limits": [
+    "macOS runtime/archive/install, native ARM64 hardware/runtime and Windows external-backend/archive/install gates require appropriate isolated runners; cross-builds are not runtime proof.",
+    "Trusted/full provider lifecycle remains unrun; installed Codex 0.166.0 and OpenCode v2.2.2 remain unsupported; allowlist and trust are not bypassed.",
+    "Screen/Zellij remain degraded with unsupported panes/layouts/read-only; tests cover recorded basic lifecycle versions only.",
+    "No external SSH hosts/WAN/other-OS interoperability claimed. Container apt resolution is not locked; exact image ID and versions are recorded.",
+    "Pruning reclaims task/agent index capacity, not disk usage; receipts/manifests/credentials/branches remain. Retired IDs capped at 16,384; corrupt history fails closed.",
+    "Same UID is not a sandbox and escaped process groups are not containment."
+  ],
+  "superseded_checkpoints": [
+    {
+      "path": "/tmp/txm-linux-followup/linux-final",
+      "status": "Failed before runtime: runner variable scope bug; corrected before full rerun."
+    },
+    {
+      "path": "/tmp/txm-linux-followup/linux-final-2",
+      "status": "Prerequisite failure before runtime: archive rebuild was still in progress; final rerun used completed immutable ZIPs."
+    },
+    {
+      "path": "/tmp/txm-linux-followup/artifact_checks.py",
+      "status": "Initial standalone assertion incorrectly required static command text in dynamic zsh output; corrected to check actual dynamic prune/flag suggestions. No production completion change."
+    }
+  ],
+  "handoff": "docs/linux-followup.md",
+  "cleanup": "linux-followup-cleanup.json"
+}

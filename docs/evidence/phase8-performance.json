@@ -1,0 +1,18 @@
+{
+  "scope": "Linux amd64, Debug VT, private idle sessions; not a release SLA",
+  "budgets": {
+    "version_median_ms": 20,
+    "list_1_ms": 50,
+    "list_10_ms": 250,
+    "list_100_ms": 2000,
+    "max_server_rss_kib": 32768
+  },
+  "metrics": {
+    "version_median_ms": 4.700419987784699,
+    "list_1_ms": 7.655034016352147,
+    "max_server_rss_kib": 25848,
+    "list_10_ms": 16.870835970621556,
+    "list_100_ms": 98.05559000233188
+  },
+  "passed": true
+}

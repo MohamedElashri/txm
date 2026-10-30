@@ -1,0 +1,17 @@
+{
+  "archive": "/tmp/txm-phase4/repo/dist/txm_Linux_x86_64.zip",
+  "sha256": "badb7ae173462867a52c9e453241498f688b2df5ef4fea903d020ab4c8c38205",
+  "files": [
+    "LICENSE",
+    "README.md",
+    "completions/_txm",
+    "completions/txm.bash",
+    "completions/txm.fish",
+    "completions/txm.ps1",
+    "docs/txm.1",
+    "txm"
+  ],
+  "version": "txm version 1.3.2-next",
+  "passed": true,
+  "scope": "host-compatible ZIP, private user install; no system install/publication"
+}

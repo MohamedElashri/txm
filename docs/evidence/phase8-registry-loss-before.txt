@@ -1,0 +1,17 @@
+test_registry_loss_requires_pinned_exit_receipt (__main__.TaskChecks.test_registry_loss_requires_pinned_exit_receipt) ... FAIL
+
+======================================================================
+FAIL: test_registry_loss_requires_pinned_exit_receipt (__main__.TaskChecks.test_registry_loss_requires_pinned_exit_receipt)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/melashri/projects/txm/tests/extension_checks.py", line 199, in test_registry_loss_requires_pinned_exit_receipt
+    command(box,['task','cleanup',ident],7)
+  File "/home/melashri/projects/txm/tests/extension_checks.py", line 28, in command
+    assert p.returncode==code,(args[:4],p.returncode,p.stdout,p.stderr)
+           ^^^^^^^^^^^^^^^^^^
+AssertionError: (['task', 'cleanup', 'a671a189f980b12c69bd91c84b37c574'], 0, '{"schema_version":1,"data":{"task":{"id":"a671a189f980b12c69bd91c84b37c574","name":"task","host_id":"74c44c598a46d82b0f91285166a6ed8f","state_root":"/tmp/txm-test-vp1yzyz_/state/txm/v1","backend":"native","repo":"/tmp/txm-test-vp1yzyz_/repo","common_dir":"/tmp/txm-test-vp1yzyz_/repo/.git","repo_identity":{"device":66306,"inode":59023195},"common_identity":{"device":66306,"inode":59023225},"worktree":"/tmp/txm-test-vp1yzyz_/state/txm/v1/task-worktrees/a671a189f980b12c69bd91c84b37c574","worktree_identity":{"device":66306,"inode":59023380},"git_file_identity":{"device":66306,"inode":59023384},"git_file":"gitdir: /tmp/txm-test-vp1yzyz_/repo/.git/worktrees/a671a189f980b12c69bd91c84b37c574\\n","admin":"/tmp/txm-test-vp1yzyz_/repo/.git/worktrees/a671a189f980b12c69bd91c84b37c574","admin_identity":{"device":66306,"inode":59023375},"branch":"txm/task-a671a189f980b12c69bd91c84b37c574","base_commit":"3965b042c44f09d83b4994b0ea2daf4ab175154c","allow_repo_commands":false,"created":true,"launch_requested":true,"cleaned":true},"agent":null,"orphan":true,"error":null},"errors":[],"partial":false}\n', '')
+
+----------------------------------------------------------------------
+Ran 1 test in 2.240s
+
+FAILED (failures=1)

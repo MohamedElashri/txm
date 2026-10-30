@@ -1,0 +1,81 @@
+{
+  "schema_version": 1,
+  "passed": true,
+  "tests_run": 9,
+  "skipped": [],
+  "versions": {
+    "sshd": "OpenSSH_9.6p1 Ubuntu-3ubuntu13.20, OpenSSL 3.0.13 30 Jan 2024",
+    "ssh": "OpenSSH_9.6p1 Ubuntu-3ubuntu13.20, OpenSSL 3.0.13 30 Jan 2024",
+    "screen": "Screen version 4.09.01 (GNU) 20-Aug-23",
+    "tmux": "tmux 3.4"
+  },
+  "observations": {
+    "screen": {
+      "real_attach_input_detach_tty": true,
+      "version": "Screen version 4.09.01 (GNU) 20-Aug-23",
+      "empty_listing": true,
+      "create_list_inspect_delete": true,
+      "exact_name_collision": true,
+      "typed_identity": true,
+      "unsupported_refusals": true,
+      "nuke_isolation": true,
+      "protected_second_namespace_survived": true,
+      "scope": "installed-version basic lifecycle; no pane/layout/read-only capability expansion"
+    },
+    "zellij": {
+      "real_attach_input_detach_tty": true,
+      "version": "zellij 0.45.1",
+      "empty_listing": true,
+      "create_list_inspect_delete": true,
+      "exact_name_collision": true,
+      "typed_identity": true,
+      "unsupported_refusals": true,
+      "nuke_isolation": true,
+      "protected_second_namespace_survived": true,
+      "scope": "installed-version basic lifecycle; no pane/layout/read-only capability expansion"
+    },
+    "foreign_coordinator": {
+      "connected_uid": 65534,
+      "peer_rejected": true,
+      "service_survived": true,
+      "registry_unchanged": true
+    },
+    "foreign_native": {
+      "filesystem_denied": true,
+      "connected_uid": 65534,
+      "peer_rejected": true,
+      "owner_and_child_survived": true
+    },
+    "ssh_native_attach": {
+      "readonly_enforced": true,
+      "control_input": true,
+      "detach": true,
+      "cancelled": true,
+      "tty_and_flags_restored": true,
+      "encoded_name_safe": true
+    },
+    "ssh_controlmaster": {
+      "same_master_reused": true,
+      "new_master_after_exit": true,
+      "version_mismatch": true,
+      "timeout": true,
+      "cancelled": true
+    },
+    "ssh_auth": {
+      "actual_loopback": true,
+      "public_key_auth": true,
+      "bad_host_key_rejected": true,
+      "bad_auth_key_rejected": true,
+      "host_pin_rejected": true,
+      "partial_failure": true
+    },
+    "ssh_tmux_attach": {
+      "real_pty": true,
+      "literal_shell_metacharacter_name": true,
+      "readonly": true,
+      "control_input": true,
+      "detach_and_tty_restore": true
+    }
+  },
+  "scope": "Disposable Linux amd64 root container, network none/loopback only, readonly host source/binaries; no host accounts or real sessions/SSH config."
+}

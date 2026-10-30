@@ -1,0 +1,72 @@
+
+/tmp/txm-phase6/final/integration-normal-final.log
+PASS isolated_tmux_cli: create/list through guarded -S wrapper
+PASS tmux_nuke_isolation: second disposable server survives target cleanup
+PASS R08_native_socket_detach: real PTY child/server survive socket attach/disconnect; not a raw-TTY restoration test
+PASS R08_native_tty_restore: CLI attach on real PTY, Ctrl-backslash detach, terminal attributes restored
+PASS native_pty_output: sentinel reached attached client through PTY/VT fanout
+{"metrics": {"version_median_ms": 4.999013501219451, "native_one_session_list_ms": 6.59735401859507, "native_socket_attach_ms": 0.7031389977782965, "native_cli_pty_attach_ms": 21.2838530424051, "native_server_rss_kib": 25788, "native_pty_bytes": 262292, "native_pty_mib_per_s": 0.04145284556080433}}
+
+/tmp/txm-phase6/final/cli_errors-normal-final.log
+....
+----------------------------------------------------------------------
+Ran 4 tests in 0.533s
+
+OK
+
+/tmp/txm-phase6/final/native_checks-normal-final.log
+...........
+----------------------------------------------------------------------
+Ran 11 tests in 25.540s
+
+OK
+
+/tmp/txm-phase6/final/structured_checks-normal-final.log
+...............
+----------------------------------------------------------------------
+Ran 15 tests in 18.893s
+
+OK
+
+/tmp/txm-phase6/final/profile_checks-normal-final.log
+................
+----------------------------------------------------------------------
+Ran 16 tests in 11.250s
+
+OK
+
+/tmp/txm-phase6/final/integration-race-final.log
+PASS isolated_tmux_cli: create/list through guarded -S wrapper
+PASS tmux_nuke_isolation: second disposable server survives target cleanup
+PASS R08_native_socket_detach: real PTY child/server survive socket attach/disconnect; not a raw-TTY restoration test
+PASS R08_native_tty_restore: CLI attach on real PTY, Ctrl-backslash detach, terminal attributes restored
+PASS native_pty_output: sentinel reached attached client through PTY/VT fanout
+{"metrics": {"version_median_ms": 1020.7638329884503, "native_one_session_list_ms": 1022.5043760146946, "native_socket_attach_ms": 1.675848034210503, "native_cli_pty_attach_ms": 21.469001017976552, "native_server_rss_kib": 47988, "native_pty_bytes": 262292, "native_pty_mib_per_s": 0.04202033780947246}}
+
+/tmp/txm-phase6/final/cli_errors-race-final.log
+....
+----------------------------------------------------------------------
+Ran 4 tests in 7.942s
+
+OK
+
+/tmp/txm-phase6/final/native_checks-race-final.log
+...........
+----------------------------------------------------------------------
+Ran 11 tests in 47.985s
+
+OK
+
+/tmp/txm-phase6/final/structured_checks-race-final.log
+...............
+----------------------------------------------------------------------
+Ran 15 tests in 62.451s
+
+OK
+
+/tmp/txm-phase6/final/profile_checks-race-final.log
+................
+----------------------------------------------------------------------
+Ran 16 tests in 25.943s
+
+OK

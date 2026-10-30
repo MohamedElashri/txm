@@ -1,0 +1,453 @@
+{
+  "schema_version": 1,
+  "phase": 4,
+  "recorded_at": "2026-10-30T00:51:01.846580+00:00",
+  "baseline_sha": "f2606d240912ffa2269569cd642a7f83e5457f74",
+  "source_state": "Uncommitted working tree; all earlier phase changes and evidence preserved. No implementation commit, PR, tag, push or publication.",
+  "implementation_status": "PR 4A/4B complete for tested Linux amd64 development. M1 platform release gate remains Blocked; M2 release/Phase 5 not claimed or implemented.",
+  "phase3_prerequisite": {
+    "verified_at_start": true,
+    "go_and_embedded_sources_sha256": "1e2e2ba6957496a43a0a5af59a84fb96b08e02b9efc270557afe2462809ee6c4",
+    "harness_and_goldens_sha256": "e51cc29aed557f5770a0b61c0061a2d547489de879dcb09f8f60df03af378746",
+    "build_sources_sha256": "2d6c10d9e6a9eb266ef8e00c664257c5476866ae79cd7dfc590941eb7689f040",
+    "gate_deviation": "New explicit Phase 4 request authorizes Linux development while previously documented unrun platform release gates remain Blocked; no platform pass or release inferred."
+  },
+  "host": {
+    "os": "Linux",
+    "architecture": "amd64",
+    "kernel": "7.0.0-38-generic",
+    "go": [
+      "1.27.3",
+      "1.26.10"
+    ],
+    "tmux": "3.4",
+    "zig": "0.16.0",
+    "golangci_lint": "2.15.0",
+    "goreleaser": "2.19.0",
+    "ghostty": "36ec90a07fcb58e3033296c06c82438bf30d2e42",
+    "libghostty_go": "c1ee3183994d21df2b9eae4f11336aca2da1e8e6"
+  },
+  "unit_environment": {
+    "PKG_CONFIG_PATH": "/tmp/txm-p0-Yso5Rk/prefix-compatible/share/pkgconfig",
+    "CGO_ENABLED": "1",
+    "GOCACHE": "/tmp/txm-plan-review-go-cache",
+    "GOPROXY": "off",
+    "GOTOOLCHAIN": "local"
+  },
+  "build_environment": {
+    "GHOSTTY_SOURCE_DIR": "/tmp/txm-p0-Yso5Rk/ghostty",
+    "GHOSTTY_HOST_DIR": "/tmp/txm-p0-Yso5Rk/prefix-compatible",
+    "ZIG": "/tmp/txm-p0-Yso5Rk/zig-x86_64-linux-0.16.0/zig",
+    "ZIG_GLOBAL_CACHE_DIR": "/tmp/txm-p0-Yso5Rk/zig-cache",
+    "GHOSTTY_BUILD_JOBS": "2"
+  },
+  "proxy_variables_unset": [
+    "HTTP_PROXY",
+    "HTTPS_PROXY",
+    "ALL_PROXY",
+    "http_proxy",
+    "https_proxy",
+    "all_proxy"
+  ],
+  "fingerprint_algorithm": "SHA-256 over sorted relative POSIX path + NUL + raw file bytes + NUL for each file.",
+  "go_and_embedded_sources": {
+    "sha256": "6cef1230d86f14a39306e464bdb2f490d1cedc82110027083f67f63c24da8d75",
+    "files": [
+      "docs/embeds.go",
+      "docs/txm.1",
+      "go.mod",
+      "go.sum",
+      "main.go",
+      "pkg/agent/client.go",
+      "pkg/agent/server_unix.go",
+      "pkg/agent/server_unsupported.go",
+      "pkg/agent/start_unix.go",
+      "pkg/agent/types.go",
+      "pkg/agent/types_test.go",
+      "pkg/backend/backend.go",
+      "pkg/backend/command.go",
+      "pkg/backend/command_test.go",
+      "pkg/backend/data.go",
+      "pkg/backend/managed.go",
+      "pkg/backend/native.go",
+      "pkg/backend/native_cgo.go",
+      "pkg/backend/native_nocgo.go",
+      "pkg/backend/native_unix.go",
+      "pkg/backend/native_unsupported.go",
+      "pkg/backend/profile.go",
+      "pkg/backend/profile_native.go",
+      "pkg/backend/screen.go",
+      "pkg/backend/tmux.go",
+      "pkg/backend/zellij.go",
+      "pkg/cmd/agent.go",
+      "pkg/cmd/environment_test.go",
+      "pkg/cmd/helpers.go",
+      "pkg/cmd/misc.go",
+      "pkg/cmd/pane.go",
+      "pkg/cmd/profile.go",
+      "pkg/cmd/queries.go",
+      "pkg/cmd/root.go",
+      "pkg/cmd/root_test.go",
+      "pkg/cmd/server.go",
+      "pkg/cmd/session.go",
+      "pkg/cmd/window.go",
+      "pkg/config/config.go",
+      "pkg/config/config_test.go",
+      "pkg/config/profile.go",
+      "pkg/config/profile_file_other.go",
+      "pkg/config/profile_file_unix.go",
+      "pkg/config/profile_test.go",
+      "pkg/core/contracts_test.go",
+      "pkg/core/errors.go",
+      "pkg/core/models.go",
+      "pkg/core/output.go",
+      "pkg/localipc/framing.go",
+      "pkg/localipc/framing_test.go",
+      "pkg/logger/logger.go",
+      "pkg/nativeprocess/wait_unix.go",
+      "pkg/nativeprocess/wait_unix_test.go",
+      "pkg/nativeprocess/wait_unsupported.go",
+      "pkg/nativeprotocol/client.go",
+      "pkg/nativeprotocol/protocol.go",
+      "pkg/nativeprotocol/protocol_test.go",
+      "pkg/nativeserver/options.go",
+      "pkg/nativeserver/server_unix.go",
+      "pkg/nativeserver/server_unix_test.go",
+      "pkg/nativeserver/server_unsupported.go",
+      "pkg/profile/access_other.go",
+      "pkg/profile/access_unix.go",
+      "pkg/profile/plan.go",
+      "pkg/profile/plan_test.go",
+      "pkg/runtimepath/files_unix.go",
+      "pkg/runtimepath/files_unix_test.go",
+      "pkg/runtimepath/files_unsupported.go",
+      "pkg/runtimepath/peer_darwin.go",
+      "pkg/runtimepath/peer_linux.go",
+      "pkg/runtimepath/publish_darwin.go",
+      "pkg/runtimepath/publish_linux.go",
+      "pkg/runtimepath/runtime.go",
+      "pkg/runtimepath/runtime_unix.go",
+      "pkg/runtimepath/runtime_unix_test.go",
+      "pkg/runtimepath/runtime_unsupported.go",
+      "pkg/runtimepath/state_unix.go",
+      "pkg/runtimepath/state_unix_test.go",
+      "pkg/runtimepath/state_unsupported.go",
+      "pkg/supervisor/probe.go",
+      "pkg/supervisor/run_unix.go",
+      "pkg/supervisor/run_unsupported.go",
+      "pkg/supervisor/types.go",
+      "pkg/supervisor/types_test.go"
+    ]
+  },
+  "harness_and_goldens": {
+    "sha256": "22f9bb122cf9a3a8e581e0ad47d551391cca1b686ab3b5904e621afe8ccd2f50",
+    "files": [
+      "pkg/core/testdata/empty.json",
+      "pkg/core/testdata/error.json",
+      "pkg/core/testdata/partial.json",
+      "pkg/core/testdata/raw.json",
+      "pkg/core/testdata/success.json",
+      "tests/agent_checks.py",
+      "tests/archive_checks.py",
+      "tests/cli_errors.py",
+      "tests/integration.py",
+      "tests/native_checks.py",
+      "tests/performance.py",
+      "tests/profile_checks.py",
+      "tests/sandbox.py",
+      "tests/structured_checks.py",
+      "tests/test_build_deps.py",
+      "tests/test_sandbox.py",
+      "tests/wire.py"
+    ]
+  },
+  "build_sources": {
+    "sha256": "0fd976298aaaea07e4278b566f2291d8ed2a8c42e8f8035616006c7c953a8cd6",
+    "files": [
+      ".github/scripts/build-ghostty.sh",
+      ".github/workflows/ci.yml",
+      ".github/workflows/release.yml",
+      ".goreleaser.yaml",
+      "Makefile",
+      "scripts/build-deps.sh",
+      "scripts/dependencies.env",
+      "scripts/generate-completions.sh",
+      "scripts/install-ci-zig.sh"
+    ]
+  },
+  "documentation_sources": {
+    "sha256": "ff92c3a9ef2ec7bb435cf1c84dc2ddfddecb667531d727a558271996e9123747",
+    "files": [
+      "README.md",
+      "docs/CHANGELOG.md",
+      "docs/ROADMAP.md",
+      "docs/architecture.md",
+      "docs/contracts.md",
+      "docs/m1-readiness.md",
+      "docs/native-protocol.md",
+      "docs/testing.md",
+      "docs/user-guide.md",
+      "plan.md"
+    ]
+  },
+  "checks": [
+    {
+      "command": "go test ./...",
+      "result": "pass",
+      "log": "phase4-go.txt"
+    },
+    {
+      "command": "go test -race ./...",
+      "result": "pass",
+      "log": "phase4-go-race.txt"
+    },
+    {
+      "command": "Go 1.26.10 toolchain: go test ./...",
+      "result": "pass",
+      "log": "phase4-go126.txt"
+    },
+    {
+      "command": "golangci-lint run",
+      "result": "pass",
+      "output": "0 issues."
+    },
+    {
+      "command": "go mod verify",
+      "result": "pass",
+      "output": "all modules verified"
+    },
+    {
+      "command": "make test-integration test-integration-race GHOSTTY_SOURCE_DIR=/tmp/txm-p0-Yso5Rk/ghostty GHOSTTY_HOST_DIR=/tmp/txm-p0-Yso5Rk/prefix-compatible ZIG=/tmp/txm-p0-Yso5Rk/zig-x86_64-linux-0.16.0/zig",
+      "cwd": "/tmp/txm-phase4/repo",
+      "result": "pass",
+      "counts": {
+        "guards": 10,
+        "smoke": 5,
+        "cli": 4,
+        "native_normal_and_race_each": 11,
+        "structured_normal_and_race_each": 15,
+        "profile_normal_and_race_each": 16,
+        "agent_at_full_run_normal_and_race_each": 16
+      },
+      "log": "phase4-integration.txt",
+      "note": "Before final coordinator state-identity fix; M1 paths unchanged by that fix. Final 19 agent groups and fresh archives rerun separately below."
+    },
+    {
+      "command": "python3 tests/agent_checks.py --binary /tmp/txm-phase4/repo/bin/txm -v",
+      "result": "pass",
+      "groups": 19,
+      "log": "phase4-agents.txt"
+    },
+    {
+      "command": "python3 tests/agent_checks.py --binary /tmp/txm-phase4/repo/bin/txm-race -v",
+      "result": "pass",
+      "groups": 19,
+      "log": "phase4-agents-race.txt",
+      "note": "Per-fixture GORACE log_path and exitcode=66 cover detached/relaunched service, wrapper and native processes."
+    },
+    {
+      "command": "make test-fuzz",
+      "result": "pass",
+      "log": "phase4-fuzz.txt",
+      "cases": [
+        {
+          "target": "FuzzNativeFrame",
+          "seconds": 30,
+          "executions": 1324136
+        },
+        {
+          "target": "FuzzPlain",
+          "seconds": 10,
+          "executions": 24694
+        },
+        {
+          "target": "FuzzLocalFrame",
+          "seconds": 15,
+          "executions": 607628
+        }
+      ]
+    },
+    {
+      "command": "CGO_ENABLED=0 GOOS=windows GOARCH=<amd64|arm64> go build -o /tmp/txm-phase4/txm-windows-<arch>.exe .",
+      "result": "pass",
+      "scope": "build-only, no Windows native/runtime/archive/install claim"
+    },
+    {
+      "command": "CGO_ENABLED=0 go build -o /tmp/txm-phase4/txm-nocgo .; private CLI refusal smoke",
+      "result": "pass",
+      "report": "phase4-nocgo.json"
+    },
+    {
+      "command": "goreleaser check",
+      "result": "pass",
+      "scope": "production configuration; no deprecated-key warnings"
+    },
+    {
+      "command": "python3 tests/performance.py --binary /tmp/txm-phase4/repo/bin/txm --report /tmp/txm-phase4/performance-final.json",
+      "result": "pass",
+      "report": "phase4-performance.json"
+    },
+    {
+      "command": "git diff --check; gofmt -l pkg main.go docs/embeds.go; python3 -m compileall -q tests; bash -n <build/generation scripts>",
+      "result": "pass",
+      "note": "Final source/harness/build equivalence and evidence JSON/hashes verified separately."
+    }
+  ],
+  "archive_build": {
+    "command": "goreleaser release --snapshot --skip=before --config linux-smoke.yml --clean --parallelism 2",
+    "cwd": "/tmp/txm-phase4/repo",
+    "configuration": "phase4-linux-smoke.yml",
+    "configuration_sha256": "18e4c053a4d39ae6aa2bdf9658e6a04056822cee38faee5d16a1a8d95591ba50",
+    "scope": "Production configuration narrowed only to Linux amd64 in both build IDs. Not the all-platform release workflow.",
+    "environment": {
+      "TXM_RELEASE_ROOT": "/tmp/txm-phase4/repo",
+      "GOCACHE": "/tmp/txm-phase4/release-go-cache",
+      "GOMODCACHE": "/home/melashri/go/pkg/mod",
+      "GOPROXY": "off",
+      "GOTOOLCHAIN": "local",
+      "ZIG_GLOBAL_CACHE_DIR": "/tmp/txm-p0-Yso5Rk/zig-cache",
+      "PATH": "/tmp/txm-p0-Yso5Rk/zig-x86_64-linux-0.16.0:/home/linuxbrew/.linuxbrew/bin:/usr/bin:/bin",
+      "HOME": "/tmp/txm-phase4/package-home",
+      "SHELL": "/bin/sh",
+      "LANG": "C"
+    },
+    "before_hook_replacement": [
+      "Pinned Zig build -Demit-lib-vt --prefix /tmp/txm-phase4/repo/.ghostty-release/linux-amd64 -Dtarget=x86_64-linux-gnu -j2",
+      "Pinned Zig build -Demit-lib-vt --prefix /tmp/txm-phase4/repo/.ghostty-release/linux-musl-amd64 -Dtarget=x86_64-linux-musl -j2",
+      "bash scripts/generate-completions.sh"
+    ],
+    "dependency_build_cwd": "/tmp/txm-p0-Yso5Rk/ghostty",
+    "note": "Same pinned target flags/default Debug VT as Phase 3. Only two target dependency builds, not eight-target helper; no helper stamps. Dedicated release Go cache.",
+    "version": "1.3.2-next",
+    "result": "pass",
+    "log": "phase4-archive-build.txt",
+    "published": false
+  },
+  "archives": [
+    {
+      "archive": "/tmp/txm-phase4/repo/dist/txm_Linux_x86_64.zip",
+      "sha256": "badb7ae173462867a52c9e453241498f688b2df5ef4fea903d020ab4c8c38205",
+      "files": [
+        "LICENSE",
+        "README.md",
+        "completions/_txm",
+        "completions/txm.bash",
+        "completions/txm.fish",
+        "completions/txm.ps1",
+        "docs/txm.1",
+        "txm"
+      ],
+      "version": "txm version 1.3.2-next",
+      "passed": true,
+      "scope": "host-compatible ZIP, private user install; no system install/publication",
+      "kind": "gnu",
+      "runtime_result": "pass",
+      "runtime_log": "phase4-archive-gnu-runtime.txt",
+      "smoke_report": "phase4-archive-gnu-smoke.json",
+      "runtime_suites": {
+        "smoke": 5,
+        "cli": 4,
+        "native": 11,
+        "structured": 15,
+        "profile": 16,
+        "agent": 19
+      },
+      "install_command": "python3 tests/archive_checks.py --archive /tmp/txm-phase4/repo/dist/txm_Linux_x86_64.zip --report /tmp/txm-phase4/archive-gnu.json"
+    },
+    {
+      "archive": "/tmp/txm-phase4/repo/dist/txm_Linux_x86_64-musl.zip",
+      "sha256": "2b5fbdea387d9b869121f7840c15993a6eed92c4f6157688f2b2a79039e4e7da",
+      "files": [
+        "LICENSE",
+        "README.md",
+        "completions/_txm",
+        "completions/txm.bash",
+        "completions/txm.fish",
+        "completions/txm.ps1",
+        "docs/txm.1",
+        "txm"
+      ],
+      "version": "txm version 1.3.2-next",
+      "passed": true,
+      "scope": "host-compatible ZIP, private user install; no system install/publication",
+      "kind": "musl",
+      "runtime_result": "pass",
+      "runtime_log": "phase4-archive-musl-runtime.txt",
+      "smoke_report": "phase4-archive-musl-smoke.json",
+      "runtime_suites": {
+        "smoke": 5,
+        "cli": 4,
+        "native": 11,
+        "structured": 15,
+        "profile": 16,
+        "agent": 19
+      },
+      "install_command": "python3 tests/archive_checks.py --archive /tmp/txm-phase4/repo/dist/txm_Linux_x86_64-musl.zip --report /tmp/txm-phase4/archive-musl.json"
+    }
+  ],
+  "artifacts": [
+    {
+      "path": "/tmp/txm-phase4/repo/bin/txm",
+      "sha256": "2d0effba446612889d46f8ca986be8acaf6287dc410315d966d3105515765bd3"
+    },
+    {
+      "path": "/tmp/txm-phase4/repo/bin/txm-race",
+      "sha256": "38dd16b05132f853a1db58ecb539287e59d17d52fd35e453c17ba41f996a7a97"
+    },
+    {
+      "path": "/tmp/txm-phase4/archive-binaries/txm-gnu",
+      "sha256": "b55b680629d843061f16a4ba9453f43c47f7656db634795875014851329118b2"
+    },
+    {
+      "path": "/tmp/txm-phase4/archive-binaries/txm-musl",
+      "sha256": "3854765750c0430e67ddcc75ae417e2f2959fd4cdcd250dd9c132cf8bf4b556c"
+    },
+    {
+      "path": "/tmp/txm-phase4/txm-nocgo",
+      "sha256": "fdf25fad2c3b8d812b6831a0a28b7f48974db519d9f2f1fb939f4c5b36e50849"
+    },
+    {
+      "path": "/tmp/txm-phase4/txm-windows-amd64.exe",
+      "sha256": "fc9eff2bd50c994f70822d4cd90f8767aaad2d68bb099f30d8ebb8f3b576ccce"
+    },
+    {
+      "path": "/tmp/txm-phase4/txm-windows-arm64.exe",
+      "sha256": "ce1cc8dc408226b0842a7036b40d2ccb91bec0f8e1284606cd7ddf3800e45f4d"
+    }
+  ],
+  "resource_comparison": {
+    "report": "phase4-performance.json",
+    "passed": true,
+    "budgets": "Unchanged Phase 3 predeclared Linux startup/list/RSS bounds; no coordinator involved in 100 idle native sessions. No production throughput/coordinator-scale SLA."
+  },
+  "covered_behaviors": [
+    "Native/tmux foreground PTYs, exact structured argv/cwd, shell-looking/Unicode/leading-dash arguments and quoted launcher paths.",
+    "Private one-use manifests, immutable receipt identity/outcomes, environment-name filtering, no argv/env values/transcripts in registry.",
+    "Exit 0/42/signal and failed-exec outcomes remain truthful; native/tmux receipts survive CLI/coordinator loss and restart with identical IDs/timestamps and no re-execution.",
+    "Wrapper loss without a receipt is unknown; separate process-group cleanup kills resistant descendants before reaping the direct child; recovery never guesses by PID.",
+    "Concurrent automatic startup, singleton and state-writer locks, duplicate names, exact native/tmux registration, observed rename and reused-name refusal.",
+    "Corrupt/torn registry and mismatched receipts rejected; interrupted prelaunch intent is unknown and unused manifest is safely discarded, never replayed.",
+    "Strict frame/schema/epoch validation, bounded/slow clients, cancellation exit 130 and authenticated same-UID local IPC.",
+    "Requests bind persisted host ID and validated private state-root location; changing XDG_STATE_HOME or copying a host ID cannot use the wrong registry.",
+    "Ordinary M1 commands never start/contact/wait for a coordinator; unmanaged registration never obtains supervised IDs or invented exit receipts."
+  ],
+  "deviations": [
+    "Explicit new Phase 4 request authorizes Linux development despite unrun M1 cross-platform release gates; those gates remain Blocked, no M1/M2 release claim.",
+    "Initial supported managed execution/registration is native with CGO and tmux 3.4+; Screen/Zellij/Windows and Unix without CGO are unsupported.",
+    "Environment-name allowlists filter the backend wrapper environment; values may predate the requesting CLI and are not uploaded/persisted. Defaults HOME/PATH/TERM.",
+    "Added explicit stop-coordinator maintenance command, separate foreground child group, wrapper status IPC, and host-ID/state-location request binding.",
+    "Wrapper cancellation initiates SIGTERM then bounded group cleanup; terminal interrupts directly reach the foreground child. Deliberate escaped groups are not contained.",
+    "Linux immutable publication uses renameat2/NOREPLACE; macOS link/unlink path remains unverified and rejects ambiguous multi-link files.",
+    "Phase 2 managed_launch capability expectation advances to supported for verified native/tmux builds. Strict nested JSON array field checks extend the shared decoder.",
+    "Fixtures explicitly set private modes, enumerate Linux child tasks and retain pidfds/Popen ownership; test-client failed-connect sockets now close.",
+    "Registry is bounded to 256 records with no automatic pruning; Phase 5 hooks/events/wait/provider schemas remain pending."
+  ],
+  "unverified_or_deferred": [
+    "Required M1 macOS, Linux arm64 and Windows runtime/archive/install checks remain unrun; configured CI or Windows build-only is not runtime evidence.",
+    "Foreign-UID end-to-end credential scenario and Screen/Zellij actual upstream runtime remain unverified.",
+    "macOS coordinator/supervisor runtime and publication path, other architectures/transports and old runtime/kernel/libc environments not certified.",
+    "Large agent-registry/coordinator-scale performance, production throughput/attach SLA, deliberate escaped process containment and automatic state pruning not claimed.",
+    "Phase 5 providers/hooks/events/wait/notifications, M2 release gate, M3 and E1/E2 remain pending."
+  ],
+  "safety": "Only guarded private HOME/XDG/PATH/socket roots, matching tmux -S wrappers, fixture-owned Popen/pidfd/protocol instances and disposable build checkout. Original ignored ghostty/bin, real user sessions, remote hosts and worktrees untouched. No dependency changes, commit, PR, push, tag or publication."
+}

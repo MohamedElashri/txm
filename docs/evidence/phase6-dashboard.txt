@@ -1,0 +1,19 @@
+test_agent_disconnect_is_stale_then_epoch_resync_without_relaunch (__main__.DashboardChecks.test_agent_disconnect_is_stale_then_epoch_resync_without_relaunch) ... ok
+test_agent_subscription_shows_sources_and_separate_process_attention_turn (__main__.DashboardChecks.test_agent_subscription_shows_sources_and_separate_process_attention_turn) ... ok
+test_cancellation_during_native_and_tmux_attach_restores_tty (__main__.DashboardChecks.test_cancellation_during_native_and_tmux_attach_restores_tty) ... ok
+test_current_native_terminal_cannot_attach_or_preview_itself (__main__.DashboardChecks.test_current_native_terminal_cannot_attach_or_preview_itself) ... ok
+test_native_readonly_and_control_attach_repeat_without_input_leaks (__main__.DashboardChecks.test_native_readonly_and_control_attach_repeat_without_input_leaks) ... ok
+test_native_refresh_search_preview_resize_and_quit_restore_tty (__main__.DashboardChecks.test_native_refresh_search_preview_resize_and_quit_restore_tty) ... ok
+test_non_tty_and_invalid_options_never_access_backends_or_agents (__main__.DashboardChecks.test_non_tty_and_invalid_options_never_access_backends_or_agents) ... ok
+test_real_tmux_readonly_control_and_name_reuse (__main__.DashboardChecks.test_real_tmux_readonly_control_and_name_reuse) ... ok
+test_sigint_sigterm_and_raw_ctrl_c_restore_tty (__main__.DashboardChecks.test_sigint_sigterm_and_raw_ctrl_c_restore_tty) ... ok
+test_slow_unavailable_backends_do_not_block_native_or_cancellation (__main__.DashboardChecks.test_slow_unavailable_backends_do_not_block_native_or_cancellation) ... ok
+test_stale_native_selection_cannot_attach_reused_name (__main__.DashboardChecks.test_stale_native_selection_cannot_attach_reused_name) ... ok
+test_thousand_sessions_search_resize_and_quit_budget (__main__.DashboardChecks.test_thousand_sessions_search_resize_and_quit_budget) ... ok
+test_unchanged_running_agent_gets_fresh_typed_proof (__main__.DashboardChecks.test_unchanged_running_agent_gets_fresh_typed_proof) ... ok
+test_unsupported_preview_and_attach_are_ui_errors_without_side_effects (__main__.DashboardChecks.test_unsupported_preview_and_attach_are_ui_errors_without_side_effects) ... ok
+
+----------------------------------------------------------------------
+Ran 14 tests in 69.765s
+
+OK

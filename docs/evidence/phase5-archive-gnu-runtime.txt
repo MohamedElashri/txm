@@ -1,0 +1,86 @@
+
+archive-gnu-install.log
+{"archive": "/tmp/txm-phase5/repo/dist/txm_Linux_x86_64.zip", "sha256": "5b8d965492740613719b94d9c188d366c5bfb511f33246a402629c05ebb7a911", "files": ["LICENSE", "README.md", "completions/_txm", "completions/txm.bash", "completions/txm.fish", "completions/txm.ps1", "docs/txm.1", "txm"], "version": "txm version 1.3.2-next", "passed": true, "scope": "host-compatible ZIP, private user install; no system install/publication"}
+
+archive-gnu-integration.log
+PASS isolated_tmux_cli: create/list through guarded -S wrapper
+PASS tmux_nuke_isolation: second disposable server survives target cleanup
+PASS R08_native_socket_detach: real PTY child/server survive socket attach/disconnect; not a raw-TTY restoration test
+PASS R08_native_tty_restore: CLI attach on real PTY, Ctrl-backslash detach, terminal attributes restored
+PASS native_pty_output: sentinel reached attached client through PTY/VT fanout
+{"metrics": {"version_median_ms": 6.293151498539373, "native_one_session_list_ms": 7.484741974622011, "native_socket_attach_ms": 0.769834965467453, "native_cli_pty_attach_ms": 21.12253603991121, "native_server_rss_kib": 22152, "native_pty_bytes": 262292, "native_pty_mib_per_s": 0.044656230067003026}}
+
+archive-gnu-cli_errors.log
+....
+----------------------------------------------------------------------
+Ran 4 tests in 0.546s
+
+OK
+
+archive-gnu-native_checks.log
+...........
+----------------------------------------------------------------------
+Ran 11 tests in 25.579s
+
+OK
+
+archive-gnu-structured_checks.log
+...............
+----------------------------------------------------------------------
+Ran 15 tests in 18.750s
+
+OK
+
+archive-gnu-profile_checks.log
+................
+----------------------------------------------------------------------
+Ran 16 tests in 11.264s
+
+OK
+
+archive-gnu-agent_checks.log
+test_all_receipt_outcomes_remain_queryable_after_restart (__main__.AgentChecks.test_all_receipt_outcomes_remain_queryable_after_restart) ... ok
+test_cancelled_agent_read_preserves_exit_130 (__main__.AgentChecks.test_cancelled_agent_read_preserves_exit_130) ... ok
+test_concurrent_automatic_start_and_explicit_stop (__main__.AgentChecks.test_concurrent_automatic_start_and_explicit_stop) ... ok
+test_corrupt_registry_and_receipts_are_not_repaired (__main__.AgentChecks.test_corrupt_registry_and_receipts_are_not_repaired) ... ok
+test_different_state_identity_cannot_use_running_coordinator (__main__.AgentChecks.test_different_state_identity_cannot_use_running_coordinator) ... ok
+test_duplicate_concurrent_starts_and_single_writer (__main__.AgentChecks.test_duplicate_concurrent_starts_and_single_writer) ... ok
+test_failed_exec_and_single_use_manifest (__main__.AgentChecks.test_failed_exec_and_single_use_manifest) ... ok
+test_framing_epoch_and_slow_clients_do_not_block_native (__main__.AgentChecks.test_framing_epoch_and_slow_clients_do_not_block_native) ... ok
+test_interrupted_launch_intent_is_unknown_and_never_replayed (__main__.AgentChecks.test_interrupted_launch_intent_is_unknown_and_never_replayed) ... ok
+test_launcher_path_with_spaces_quotes_and_format_characters (__main__.AgentChecks.test_launcher_path_with_spaces_quotes_and_format_characters) ... ok
+test_native_argv_cwd_environment_and_short_exit_receipts (__main__.AgentChecks.test_native_argv_cwd_environment_and_short_exit_receipts) ... ok
+test_ordinary_commands_do_not_start_or_contact_coordinator (__main__.AgentChecks.test_ordinary_commands_do_not_start_or_contact_coordinator) ... ok
+test_parent_exit_coordinator_crash_and_receipt_recovery_no_reexecution (__main__.AgentChecks.test_parent_exit_coordinator_crash_and_receipt_recovery_no_reexecution) ... ok
+test_preflight_unsupported_and_invalid_never_starts_service (__main__.AgentChecks.test_preflight_unsupported_and_invalid_never_starts_service) ... ok
+test_registration_has_no_supervised_identity_or_exit (__main__.AgentChecks.test_registration_has_no_supervised_identity_or_exit) ... ok
+test_signal_receipt_and_resistant_descendant_cleanup (__main__.AgentChecks.test_signal_receipt_and_resistant_descendant_cleanup) ... ok
+test_tmux_coordinator_loss_preserves_receipt_without_reexecution (__main__.AgentChecks.test_tmux_coordinator_loss_preserves_receipt_without_reexecution) ... ok
+test_tmux_exact_launch_rename_and_reused_name (__main__.AgentChecks.test_tmux_exact_launch_rename_and_reused_name) ... ok
+test_unobserved_wrapper_loss_is_unknown (__main__.AgentChecks.test_unobserved_wrapper_loss_is_unknown) ... ok
+
+----------------------------------------------------------------------
+Ran 19 tests in 25.118s
+
+OK
+
+archive-gnu-agent_events_checks.log
+test_atomic_initial_snapshot_and_future_transition (__main__.AgentEventsChecks.test_atomic_initial_snapshot_and_future_transition) ... ok
+test_authenticated_signals_replay_freshness_rotation_and_privacy (__main__.AgentEventsChecks.test_authenticated_signals_replay_freshness_rotation_and_privacy) ... ok
+test_generic_managed_context_self_signals_and_environment_opt_in (__main__.AgentEventsChecks.test_generic_managed_context_self_signals_and_environment_opt_in) ... ok
+test_missing_receipt_is_unknown_and_wait_fails (__main__.AgentEventsChecks.test_missing_receipt_is_unknown_and_wait_fails) ... ok
+test_notifications_explicit_transcript_free_throttled_and_no_snapshot_replay (__main__.AgentEventsChecks.test_notifications_explicit_transcript_free_throttled_and_no_snapshot_replay) ... ok
+test_provider_bridge_session_binding_and_conservative_stop (__main__.AgentEventsChecks.test_provider_bridge_session_binding_and_conservative_stop) ... ok
+test_real_claude_init_only_sessionstart_no_model_or_auth (__main__.AgentEventsChecks.test_real_claude_init_only_sessionstart_no_model_or_auth) ... ok
+test_reconnect_epoch_resync_never_reexecutes (__main__.AgentEventsChecks.test_reconnect_epoch_resync_never_reexecutes) ... ok
+test_slow_notification_action_deadline_and_cancellation (__main__.AgentEventsChecks.test_slow_notification_action_deadline_and_cancellation) ... ok
+test_stale_attention_is_unknown_after_restart (__main__.AgentEventsChecks.test_stale_attention_is_unknown_after_restart) ... ok
+test_subscriber_limit_and_cancellation_release (__main__.AgentEventsChecks.test_subscriber_limit_and_cancellation_release) ... ok
+test_tmux_generic_hook_context_wait_and_exit (__main__.AgentEventsChecks.test_tmux_generic_hook_context_wait_and_exit) ... ok
+test_unsupported_providers_and_ordinary_independence (__main__.AgentEventsChecks.test_unsupported_providers_and_ordinary_independence) ... ok
+test_wait_exit_codes_timeout_cancellation_and_missing_hooks (__main__.AgentEventsChecks.test_wait_exit_codes_timeout_cancellation_and_missing_hooks) ... ok
+
+----------------------------------------------------------------------
+Ran 14 tests in 34.135s
+
+OK

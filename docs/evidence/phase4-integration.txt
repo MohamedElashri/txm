@@ -1,0 +1,82 @@
+GHOSTTY_SOURCE_DIR="/tmp/txm-p0-Yso5Rk/ghostty" GHOSTTY_HOST_DIR="/tmp/txm-p0-Yso5Rk/prefix-compatible" ZIG="/tmp/txm-p0-Yso5Rk/zig-x86_64-linux-0.16.0/zig" bash scripts/build-deps.sh host
+mkdir -p bin
+PKG_CONFIG_PATH="/tmp/txm-p0-Yso5Rk/prefix-compatible/share/pkgconfig" CGO_ENABLED=1 go build -o bin/txm .
+python3 -m unittest discover -s tests -p 'test_*.py' -v
+test_existing_directory_is_not_a_cache_hit (test_build_deps.BuildGuardTests.test_existing_directory_is_not_a_cache_hit) ... ok
+test_failed_build_does_not_stamp_success (test_build_deps.BuildGuardTests.test_failed_build_does_not_stamp_success) ... ok
+test_mismatched_and_dirty_source_left_unchanged (test_build_deps.BuildGuardTests.test_mismatched_and_dirty_source_left_unchanged) ... ok
+test_mismatched_version_rejected_before_build (test_build_deps.BuildGuardTests.test_mismatched_version_rejected_before_build) ... ok
+test_release_requires_absolute_root_and_builds_exact_target_prefixes (test_build_deps.BuildGuardTests.test_release_requires_absolute_root_and_builds_exact_target_prefixes) ... ok
+test_environment_and_removed_marker (test_sandbox.GuardTests.test_environment_and_removed_marker) ... ok
+test_executable_override_cannot_follow_symlink (test_sandbox.GuardTests.test_executable_override_cannot_follow_symlink) ... ok
+test_socket_replacement_refuses_cleanup (test_sandbox.GuardTests.test_socket_replacement_refuses_cleanup) ... ok
+test_symlinked_marker_refused (test_sandbox.GuardTests.test_symlinked_marker_refused) ... ok
+test_two_servers_cleanup_cannot_reach_other_fixture (test_sandbox.GuardTests.test_two_servers_cleanup_cannot_reach_other_fixture) ... ok
+
+----------------------------------------------------------------------
+Ran 10 tests in 0.909s
+
+OK
+python3 tests/integration.py --binary "/tmp/txm-phase4/repo/bin/txm"
+PASS isolated_tmux_cli: create/list through guarded -S wrapper
+PASS tmux_nuke_isolation: second disposable server survives target cleanup
+PASS R08_native_socket_detach: real PTY child/server survive socket attach/disconnect; not a raw-TTY restoration test
+PASS R08_native_tty_restore: CLI attach on real PTY, Ctrl-backslash detach, terminal attributes restored
+PASS native_pty_output: sentinel reached attached client through PTY/VT fanout
+{"metrics": {"version_median_ms": 5.8583140198607, "native_one_session_list_ms": 6.950484006665647, "native_socket_attach_ms": 0.8442040416412055, "native_cli_pty_attach_ms": 21.12587704323232, "native_server_rss_kib": 25576, "native_pty_bytes": 262292, "native_pty_mib_per_s": 0.04194493137360702}}
+python3 tests/cli_errors.py --binary "/tmp/txm-phase4/repo/bin/txm"
+....
+----------------------------------------------------------------------
+Ran 4 tests in 0.486s
+
+OK
+python3 tests/native_checks.py --binary "/tmp/txm-phase4/repo/bin/txm"
+...........
+----------------------------------------------------------------------
+Ran 11 tests in 25.556s
+
+OK
+python3 tests/structured_checks.py --binary "/tmp/txm-phase4/repo/bin/txm"
+...............
+----------------------------------------------------------------------
+Ran 15 tests in 18.793s
+
+OK
+python3 tests/profile_checks.py --binary "/tmp/txm-phase4/repo/bin/txm"
+................
+----------------------------------------------------------------------
+Ran 16 tests in 11.514s
+
+OK
+python3 tests/agent_checks.py --binary "/tmp/txm-phase4/repo/bin/txm"
+................
+----------------------------------------------------------------------
+Ran 16 tests in 22.764s
+
+OK
+mkdir -p bin
+PKG_CONFIG_PATH="/tmp/txm-p0-Yso5Rk/prefix-compatible/share/pkgconfig" CGO_ENABLED=1 go build -race -o bin/txm-race .
+python3 tests/native_checks.py --binary "/tmp/txm-phase4/repo/bin/txm-race"
+...........
+----------------------------------------------------------------------
+Ran 11 tests in 48.457s
+
+OK
+python3 tests/structured_checks.py --binary "/tmp/txm-phase4/repo/bin/txm-race"
+...............
+----------------------------------------------------------------------
+Ran 15 tests in 67.769s
+
+OK
+python3 tests/profile_checks.py --binary "/tmp/txm-phase4/repo/bin/txm-race"
+................
+----------------------------------------------------------------------
+Ran 16 tests in 26.352s
+
+OK
+python3 tests/agent_checks.py --binary "/tmp/txm-phase4/repo/bin/txm-race"
+................
+----------------------------------------------------------------------
+Ran 16 tests in 100.605s
+
+OK

@@ -1,0 +1,18 @@
+test_attach_encoding_pinned_instance_and_local_tty_restore (__main__.RemoteChecks.test_attach_encoding_pinned_instance_and_local_tty_restore) ... ok
+test_cancelled_ssh_and_normal_core_do_not_initialize_extensions (__main__.RemoteChecks.test_cancelled_ssh_and_normal_core_do_not_initialize_extensions) ... ok
+test_endpoint_bad_protocol_and_host_refuse_before_backend (__main__.RemoteChecks.test_endpoint_bad_protocol_and_host_refuse_before_backend) ... ok
+test_fake_transport_pins_partial_version_collision_and_timeout (__main__.RemoteChecks.test_fake_transport_pins_partial_version_collision_and_timeout) ... ok
+test_concurrent_tasks_commits_and_unknown_launch_intent (__main__.TaskChecks.test_concurrent_tasks_commits_and_unknown_launch_intent) ... ok
+test_conditional_filters_cannot_run_during_new_worktree_checkout (__main__.TaskChecks.test_conditional_filters_cannot_run_during_new_worktree_checkout) ... ok
+test_detached_head_hooks_dirty_and_forced_cleanup (__main__.TaskChecks.test_detached_head_hooks_dirty_and_forced_cleanup) ... ok
+test_dry_run_and_branch_filter_boundaries (__main__.TaskChecks.test_dry_run_and_branch_filter_boundaries) ... ok
+test_identity_symlink_and_state_copy_refusal (__main__.TaskChecks.test_identity_symlink_and_state_copy_refusal) ... ok
+test_native_name_reuse_and_changed_branch_never_target_other_resource (__main__.TaskChecks.test_native_name_reuse_and_changed_branch_never_target_other_resource) ... ok
+test_registry_loss_requires_pinned_exit_receipt (__main__.TaskChecks.test_registry_loss_requires_pinned_exit_receipt) ... ok
+test_restart_orphan_and_no_reexecution (__main__.TaskChecks.test_restart_orphan_and_no_reexecution) ... ok
+test_tmux_rename_and_owner_loss (__main__.TaskChecks.test_tmux_rename_and_owner_loss) ... ok
+
+----------------------------------------------------------------------
+Ran 13 tests in 20.191s
+
+OK

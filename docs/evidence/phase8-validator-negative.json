@@ -1,0 +1,10 @@
+{
+  "wrong_race_binary": {
+    "exit_code": 2,
+    "no_output_created": true
+  },
+  "existing_output": {
+    "exit_code": 1,
+    "marker_unchanged": true
+  }
+}

@@ -1,0 +1,41 @@
+{
+  "mode": "smoke",
+  "source": "final make test-integration output",
+  "checks": [
+    {
+      "check": "isolated_tmux_cli",
+      "passed": true,
+      "detail": "create/list through guarded -S wrapper"
+    },
+    {
+      "check": "tmux_nuke_isolation",
+      "passed": true,
+      "detail": "second disposable server survives target cleanup"
+    },
+    {
+      "check": "R08_native_socket_detach",
+      "passed": true,
+      "detail": "real PTY child/server survive socket attach/disconnect; not a raw-TTY restoration test"
+    },
+    {
+      "check": "R08_native_tty_restore",
+      "passed": true,
+      "detail": "CLI attach on real PTY, Ctrl-backslash detach, terminal attributes restored"
+    },
+    {
+      "check": "native_pty_output",
+      "passed": true,
+      "detail": "sentinel reached attached client through PTY/VT fanout"
+    }
+  ],
+  "metrics": {
+    "version_median_ms": 4.790199513081461,
+    "native_one_session_list_ms": 7.464341004379094,
+    "native_socket_attach_ms": 0.5908829625695944,
+    "native_cli_pty_attach_ms": 21.01964398752898,
+    "native_server_rss_kib": 24972,
+    "native_pty_bytes": 262292,
+    "native_pty_mib_per_s": 0.04497048473042486
+  },
+  "metric_limits": "Ten startup samples; one native list/socket/real-PTY attach/RSS/256-KiB throughput sample; Debug Ghostty; no release performance thresholds or scale pass claimed."
+}

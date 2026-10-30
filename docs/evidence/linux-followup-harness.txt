@@ -1,0 +1,20 @@
+test_inherited_git_routing_and_credentials_cannot_escape_fixture (test_build_deps.BuildGuardEnvironmentTests.test_inherited_git_routing_and_credentials_cannot_escape_fixture) ... ok
+test_existing_directory_is_not_a_cache_hit (test_build_deps.BuildGuardTests.test_existing_directory_is_not_a_cache_hit) ... ok
+test_failed_build_does_not_stamp_success (test_build_deps.BuildGuardTests.test_failed_build_does_not_stamp_success) ... ok
+test_mismatched_and_dirty_source_left_unchanged (test_build_deps.BuildGuardTests.test_mismatched_and_dirty_source_left_unchanged) ... ok
+test_mismatched_version_rejected_before_build (test_build_deps.BuildGuardTests.test_mismatched_version_rejected_before_build) ... ok
+test_release_requires_absolute_root_and_builds_exact_target_prefixes (test_build_deps.BuildGuardTests.test_release_requires_absolute_root_and_builds_exact_target_prefixes) ... ok
+test_environment_and_removed_marker (test_sandbox.GuardTests.test_environment_and_removed_marker) ... ok
+test_executable_override_cannot_follow_symlink (test_sandbox.GuardTests.test_executable_override_cannot_follow_symlink) ... ok
+test_socket_replacement_refuses_cleanup (test_sandbox.GuardTests.test_socket_replacement_refuses_cleanup) ... ok
+test_symlinked_marker_refused (test_sandbox.GuardTests.test_symlinked_marker_refused) ... ok
+test_two_servers_cleanup_cannot_reach_other_fixture (test_sandbox.GuardTests.test_two_servers_cleanup_cannot_reach_other_fixture) ... ok
+test_extracts_only_exact_binary_and_rejects_missing_or_duplicate_members (test_validation.ValidationChecks.test_extracts_only_exact_binary_and_rejects_missing_or_duplicate_members) ... ok
+test_fingerprint_tracks_source_harness_and_runner (test_validation.ValidationChecks.test_fingerprint_tracks_source_harness_and_runner) ... ok
+test_scanner_checks_compressed_zip_members (test_validation.ValidationChecks.test_scanner_checks_compressed_zip_members) ... ok
+test_scanner_detects_split_credentials_without_echoing_them (test_validation.ValidationChecks.test_scanner_detects_split_credentials_without_echoing_them) ... ok
+
+----------------------------------------------------------------------
+Ran 15 tests in 1.096s
+
+OK

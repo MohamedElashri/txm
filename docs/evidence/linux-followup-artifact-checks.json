@@ -1,0 +1,22 @@
+{
+  "passed": true,
+  "checks": [
+    {
+      "archive": "txm_Linux_x86_64.zip",
+      "musl_static": false,
+      "completion_prune_all_four_shells": true
+    },
+    {
+      "archive": "txm_Linux_x86_64-musl.zip",
+      "musl_static": true,
+      "completion_prune_all_four_shells": true
+    },
+    {
+      "CGO_disabled_native_refusal": true,
+      "coordinator_not_started": true
+    },
+    {
+      "root_container_guard_refuses_host": true
+    }
+  ]
+}

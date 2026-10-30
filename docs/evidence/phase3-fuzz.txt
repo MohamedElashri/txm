@@ -1,0 +1,24 @@
+fuzz: elapsed: 0s, gathering baseline coverage: 0/34 completed
+fuzz: elapsed: 0s, gathering baseline coverage: 34/34 completed, now fuzzing with 2 workers
+fuzz: elapsed: 3s, execs: 39451 (13146/sec), new interesting: 0 (total: 34)
+fuzz: elapsed: 6s, execs: 80327 (13629/sec), new interesting: 0 (total: 34)
+fuzz: elapsed: 9s, execs: 124982 (14882/sec), new interesting: 0 (total: 34)
+fuzz: elapsed: 12s, execs: 173735 (16250/sec), new interesting: 0 (total: 34)
+fuzz: elapsed: 15s, execs: 233198 (19803/sec), new interesting: 0 (total: 34)
+fuzz: elapsed: 18s, execs: 270810 (12542/sec), new interesting: 0 (total: 34)
+fuzz: elapsed: 21s, execs: 360134 (29797/sec), new interesting: 0 (total: 34)
+fuzz: elapsed: 24s, execs: 484647 (41507/sec), new interesting: 1 (total: 35)
+fuzz: elapsed: 27s, execs: 604163 (39836/sec), new interesting: 1 (total: 35)
+fuzz: elapsed: 30s, execs: 727266 (41007/sec), new interesting: 1 (total: 35)
+fuzz: elapsed: 30s, execs: 727266 (0/sec), new interesting: 1 (total: 35)
+PASS
+ok  	github.com/MohamedElashri/txm/pkg/nativeprotocol	30.127s
+
+fuzz: elapsed: 0s, gathering baseline coverage: 0/78 completed
+fuzz: elapsed: 0s, gathering baseline coverage: 78/78 completed, now fuzzing with 2 workers
+fuzz: elapsed: 3s, execs: 39412 (13137/sec), new interesting: 5 (total: 83)
+fuzz: elapsed: 6s, execs: 65182 (8590/sec), new interesting: 9 (total: 87)
+fuzz: elapsed: 9s, execs: 143722 (26178/sec), new interesting: 19 (total: 97)
+fuzz: elapsed: 11s, execs: 160218 (8043/sec), new interesting: 21 (total: 99)
+PASS
+ok  	github.com/MohamedElashri/txm/pkg/core	11.107s

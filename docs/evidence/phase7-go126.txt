@@ -1,0 +1,19 @@
+?   	github.com/MohamedElashri/txm	[no test files]
+?   	github.com/MohamedElashri/txm/docs	[no test files]
+ok  	github.com/MohamedElashri/txm/pkg/agent	(cached)
+ok  	github.com/MohamedElashri/txm/pkg/backend	(cached)
+ok  	github.com/MohamedElashri/txm/pkg/cmd	0.006s
+ok  	github.com/MohamedElashri/txm/pkg/config	(cached)
+ok  	github.com/MohamedElashri/txm/pkg/core	(cached)
+ok  	github.com/MohamedElashri/txm/pkg/dashboard	(cached)
+ok  	github.com/MohamedElashri/txm/pkg/extension	(cached)
+ok  	github.com/MohamedElashri/txm/pkg/localipc	(cached)
+?   	github.com/MohamedElashri/txm/pkg/logger	[no test files]
+ok  	github.com/MohamedElashri/txm/pkg/nativeprocess	(cached)
+ok  	github.com/MohamedElashri/txm/pkg/nativeprotocol	(cached)
+ok  	github.com/MohamedElashri/txm/pkg/nativeserver	(cached)
+ok  	github.com/MohamedElashri/txm/pkg/profile	(cached)
+ok  	github.com/MohamedElashri/txm/pkg/remote	(cached)
+ok  	github.com/MohamedElashri/txm/pkg/runtimepath	(cached)
+ok  	github.com/MohamedElashri/txm/pkg/supervisor	(cached)
+ok  	github.com/MohamedElashri/txm/pkg/task	(cached)

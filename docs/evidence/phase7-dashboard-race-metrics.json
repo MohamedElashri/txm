@@ -1,0 +1,15 @@
+{
+  "scope": "guarded Linux native VT/PTY dashboard fixtures; race RSS is diagnostic only",
+  "budgets": {
+    "input_resize_quit_ms": 500,
+    "rss_1000_kib": 65536,
+    "slow_cancel_s": 3
+  },
+  "metrics": {
+    "slow_backend_search_ms": 58.42259601922706,
+    "search_1000_ms": 302.69804899580777,
+    "resize_1000_ms": 242.24236799636856,
+    "rss_1000_kib": 71904,
+    "quit_1000_ms": 61.056678008753806
+  }
+}

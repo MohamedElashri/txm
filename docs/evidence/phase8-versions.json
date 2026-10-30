@@ -1,0 +1,50 @@
+{
+  "go": {
+    "argv": [
+      "go",
+      "version"
+    ],
+    "exit_code": 0,
+    "output": "go version go1.27.3 linux/amd64"
+  },
+  "tmux": {
+    "argv": [
+      "tmux",
+      "-V"
+    ],
+    "exit_code": 0,
+    "output": "tmux 3.4"
+  },
+  "git": {
+    "argv": [
+      "git",
+      "--version"
+    ],
+    "exit_code": 0,
+    "output": "git version 2.43.0"
+  },
+  "ssh": {
+    "argv": [
+      "ssh",
+      "-V"
+    ],
+    "exit_code": 0,
+    "output": "OpenSSH_9.6p1 Ubuntu-3ubuntu13.20, OpenSSL 3.0.13 30 Jan 2024"
+  },
+  "lint": {
+    "argv": [
+      "golangci-lint",
+      "version"
+    ],
+    "exit_code": 0,
+    "output": "golangci-lint has version 2.15.0 built with go1.27.2 from 25c5369 on 2026-10-16T10:51:54Z"
+  },
+  "goreleaser": {
+    "argv": [
+      "goreleaser",
+      "--version"
+    ],
+    "exit_code": 0,
+    "output": "____       ____      _\n / ___| ___ |  _ \\ ___| | ___  __ _ ___  ___ _ __\n| |  _ / _ \\| |_) / _ \\ |/ _ \\/ _` / __|/ _ \\ '__|\n| |_| | (_) |  _ <  __/ |  __/ (_| \\__ \\  __/ |\n \\____|\\___/|_| \\_\\___|_|\\___|\\__,_|___/\\___|_|\ngoreleaser: Release engineering, simplified.\nhttps://goreleaser.com\n\nGitVersion:    2.19.0\nGitCommit:     00139d15712716a3a2f21eb4d533f231ff19b9c5\nGitTreeState:  clean\nBuildDate:     2026-10-22T19:02:30Z\nBuiltBy:       Homebrew\nGoVersion:     go1.27.3\nCompiler:      gc\nModuleSum:     unknown\nPlatform:      linux/amd64"
+  }
+}

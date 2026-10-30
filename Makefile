@@ -1,7 +1,9 @@
-.PHONY: build clean test lint init update all build-deps
+.PHONY: build clean test lint init update all build-deps test-integration test-race test-harness test-fuzz test-integration-race test-performance test-extensions
 
 BINARY_NAME=txm
 GHOSTTY_HOST_DIR ?= $(CURDIR)/.ghostty-host
+GHOSTTY_SOURCE_DIR ?= $(CURDIR)/ghostty
+ZIG ?= zig
 
 all: test build
 
@@ -14,12 +16,11 @@ update:
 	go mod tidy
 
 build-deps:
-	@if [ ! -d "ghostty" ]; then git clone https://github.com/ghostty-org/ghostty.git ghostty && cd ghostty && git checkout d4c88d806; fi
-	@if [ ! -d "$(GHOSTTY_HOST_DIR)" ]; then cd ghostty && zig build -Demit-lib-vt --prefix $(GHOSTTY_HOST_DIR); fi
+	GHOSTTY_SOURCE_DIR="$(GHOSTTY_SOURCE_DIR)" GHOSTTY_HOST_DIR="$(GHOSTTY_HOST_DIR)" ZIG="$(ZIG)" bash scripts/build-deps.sh host
 
 build: build-deps
 	mkdir -p bin
-	PKG_CONFIG_PATH=$(GHOSTTY_HOST_DIR)/share/pkgconfig CGO_ENABLED=1 go build -o bin/$(BINARY_NAME) .
+	PKG_CONFIG_PATH="$(GHOSTTY_HOST_DIR)/share/pkgconfig" CGO_ENABLED=1 go build -o bin/$(BINARY_NAME) .
 
 clean:
 	rm -rf bin
@@ -27,10 +28,53 @@ clean:
 	rm -rf $(GHOSTTY_HOST_DIR)
 
 test: build-deps
-	PKG_CONFIG_PATH=$(GHOSTTY_HOST_DIR)/share/pkgconfig CGO_ENABLED=1 go test -v ./...
+	PKG_CONFIG_PATH="$(GHOSTTY_HOST_DIR)/share/pkgconfig" CGO_ENABLED=1 go test -v ./...
 
 lint: build-deps
-	PKG_CONFIG_PATH=$(GHOSTTY_HOST_DIR)/share/pkgconfig CGO_ENABLED=1 golangci-lint run
+	PKG_CONFIG_PATH="$(GHOSTTY_HOST_DIR)/share/pkgconfig" CGO_ENABLED=1 golangci-lint run
+
+test-harness:
+	python3 -m unittest discover -s tests -p 'test_*.py' -v
+
+test-integration: build test-harness
+	python3 tests/integration.py --binary "$(CURDIR)/bin/$(BINARY_NAME)"
+	python3 tests/cli_errors.py --binary "$(CURDIR)/bin/$(BINARY_NAME)"
+	python3 tests/native_checks.py --binary "$(CURDIR)/bin/$(BINARY_NAME)"
+	python3 tests/structured_checks.py --binary "$(CURDIR)/bin/$(BINARY_NAME)"
+	python3 tests/profile_checks.py --binary "$(CURDIR)/bin/$(BINARY_NAME)"
+	python3 tests/agent_checks.py --binary "$(CURDIR)/bin/$(BINARY_NAME)"
+	python3 tests/agent_events_checks.py --binary "$(CURDIR)/bin/$(BINARY_NAME)"
+	python3 tests/dashboard_checks.py --binary "$(CURDIR)/bin/$(BINARY_NAME)"
+	python3 tests/extension_checks.py --binary "$(CURDIR)/bin/$(BINARY_NAME)"
+	python3 tests/prune_checks.py --binary "$(CURDIR)/bin/$(BINARY_NAME)"
+
+test-extensions: build test-harness
+	python3 tests/extension_checks.py --binary "$(CURDIR)/bin/$(BINARY_NAME)"
+	python3 tests/prune_checks.py --binary "$(CURDIR)/bin/$(BINARY_NAME)"
+
+test-race: build-deps
+	PKG_CONFIG_PATH="$(GHOSTTY_HOST_DIR)/share/pkgconfig" CGO_ENABLED=1 go test -race ./...
+
+test-fuzz:
+	go test ./pkg/nativeprotocol -run='^$$' -fuzz=FuzzNativeFrame -fuzztime=30s -parallel=2
+	go test ./pkg/core -run='^$$' -fuzz=FuzzPlain -fuzztime=10s -parallel=2
+	go test ./pkg/localipc -run='^$$' -fuzz=FuzzLocalFrame -fuzztime=15s -parallel=2
+	go test ./pkg/remote -run='^$$' -fuzz=FuzzDecode -fuzztime=15s -parallel=2
+
+test-integration-race: build-deps test-harness
+	mkdir -p bin
+	PKG_CONFIG_PATH="$(GHOSTTY_HOST_DIR)/share/pkgconfig" CGO_ENABLED=1 go build -race -o bin/$(BINARY_NAME)-race .
+	python3 tests/native_checks.py --binary "$(CURDIR)/bin/$(BINARY_NAME)-race"
+	python3 tests/structured_checks.py --binary "$(CURDIR)/bin/$(BINARY_NAME)-race"
+	python3 tests/profile_checks.py --binary "$(CURDIR)/bin/$(BINARY_NAME)-race"
+	python3 tests/agent_checks.py --binary "$(CURDIR)/bin/$(BINARY_NAME)-race"
+	python3 tests/agent_events_checks.py --binary "$(CURDIR)/bin/$(BINARY_NAME)-race"
+	python3 tests/dashboard_checks.py --binary "$(CURDIR)/bin/$(BINARY_NAME)-race"
+	python3 tests/extension_checks.py --binary "$(CURDIR)/bin/$(BINARY_NAME)-race"
+	python3 tests/prune_checks.py --binary "$(CURDIR)/bin/$(BINARY_NAME)-race"
+
+test-performance: build test-harness
+	python3 tests/performance.py --binary "$(CURDIR)/bin/$(BINARY_NAME)" --report "$(CURDIR)/bin/performance.json"
 
 install: build
 	sudo ./bin/$(BINARY_NAME) install --system

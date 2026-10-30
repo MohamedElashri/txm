@@ -1,0 +1,41 @@
+{
+  "argv": [
+    "/usr/bin/ssh",
+    "-G",
+    "-F",
+    "/tmp/txm-ssh-config-ikpdxnut/config",
+    "-T",
+    "-o",
+    "BatchMode=yes",
+    "-o",
+    "StrictHostKeyChecking=yes",
+    "-o",
+    "ConnectTimeout=5",
+    "-o",
+    "ConnectionAttempts=1",
+    "-o",
+    "ServerAliveInterval=5",
+    "-o",
+    "ServerAliveCountMax=1",
+    "--",
+    "fixture"
+  ],
+  "exit_code": 0,
+  "network_contact": false,
+  "host": "fixture.invalid",
+  "config_preserved": [
+    "HostName",
+    "IdentityFile",
+    "ControlMaster",
+    "ControlPath",
+    "ControlPersist"
+  ],
+  "strict_options": [
+    "BatchMode",
+    "StrictHostKeyChecking",
+    "ConnectTimeout",
+    "ConnectionAttempts",
+    "ServerAliveInterval",
+    "ServerAliveCountMax"
+  ]
+}
