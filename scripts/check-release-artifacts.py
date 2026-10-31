@@ -5,6 +5,7 @@ import hashlib
 import json
 from pathlib import Path
 import re
+import shutil
 import struct
 import zipfile
 
@@ -43,21 +44,24 @@ def binary_target(data, system, arch, static=False):
         raise ValueError('truncated executable header') from e
 
 
-def verify(directory, repo=REPO):
-    expected = {*TARGETS, 'checksums.txt'}
+def verify(directory, repo=REPO, platform=None):
+    targets = {name: target for name, target in TARGETS.items()
+               if platform is None or (target[0] == 'Darwin') == (platform == 'darwin')}
+    manifest_name = 'checksums.txt' if platform is None else f'checksums-{platform}.txt'
+    expected = {*targets, manifest_name}
     entries = list(directory.iterdir())
     if {p.name for p in entries} != expected or any(p.is_symlink() or not p.is_file() for p in entries):
-        raise ValueError('bundle must contain exactly eight regular ZIP archives and checksums.txt')
+        raise ValueError(f'bundle must contain exactly {len(targets)} regular ZIP archives and {manifest_name}')
     manifest = {}
-    for line in (directory/'checksums.txt').read_text().splitlines():
+    for line in (directory/manifest_name).read_text().splitlines():
         match = re.fullmatch(r'([a-fA-F0-9]{64})\s+\*?([^\s/\\]+)', line)
-        if not match or match[2] not in TARGETS or match[2] in manifest:
+        if not match or match[2] not in targets or match[2] in manifest:
             raise ValueError('invalid, duplicate or unexpected checksum entry')
         manifest[match[2]] = match[1].lower()
-    if set(manifest) != set(TARGETS):
-        raise ValueError('checksums must cover all eight archives')
+    if set(manifest) != set(targets):
+        raise ValueError('checksums must cover every expected archive')
     result = []
-    for name, (system, arch, static) in TARGETS.items():
+    for name, (system, arch, static) in targets.items():
         path = directory/name
         if path.stat().st_size > 200 << 20:
             raise ValueError('oversized ZIP archive')
@@ -79,13 +83,45 @@ def verify(directory, repo=REPO):
     return {'passed': True, 'archives': result, 'scope': 'Inventory, source bytes, checksums and binary targets; host runtime checks are separate'}
 
 
+def assemble(parts, directory, repo=REPO):
+    """Merge the two build partitions without regenerating trusted checksums."""
+    manifests = {'checksums-linux.txt', 'checksums-darwin.txt'}
+    entries = list(parts.iterdir())
+    if ({p.name for p in entries} != set(TARGETS) | manifests
+            or any(p.is_symlink() or not p.is_file() for p in entries)):
+        raise ValueError('build partitions must contain exactly eight ZIPs and two checksum manifests')
+    checksums = []
+    for platform in ('linux', 'darwin'):
+        lines = (parts/f'checksums-{platform}.txt').read_text().splitlines()
+        expected = {name for name, (system, _, _) in TARGETS.items()
+                    if (system == 'Darwin') == (platform == 'darwin')}
+        names = []
+        for line in lines:
+            match = re.fullmatch(r'[a-fA-F0-9]{64}\s+\*?([^\s/\\]+)', line)
+            if not match:
+                raise ValueError('invalid partition checksum entry')
+            names.append(match[1])
+        if len(names) != len(expected) or set(names) != expected:
+            raise ValueError('partition checksum inventory mismatch: '+platform)
+        checksums.extend(lines)
+    directory.mkdir()  # Refuse an existing bundle, including a previous attempt.
+    for name in TARGETS:
+        shutil.copyfile(parts/name, directory/name)
+    (directory/'checksums.txt').write_text('\n'.join(sorted(checksums))+'\n')
+    return verify(directory, repo)
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--directory', required=True, type=Path)
+    parser.add_argument('--assemble-from', type=Path, help='Assemble and verify Linux and Darwin build partitions')
+    parser.add_argument('--partition', choices=['linux', 'darwin'], help='Verify only one build partition before assembly')
     parser.add_argument('--report', type=Path)
     args = parser.parse_args()
+    if args.partition and args.assemble_from:
+        parser.error('--partition and --assemble-from are mutually exclusive')
     try:
-        result = verify(args.directory)
+        result = assemble(args.assemble_from, args.directory) if args.assemble_from else verify(args.directory, platform=args.partition)
         if args.report:
             with args.report.open('x') as out:
                 out.write(json.dumps(result, indent=2)+'\n')

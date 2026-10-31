@@ -22,6 +22,8 @@ coverage.*
 /zig-out/
 /zig-cache/
 /.zig-cache/
+/.zig-cache-global/
+/.go-cache/
 
 # Local workspace/editor files
 go.work

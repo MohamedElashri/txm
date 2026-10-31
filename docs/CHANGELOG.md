@@ -5,6 +5,23 @@ Changes follow [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) and
 
 ## [Unreleased]
 
+### Fixed
+
+- Publish native fixture identity receipts atomically and tolerate temporary
+  connection-pool refusals only in the bounded recovery probe. Rejected test
+  handshakes close their sockets.
+
+### Release engineering
+
+- Reserve full package validation for tags and explicit dry runs. Reuse successful
+  CI of the exact release commit, build Linux/Windows archives on Linux alongside
+  a separate Darwin build, and cache verified native dependencies before tests.
+- Retain independently retryable build partitions and the complete package bundle,
+  bound job runtime, and distinguish package reports by run attempt. All eight
+  target runtime/CLI gates remain required before draft creation.
+- Run Linux foreign-UID checks in a pinned minimal Python image without building
+  a full SSH/backend test image for each archive.
+
 ## [2.0.0] - 2026-10-31
 
 txm 2.0 brings persistent terminal workspaces, supervised commands, a dashboard,
