@@ -15,9 +15,9 @@ url=$(jq -er --arg v "$ZIG_VERSION" --arg p "$platform" '.[$v][$p].tarball' "$de
 checksum=$(jq -er --arg v "$ZIG_VERSION" --arg p "$platform" '.[$v][$p].shasum' "$dest/index.json")
 curl --fail --location --retry 3 "$url" -o "$dest/zig.tar.xz"
 if command -v sha256sum >/dev/null; then
-    printf '%s  %s\n' "$checksum" "$dest/zig.tar.xz" | sha256sum --check
+    printf '%s  %s\n' "$checksum" "$dest/zig.tar.xz" | sha256sum -c
 else
-    printf '%s  %s\n' "$checksum" "$dest/zig.tar.xz" | shasum -a 256 --check
+    printf '%s  %s\n' "$checksum" "$dest/zig.tar.xz" | shasum -a 256 -c
 fi
 tar -xf "$dest/zig.tar.xz" -C "$dest"
 echo "$dest/zig-$platform-$ZIG_VERSION" >> "$GITHUB_PATH"
