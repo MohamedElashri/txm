@@ -185,7 +185,7 @@ jobs:
           python3 tests/archive_checks.py --archive "$RUNNER_TEMP/bundle/$ARCHIVE" --expected-version "$(cat VERSION)" --report "$RUNNER_TEMP/reports/install.json"
           unzip -q "$RUNNER_TEMP/bundle/$ARCHIVE" txm -d "$RUNNER_TEMP/package"
           chmod +x "$RUNNER_TEMP/package/txm"
-          for suite in cli_errors native_checks structured_checks profile_checks agent_checks agent_events_checks dashboard_checks extension_checks prune_checks; do
+          for suite in cli_errors native_checks structured_checks profile_checks agent_checks agent_events_checks dashboard_checks extension_checks prune_checks mcp_checks task_review_checks metrics_checks; do
             python3 "tests/$suite.py" --binary "$RUNNER_TEMP/package/txm"
           done
           if [[ "$RUNNER_OS" == macOS ]]; then

@@ -11,6 +11,7 @@ import (
 	"unicode/utf8"
 
 	"github.com/MohamedElashri/txm/pkg/core"
+	"github.com/MohamedElashri/txm/pkg/metrics"
 	"github.com/MohamedElashri/txm/pkg/nativeprotocol"
 	"github.com/MohamedElashri/txm/pkg/runtimepath"
 )
@@ -18,15 +19,16 @@ import (
 const MaxManifest = 128 << 10
 
 type Manifest struct {
-	SchemaVersion int          `json:"schema_version"`
-	ManagedID     string       `json:"managed_id"`
-	InstanceID    string       `json:"instance_id"`
-	Backend       string       `json:"backend"`
-	Argv          []string     `json:"argv"`
-	Cwd           string       `json:"cwd"`
-	EnvNames      []string     `json:"env_names"`
-	Receipt       string       `json:"receipt"`
-	Hooks         *HookContext `json:"hooks,omitempty"`
+	SchemaVersion int             `json:"schema_version"`
+	ManagedID     string          `json:"managed_id"`
+	InstanceID    string          `json:"instance_id"`
+	Backend       string          `json:"backend"`
+	Argv          []string        `json:"argv"`
+	Cwd           string          `json:"cwd"`
+	EnvNames      []string        `json:"env_names"`
+	Receipt       string          `json:"receipt"`
+	Hooks         *HookContext    `json:"hooks,omitempty"`
+	Metrics       *metrics.Config `json:"metrics,omitempty"`
 }
 type HookContext struct {
 	AgentID    string `json:"agent_id"`
@@ -83,6 +85,9 @@ var envName = regexp.MustCompile(`^[a-zA-Z_][a-zA-Z0-9_]*$`)
 
 func (m Manifest) Validate() error {
 	bad := func() error { return core.Failure("invalid_usage", "invalid managed launch manifest") }
+	if m.Metrics != nil && m.Metrics.Validate() != nil {
+		return bad()
+	}
 	if m.Hooks != nil {
 		h := m.Hooks
 		if h.AgentID != m.ManagedID || h.InstanceID != m.InstanceID || !runtimepath.ValidID(h.Generation) || !filepath.IsAbs(h.StateHome) || !filepath.IsAbs(h.TempDir) || (h.RuntimeDir != "" && !filepath.IsAbs(h.RuntimeDir)) {

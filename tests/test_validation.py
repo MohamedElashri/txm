@@ -22,6 +22,18 @@ scanner = module('audit-artifacts')
 
 
 class ValidationChecks(unittest.TestCase):
+    def test_full_matrix_includes_new_control_task_and_metrics_boundaries(self):
+        # The same matrix runs normal/race binaries on actual Linux/macOS;
+        # omitting a suite would otherwise silently qualify incomplete runs.
+        self.assertTrue({'mcp_checks', 'task_review_checks', 'metrics_checks'}
+                        .issubset(validator.SUITES))
+        self.assertEqual(len(validator.SUITES), len(set(validator.SUITES)))
+        workflow = (REPO/'.github/workflows/release.yml').read_text()
+        suite_loop = next(line for line in workflow.splitlines()
+                          if 'for suite in ' in line)
+        for suite in validator.SUITES:
+            self.assertIn(suite, suite_loop.replace(';', ' ').split())
+
     def test_extracts_only_exact_binary_and_rejects_missing_or_duplicate_members(self):
         with tempfile.TemporaryDirectory(prefix='txm-validator-') as temp:
             root = Path(temp)/'work'; root.mkdir(); archive = root/'payload.zip'

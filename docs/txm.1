@@ -12,6 +12,88 @@ work with tmux, Zellij and GNU Screen, with capabilities reported per backend.
 Run txm without a command to pick a session. Use dashboard to find your work,
 profile for repeatable layouts, and agent to supervise jobs. Ordinary sessions
 do not require the optional agent coordinator or an AI provider.
+.SH OPT-IN PROCESS METRICS
+\fBagent start NAME --metrics --metrics-interval 2 -- EXECUTABLE ARGS\fR
+opts in to local managed child-PID CPU/RSS sampling. CPU 100 percent means one
+fully occupied logical core; RSS is bytes. First CPU sample is unknown. Every
+sample binds the unreaped child PID to its kernel start identity. Descendants,
+remote/unmanaged sessions and process-group totals are not inferred.
+.PP
+\fBagent metrics ID --json\fR reads existing samples without starting a sampler
+or coordinator. Unavailable/stale observations are explicit. Sampler failure or
+quota refusal never stops the job. Disabled metrics create no metrics files,
+sampler timers/goroutines or process-counter reads. Coordinator restart does not
+restart sampling by PID; the separate supervisor owns it until child exit.
+.PP
+Limits: 32 active samplers, 2-60 seconds, 24-hour maximum age, 2048 retained
+samples per instance, 512 KiB retained history per instance (1 MiB including
+atomic replacement), 30 MiB aggregate histories plus 2 MiB metadata/publication
+headroom within 32 MiB. Oldest inactive histories are evicted first; another
+active registration is never evicted to admit a sampler. The first quota wins;
+24 hours of samples is not guaranteed. Served data has a 24-hour age cap;
+physical retention cleanup runs on the next opted-in writer. Limits count logical
+file bytes, including atomic publication headroom. Linux runtime is fixture-tested; macOS
+implementation still requires matching-runner validation before a support claim.
+.SH DASHBOARD TRIAGE
+Plain dashboard does not start an agent coordinator; \fB--agents\fR explicitly
+subscribes. Fresh authenticated needs-input agents sort first. Attention expiry
+uses its own event time, independent of process and coordinator heartbeats.
+Permission requests remain unconfirmed. Keys: \fB[ ]\fR previous/next blocked,
+\fBg\fR repo/task/backend grouping, \fBc\fR collapse group, \fBC\fR expand all,
+\fB/\fR search, Tab filter, \fBb\fR backend, \fBo\fR read-only attach,
+\fBp\fR bounded preview, F1 help. Registrations never authorize attach by name.
+Repository/task groups require exact managed instance provenance; sessions with
+no positive association remain in a no-repo group. Selection uses opaque IDs.
+.SH REVIEWED TASK OPERATIONS
+\fBtask review ID --target refs/heads/BRANCH\fR reads frozen base/task/target
+commits and worktree state without starting a service or writing optional Git
+locks. The comparison is base-to-task. \fB--diff\fR explicitly permits up to
+16 KiB of untrusted diff; terminal controls are removed, secrets are not redacted.
+.PP
+\fBtask start\fR accepts \fB--setup-policy /private/setup.json\fR with a fixed
+task ID, repository/worktree, base, main/setup argv and timeout. The owned file
+must have mode 0600. Review \fB--dry-run\fR then pass its exact
+\fB--accept-setup DIGEST\fR. Changed configuration, executable or input rejects
+acceptance. Setup is supervised with an empty environment before the main job.
+Failures/interruption retain the worktree and setup intent/receipt. Inspect with
+\fBtask setup-status ID\fR. Cleanup requires pinned setup exit proof; an
+uncertain launch is never retried automatically.
+.PP
+\fBtask merge ID --target refs/heads/BRANCH\fR defaults to a pure dry run.
+Apply requires \fB--dry-run=false --quiescent --confirm ID\fR plus exact
+\fB--expected-task OID --expected-target OID --review-digest DIGEST\fR.
+Only clean owned checked-out target worktrees support apply, using genuine
+fast-forward-only Git merge of the frozen commit. All registered workers require
+exit receipts. The operator must also stop external Git clients, editors and
+escaped descendants; this explicit quiescence is the concurrency boundary.
+Ref-only merge, submodules and sparse worktrees require manual handling.
+An uncertain intent is retained without retry/reset. Applied is a historical
+outcome, not a guarantee against later external changes. No push or cleanup runs.
+.PP
+Generic job stop uses \fBagent stop FULL_MANAGED_ID --confirm FULL_MANAGED_ID\fR.
+The command verifies supervised ownership and strict backend selection, and
+retains the immutable exit receipt. Missing confirmation never signals a job.
+.SH SCOPED MCP
+\fBtxm mcp serve\fR serves newline-delimited JSON-RPC over stdio using
+2025-11-25 initialization or 2026-07-28 per-request metadata. Reads default to
+deny. Supply \fB--read-backend native\fR and exact \fB--read-id ID\fR or
+\fB--read-repo /owned/repository\fR grants; selectors intersect. Session tools
+report managed registrations, not verified live attachment. No remote discovery
+or output preview is exposed. Reads never start a coordinator or repair state.
+.PP
+Creation is absent unless \fB--create-policy /private/policy.json\fR loads an
+owned mode-0600 startup grant containing fixed templates. Requests supply only
+template and permanent operation IDs. The initial child environment is empty.
+An uncertain reservation must be inspected and must never be relaunched with a
+new ID. Journals retain up to 1024 permanent entries within 1 MiB; capacity
+refuses new creates. Do not delete or reuse a namespace to retry old operations.
+Stop, cleanup and merge are human CLI handoffs, never executable MCP tools.
+.PP
+Limits: 1 MiB messages, 16 concurrent requests, four waits, 60-second maximum
+wait, 256 items per page and 8192 unique request IDs per process. Reconnect
+before exhausting the ID budget. Framing/limit violations terminate the stream.
+\fBagent list --existing --backend native --read-id ID\fR and
+\fBagent status ID --existing --backend native\fR share the pure read service.
 .SH BACKEND SUPPORT
 \fBtxm\fR supports four terminal multiplexer backends:
 .TP
@@ -180,7 +262,8 @@ Prune the task before its agent. Actual pruning requires the matching full ID.
 \fBagent start --provider\fR generic|claude NAME -- EXECUTABLE [ARGS...]
 Explicitly provide private hook context to a managed child. Claude receives a
 private generated settings file; user/project settings are not edited. Only exact
-verified provider versions are accepted. Generic operation needs no provider.
+schema-allowlisted versions are accepted; this is separate from live validation.
+Generic operation needs no provider.
 .TP
 \fBagent hooks enable\fR ID [--provider generic|claude|codex]
 Create or rotate a mode-0600 per-instance/generation credential. Same UID is the
@@ -190,6 +273,43 @@ trust boundary. Tokens never enter argv, environment, public status or events.
 Print reviewable provider settings or installed adapter availability. Codex
 requires manual provider trust review. OpenCode v2 remains unsupported. No
 permission bypass or automatic approval is provided.
+.TP
+\fBagent doctor\fR [--probe] [--json]
+Discover providers without starting the coordinator, enabling hooks or changing
+trust. Default discovery checks PATH only. --probe explicitly executes bounded
+provider version commands, which may create the provider's own caches.
+.PP
+Codex 0.166.0 has an authorized interactive Linux/amd64 lifecycle reference.
+Probing reports verified only when the installed executable matches that
+reference's hash and platform; validation_reference states the exact scope.
+Trust and enablement remain unknown until reviewed per instance. Automatic
+Codex configuration remains disabled. SessionStart startup/resume are live
+validated; compact/clear/fork start sources remain fixture-only, and fork
+rebinding is refused. authorized_live_reference describes adapter reference
+evidence, not attestation of every running instance or mode.
+.PP
+Claude Code 2.1.309 has a Linux/amd64 interactive restricted-mode reference
+with default permission mode. Probing requires the reference executable hash
+before marking it verified; current trust/enablement remain unknown. Claude
+prompt_id correlates prompt events in canonical turn_id; SessionStart and
+SessionEnd stay session-scoped. A canceled permission dialog emits no terminal
+hook, so completion remains unknown until later sourced evidence. StopFailure
+was exercised for model_not_found; other API error kinds remain unverified.
+Automatic hooks preserve inherited user/project settings. If the Claude argv
+already contains --settings, automatic setup refuses before launch; use manual
+reviewed hooks composition. New-version associations use separate schema2
+sidecars, preserving the strict v1 registry and tagged-v2.0 downgrade behavior.
+Availability, nullable compatibility, validation and enablement are separate;
+the legacy supported field means schema allowlist compatibility, not verified
+live conversations. Unknown versions remain disabled.
+.PP
+Public agent status adds nullable provider_observation metadata.
+Dependency notices introduced by MCP are retained in the binary; use
+\fBtxm licenses\fR (or \fB--json\fR) without backend or provider discovery. Its freshness
+and fixture/runtime validation are distinct. Provider permission requests can
+precede auto-denial and are not automatically confirmed needs-input. Stop records
+an observed turn completion, not process exit or permission approval. A missing
+or mismatched private observation remains unknown and is never repaired by reads.
 .TP
 \fBagent signal\fR ID --instance I --generation G --sequence N --time RFC3339 --state STATE
 Report authenticated unknown, working, needs-input, idle or turn-complete. A

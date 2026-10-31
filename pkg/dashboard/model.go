@@ -42,17 +42,27 @@ type Model struct {
 	Selected              string
 	Index                 int
 	Message               string
+	PublicAgents          map[string]agent.PublicView
+	TaskGroups            map[string]string
+	GroupByTask           bool
+	Collapsed             map[string]bool
 }
 type Row struct {
-	Key           string
-	Session       *core.Session
-	Agent         *agent.View
-	Stale         bool
-	Current       bool
-	ContextUnsafe bool
+	Key                string
+	Session            *core.Session
+	Agent              *agent.View
+	Stale              bool
+	Current            bool
+	ContextUnsafe      bool
+	Now                time.Time
+	Observation        *agent.ObservationView
+	ObservationInvalid bool
+	Group              string
 }
 
-func NewModel(o Options) *Model { return &Model{Options: o, Backends: map[string]BackendState{}} }
+func NewModel(o Options) *Model {
+	return &Model{Options: o, Backends: map[string]BackendState{}, GroupByTask: true, Collapsed: map[string]bool{}}
+}
 func (m *Model) ApplyBackend(name string, sessions []core.Session, err error, now time.Time) {
 	state := m.Backends[name]
 	state.Err = err
@@ -111,9 +121,27 @@ func (r Row) Attention() string {
 	if r.Stale || r.Agent == nil {
 		return "unknown"
 	}
+	if r.ObservationInvalid {
+		return "unknown"
+	}
+	if r.Observation != nil {
+		return r.Observation.Observation.Fresh(r.Now).Attention
+	}
+	if at := r.Agent.AttentionObservedAt; at != nil {
+		age := r.Now.Sub(*at)
+		if age < -5*time.Second || age > agent.HookFreshness || r.Agent.Lifecycle == "exited" {
+			return "unknown"
+		}
+	}
 	return r.Agent.Attention
 }
+func (r Row) Blocked() bool {
+	return r.Agent != nil && r.Agent.Hooks != nil && r.Agent.AttentionObservedAt != nil && strings.HasPrefix(r.Agent.AttentionSource, "hook:") && r.Attention() == "needs_input" && r.Lifecycle() == "running"
+}
 func (m *Model) Rows(now time.Time) []Row {
+	return m.rows(now, false)
+}
+func (m *Model) rows(now time.Time, includeCollapsed bool) []Row {
 	rows := []Row{}
 	total := 0
 	for _, name := range m.Options.Backends {
@@ -131,6 +159,9 @@ func (m *Model) Rows(now time.Time) []Row {
 	if m.Options.Agents {
 		stale := m.AgentError != nil || m.AgentUpdated.IsZero() || now.Sub(m.AgentUpdated) > AgentFreshness
 		for i := range m.Agents {
+			if i >= MaxSessions {
+				break
+			}
 			v := &m.Agents[i]
 			inScope := false
 			for _, name := range m.Options.Backends {
@@ -148,6 +179,20 @@ func (m *Model) Rows(now time.Time) []Row {
 	result := []Row{}
 	query := strings.ToLower(m.Query)
 	for _, r := range rows {
+		r.Now = now
+		r.Group = "no-repo / " + r.Backend()
+		if r.Agent != nil {
+			if public, ok := m.PublicAgents[r.Agent.ID]; ok {
+				r.Observation = public.ProviderObservation
+				r.ObservationInvalid = public.ObservationError != nil
+			}
+			if group, ok := m.TaskGroups[r.Agent.ID]; ok {
+				r.Group = group
+			}
+		}
+		if !m.GroupByTask {
+			r.Group = r.Backend()
+		}
 		if m.BackendFilter > 0 && r.Backend() != m.Options.Backends[m.BackendFilter-1] {
 			continue
 		}
@@ -159,7 +204,7 @@ func (m *Model) Rows(now time.Time) []Row {
 			continue
 		}
 		if query != "" {
-			text := r.Backend() + " " + r.Name() + " " + r.Lifecycle() + " " + r.Attention() + " " + r.Key
+			text := r.Group + " " + r.Backend() + " " + r.Name() + " " + r.Lifecycle() + " " + r.Attention() + " " + r.Key
 			if r.Agent != nil {
 				text += " " + r.Agent.Source + " " + r.Agent.AttentionSource
 			}
@@ -167,9 +212,50 @@ func (m *Model) Rows(now time.Time) []Row {
 				continue
 			}
 		}
+		if !includeCollapsed && m.Collapsed[r.Group] {
+			continue
+		}
 		result = append(result, r)
 	}
+	sort.SliceStable(result, func(i, j int) bool {
+		a, b := result[i], result[j]
+		if a.Blocked() != b.Blocked() {
+			return a.Blocked()
+		}
+		if a.Group != b.Group {
+			return a.Group < b.Group
+		}
+		if (a.Session != nil) != (b.Session != nil) {
+			return a.Session != nil
+		}
+		if a.Name() != b.Name() {
+			return a.Name() < b.Name()
+		}
+		return a.Key < b.Key
+	})
 	return result
+}
+func (m *Model) GroupCounts(now time.Time) map[string]int {
+	counts := map[string]int{}
+	for _, r := range m.rows(now, true) {
+		counts[r.Group]++
+	}
+	return counts
+}
+func (m *Model) MoveBlocked(rows []Row, delta int) {
+	if len(rows) == 0 {
+		return
+	}
+	m.Selection(rows)
+	for offset := 1; offset <= len(rows); offset++ {
+		i := (m.Index + delta*offset + len(rows)*2) % len(rows)
+		if rows[i].Blocked() {
+			m.Index = i
+			m.Selected = rows[i].Key
+			return
+		}
+	}
+	m.Message = "No fresh authenticated needs-input agents in this view"
 }
 func (m *Model) Selection(rows []Row) *Row {
 	if len(rows) == 0 {

@@ -17,7 +17,7 @@ var taskStartCmd = &cobra.Command{Use: "start NAME -- EXECUTABLE [ARGS...]", Sho
 	if cmd.ArgsLenAtDash() != 1 {
 		return core.Failure("invalid_usage", "task start requires NAME -- EXECUTABLE [ARGS...]")
 	}
-	ctx, cancel := context.WithTimeout(cmd.Context(), 30*time.Second)
+	ctx, cancel := context.WithTimeout(cmd.Context(), 90*time.Second)
 	defer cancel()
 	o := taskOptions
 	o.Name = args[0]
@@ -67,6 +67,8 @@ var taskListCmd = &cobra.Command{Use: "list", Short: "List tasks and existing ma
 func init() {
 	rootCmd.AddCommand(taskCmd)
 	taskCmd.AddCommand(taskStartCmd, taskListCmd)
+	taskStartCmd.Flags().StringVar(&taskOptions.SetupPolicy, "setup-policy", "", "Owned mode-0600 JSON grant binding exact task/setup argv and worktree; review --dry-run first")
+	taskStartCmd.Flags().StringVar(&taskOptions.AcceptSetup, "accept-setup", "", "Exact reviewed dry-run setup digest; changed inputs invalidate it")
 	taskStartCmd.Flags().StringVar(&taskOptions.Repo, "repo", "", "Source Git repository (required)")
 	taskStartCmd.Flags().StringVar(&taskOptions.Base, "base", "HEAD", "Committed starting revision")
 	taskStartCmd.Flags().StringVar(&taskOptions.Branch, "branch", "", "Fresh branch (default txm/NAME-ID)")

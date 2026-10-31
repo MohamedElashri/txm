@@ -21,7 +21,8 @@ import zipfile
 REPO = Path(__file__).resolve().parents[1]
 SUITES = ('cli_errors', 'native_checks', 'structured_checks',
           'profile_checks', 'agent_checks', 'agent_events_checks',
-          'dashboard_checks', 'extension_checks', 'prune_checks')
+          'dashboard_checks', 'extension_checks', 'prune_checks',
+          'mcp_checks', 'task_review_checks', 'metrics_checks')
 
 
 def sha(path):

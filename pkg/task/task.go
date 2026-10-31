@@ -15,8 +15,12 @@ import (
 
 type Options struct {
 	Name, Repo, Base, Branch, Backend string
-	Argv, Env                         []string
-	DryRun, AllowRepoCommands         bool
+	// ReservedID is for durable service reservations, never a CLI name or retry.
+	ReservedID                string
+	SetupPolicy, AcceptSetup  string
+	Argv, Env                 []string
+	DryRun, AllowRepoCommands bool
+	TrustedTools              bool
 }
 type Plan struct {
 	DryRun        bool     `json:"dry_run"`
@@ -27,10 +31,16 @@ type Plan struct {
 	Backend       string   `json:"backend"`
 	ArgumentCount int      `json:"argument_count"`
 	EnvNames      []string `json:"env_names"`
+	SetupDigest   string   `json:"setup_digest,omitempty"`
+	ReservedID    string   `json:"reserved_id,omitempty"`
+	SetupWorktree string   `json:"setup_worktree,omitempty"`
 }
 
 func Start(ctx context.Context, o Options) (any, error) {
-	if !names.MatchString(o.Name) || o.Repo == "" || (o.Backend != "native" && o.Backend != "tmux") {
+	if o.ReservedID != "" && !runtimepath.ValidID(o.ReservedID) {
+		return nil, core.Failure("invalid_usage", "invalid reserved task identity")
+	}
+	if !names().MatchString(o.Name) || o.Repo == "" || (o.Backend != "native" && o.Backend != "tmux") {
 		return nil, core.Failure("invalid_usage", "task requires a bounded ASCII name, --repo and native/tmux backend")
 	}
 	if !supervisor.Supported() {
@@ -39,6 +49,11 @@ func Start(ctx context.Context, o Options) (any, error) {
 	g, e := newGit(o.AllowRepoCommands)
 	if e != nil {
 		return nil, e
+	}
+	if o.TrustedTools || o.SetupPolicy != "" {
+		if _, e = extension.ExecutableHash(g.exe); e != nil {
+			return nil, e
+		}
 	}
 	repo, common, e := g.repo(ctx, o.Repo)
 	if e != nil {
@@ -51,7 +66,7 @@ func Start(ctx context.Context, o Options) (any, error) {
 		o.Base = "HEAD"
 	}
 	base, e := g.text(ctx, repo, "rev-parse", "--verify", "--end-of-options", o.Base+"^{commit}")
-	if e != nil || !commitPattern.MatchString(base) {
+	if e != nil || !commitPattern().MatchString(base) {
 		return nil, core.Failure("invalid_target", "task base must resolve to a committed revision")
 	}
 	branch := o.Branch
@@ -66,8 +81,21 @@ func Start(ctx context.Context, o Options) (any, error) {
 	if e != nil {
 		return nil, e
 	}
+	setup, e := prepareSetup(ctx, g, o, repo, base)
+	if e != nil {
+		return nil, e
+	}
+	if setup != nil {
+		o.ReservedID = setup.Policy.TaskID
+	}
 	if o.DryRun {
-		return Plan{true, o.Name, repo, base, branch, o.Backend, len(m.Argv), m.EnvNames}, nil
+		p := Plan{DryRun: true, Name: o.Name, Repo: repo, Base: base, Branch: branch, Backend: o.Backend, ArgumentCount: len(m.Argv), EnvNames: m.EnvNames}
+		if setup != nil {
+			p.SetupDigest = setup.Digest
+			p.ReservedID = setup.Policy.TaskID
+			p.SetupWorktree = setup.Policy.Worktree
+		}
+		return p, nil
 	}
 	b, e := backend.NewBackend(o.Backend, ctx)
 	if e != nil {
@@ -92,6 +120,14 @@ func Start(ctx context.Context, o Options) (any, error) {
 	id, e := runtimepath.NewID()
 	if e != nil {
 		return nil, e
+	}
+	if o.ReservedID != "" {
+		id = o.ReservedID
+		for _, prior := range s.data.Tasks {
+			if prior.ID == id {
+				return nil, core.Failure("conflict", "reserved task identity already used; inspect existing outcome")
+			}
+		}
 	}
 	if o.Branch == "" {
 		branch = "txm/" + o.Name + "-" + id
@@ -118,6 +154,9 @@ func Start(ctx context.Context, o Options) (any, error) {
 	}
 	defer func() { _ = wt.Close() }()
 	dest := filepath.Join(wt.Path, id)
+	if setup != nil && dest != setup.Policy.Worktree {
+		return nil, core.Failure("conflict", "reviewed setup worktree does not match task state namespace")
+	}
 	if _, e = os.Lstat(dest); !os.IsNotExist(e) {
 		return nil, core.Failure("conflict", "task worktree destination already exists")
 	}
@@ -157,6 +196,24 @@ func Start(ctx context.Context, o Options) (any, error) {
 			return View{Task: *record, Orphan: true}, core.Failure("conflict", "new worktree contents changed before checkout")
 		}
 		if _, _, e = g.run(ctx, dest, "read-tree", "--reset", "-u", "HEAD"); e != nil {
+			return View{Task: *record, Orphan: true}, e
+		}
+	}
+	if setup != nil {
+		// Reserve the workflow launch in v1 metadata before setup. Older
+		// binaries then refuse cleanup without a task receipt instead of
+		// mistaking an active setup worker for an unused orphan worktree.
+		record.LaunchRequested = true
+		if e = s.save(); e != nil {
+			return View{Task: *record, Orphan: true}, e
+		}
+		if e = s.runSetup(ctx, g, *record, setup); e != nil {
+			return View{Task: *record, Orphan: true}, e
+		}
+		if e = verify(ctx, g, *record); e != nil {
+			return View{Task: *record, Orphan: true}, e
+		}
+		if e = markSetupMain(s.root, record.ID); e != nil {
 			return View{Task: *record, Orphan: true}, e
 		}
 	}
@@ -285,9 +342,21 @@ func Cleanup(ctx context.Context, id string, dry, force bool, confirm string) (V
 	if e != nil {
 		return View{}, e
 	}
-	v, e := observe(ctx, *r)
-	if e != nil {
-		return v, e
+	if e = guardSetupExit(ctx, s.root, *r); e != nil {
+		return View{Task: *r}, e
+	}
+	v := View{Task: *r}
+	setupState, setupErr := readSetup(s.root, r.ID)
+	if setupErr != nil {
+		return v, setupErr
+	}
+	if setupState == nil || setupState.MainLaunch {
+		v, e = observe(ctx, *r)
+		if e != nil {
+			return v, e
+		}
+	} else {
+		v.Orphan = true
 	}
 	if v.Agent != nil && (v.Agent.Lifecycle != "exited" || v.Agent.Receipt == nil) {
 		return v, core.Failure("conflict", "task cleanup requires a durable exit receipt")

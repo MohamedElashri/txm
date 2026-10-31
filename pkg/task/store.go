@@ -11,6 +11,7 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
+	"sync"
 )
 
 type Record struct {
@@ -42,6 +43,7 @@ type View struct {
 	Agent  *agent.View          `json:"agent"`
 	Orphan bool                 `json:"orphan"`
 	Error  *core.OperationError `json:"error"`
+	Setup  *SetupState          `json:"setup,omitempty"`
 }
 type index struct {
 	Schema    int      `json:"schema_version"`
@@ -55,7 +57,7 @@ type store struct {
 	data index
 }
 
-var names = regexp.MustCompile(`^[A-Za-z0-9][A-Za-z0-9_-]{0,63}$`)
+var names = sync.OnceValue(func() *regexp.Regexp { return regexp.MustCompile(`^[A-Za-z0-9][A-Za-z0-9_-]{0,63}$`) })
 
 func open(ctx context.Context) (*store, error) {
 	host, e := runtimepath.HostID(ctx)
@@ -91,7 +93,7 @@ func (s *store) validate(host string) error {
 	}
 	seen := map[string]bool{}
 	for _, r := range d.Tasks {
-		if !runtimepath.ValidID(r.ID) || seen[r.ID] || !names.MatchString(r.Name) || r.HostID != host || r.StateRoot != d.StateRoot || (r.Backend != "native" && r.Backend != "tmux") || r.Worktree != filepath.Join(d.StateRoot, "task-worktrees", r.ID) || !commitPattern.MatchString(r.Base) || !filepath.IsAbs(r.Repo) || !filepath.IsAbs(r.Common) || r.Branch == "" || r.RepoID.Inode == 0 || r.CommonID.Inode == 0 {
+		if !runtimepath.ValidID(r.ID) || seen[r.ID] || !names().MatchString(r.Name) || r.HostID != host || r.StateRoot != d.StateRoot || (r.Backend != "native" && r.Backend != "tmux") || r.Worktree != filepath.Join(d.StateRoot, "task-worktrees", r.ID) || !commitPattern().MatchString(r.Base) || !filepath.IsAbs(r.Repo) || !filepath.IsAbs(r.Common) || r.Branch == "" || r.RepoID.Inode == 0 || r.CommonID.Inode == 0 {
 			return core.Failure("invalid_config", "invalid task record")
 		}
 		if r.Created && (r.WorktreeID.Inode == 0 || r.GitFileID.Inode == 0 || r.AdminID.Inode == 0 || !filepath.IsAbs(r.Admin) || r.GitFile == "") {
@@ -130,6 +132,15 @@ func (s *store) find(id string) (*Record, error) {
 }
 func observe(ctx context.Context, r Record) (View, error) {
 	v := View{Task: r}
+	setup, setupErr := SetupStatus(ctx, r.ID)
+	if setupErr != nil {
+		return v, setupErr
+	}
+	v.Setup = setup
+	if setup != nil && !setup.MainLaunch {
+		v.Orphan = true
+		return v, nil
+	}
 	if !r.LaunchRequested {
 		v.Orphan = true
 		return v, nil

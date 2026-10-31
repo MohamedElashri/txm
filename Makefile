@@ -1,4 +1,4 @@
-.PHONY: build clean test lint init update all build-deps test-integration test-race test-harness test-fuzz test-integration-race test-performance test-extensions test-ssh release-check
+.PHONY: build clean test lint init update all build-deps test-integration test-race test-harness test-fuzz test-integration-race test-performance test-extensions test-ssh test-opencode-runtime release-check
 
 BINARY_NAME=txm
 VERSION ?= $(shell cat VERSION)
@@ -45,6 +45,9 @@ test-integration: build test-harness
 	python3 tests/profile_checks.py --binary "$(CURDIR)/bin/$(BINARY_NAME)"
 	python3 tests/agent_checks.py --binary "$(CURDIR)/bin/$(BINARY_NAME)"
 	python3 tests/agent_events_checks.py --binary "$(CURDIR)/bin/$(BINARY_NAME)"
+	python3 tests/mcp_checks.py --binary "$(CURDIR)/bin/$(BINARY_NAME)"
+	python3 tests/task_review_checks.py --binary "$(CURDIR)/bin/$(BINARY_NAME)"
+	python3 tests/metrics_checks.py --binary "$(CURDIR)/bin/$(BINARY_NAME)"
 	python3 tests/dashboard_checks.py --binary "$(CURDIR)/bin/$(BINARY_NAME)"
 	python3 tests/extension_checks.py --binary "$(CURDIR)/bin/$(BINARY_NAME)"
 	python3 tests/prune_checks.py --binary "$(CURDIR)/bin/$(BINARY_NAME)"
@@ -61,6 +64,7 @@ test-fuzz:
 	go test ./pkg/core -run='^$$' -fuzz=FuzzPlain -fuzztime=10s -parallel=2
 	go test ./pkg/localipc -run='^$$' -fuzz=FuzzLocalFrame -fuzztime=15s -parallel=2
 	go test ./pkg/remote -run='^$$' -fuzz=FuzzDecode -fuzztime=15s -parallel=2
+	go test ./pkg/mcp -run='^$$' -fuzz=FuzzMCPFrame -fuzztime=20s -parallel=2
 
 test-integration-race: build-deps test-harness
 	mkdir -p bin
@@ -70,6 +74,9 @@ test-integration-race: build-deps test-harness
 	python3 tests/profile_checks.py --binary "$(CURDIR)/bin/$(BINARY_NAME)-race"
 	python3 tests/agent_checks.py --binary "$(CURDIR)/bin/$(BINARY_NAME)-race"
 	python3 tests/agent_events_checks.py --binary "$(CURDIR)/bin/$(BINARY_NAME)-race"
+	python3 tests/mcp_checks.py --binary "$(CURDIR)/bin/$(BINARY_NAME)-race"
+	python3 tests/task_review_checks.py --binary "$(CURDIR)/bin/$(BINARY_NAME)-race"
+	python3 tests/metrics_checks.py --binary "$(CURDIR)/bin/$(BINARY_NAME)-race"
 	python3 tests/dashboard_checks.py --binary "$(CURDIR)/bin/$(BINARY_NAME)-race"
 	python3 tests/extension_checks.py --binary "$(CURDIR)/bin/$(BINARY_NAME)-race"
 	python3 tests/prune_checks.py --binary "$(CURDIR)/bin/$(BINARY_NAME)-race"
@@ -90,3 +97,7 @@ test-ssh: build test-harness
 release-check:
 	python3 scripts/check-release.py --stable
 	goreleaser check
+
+# Explicit no-inference provider runtime fixture; never discovers a personal service.
+test-opencode-runtime:
+	python3 tests/opencode_checks.py --opencode "$${OPENCODE_BINARY:?set an exact OpenCode 2.2.5 executable}" --report "$${OPENCODE_REPORT:?set a new private report path}"

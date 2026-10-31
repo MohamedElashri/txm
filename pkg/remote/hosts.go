@@ -11,6 +11,7 @@ import (
 	"os"
 	"regexp"
 	"sort"
+	"sync"
 )
 
 type Host struct {
@@ -23,12 +24,12 @@ type hostFile struct {
 	Hosts  []Host `json:"hosts"`
 }
 
-var aliasPattern = regexp.MustCompile(`^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$`)
-var exePattern = regexp.MustCompile(`^/[A-Za-z0-9_./-]+$`)
+var aliasPattern = sync.OnceValue(func() *regexp.Regexp { return regexp.MustCompile(`^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$`) })
+var exePattern = sync.OnceValue(func() *regexp.Regexp { return regexp.MustCompile(`^/[A-Za-z0-9_./-]+$`) })
 
-func ValidAlias(s string) bool { return aliasPattern.MatchString(s) }
+func ValidAlias(s string) bool { return aliasPattern().MatchString(s) }
 func validHost(h Host) bool {
-	return ValidAlias(h.Alias) && (h.HostID == "" || runtimepath.ValidID(h.HostID)) && len(h.Executable) <= 1024 && (h.Executable == "txm" || exePattern.MatchString(h.Executable))
+	return ValidAlias(h.Alias) && (h.HostID == "" || runtimepath.ValidID(h.HostID)) && len(h.Executable) <= 1024 && (h.Executable == "txm" || exePattern().MatchString(h.Executable))
 }
 func hostStore(ctx context.Context, change func(*hostFile) error) ([]Host, error) {
 	r, lock, e := extension.Store(ctx, "remotes")

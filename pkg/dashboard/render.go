@@ -73,7 +73,11 @@ func Render(s tcell.Screen, m *Model, preview string, now time.Time) {
 		}
 	}
 	put(s, 0, 0, w, "txm dashboard | local host "+m.Options.HostID+" | "+mode, accent)
-	put(s, 0, 1, w, fmt.Sprintf("Search /%s | filter: %s | backend: %s | %d rows", m.Query, Filters[m.Filter], filter, len(rows)), normal)
+	groupMode := "repo/task"
+	if !m.GroupByTask {
+		groupMode = "backend"
+	}
+	put(s, 0, 1, w, fmt.Sprintf("Search /%s | filter: %s | backend: %s | %d rows | group: %s (%d collapsed)", m.Query, Filters[m.Filter], filter, len(rows), groupMode, len(m.Collapsed)), normal)
 	status := []string{}
 	for _, name := range m.Options.Backends {
 		st, ok := m.Backends[name]
@@ -123,6 +127,9 @@ func Render(s tcell.Screen, m *Model, preview string, now time.Time) {
 		if r.Stale {
 			style = style.Foreground(tcell.ColorYellow)
 		}
+		if r.Blocked() {
+			style = style.Foreground(tcell.ColorLightYellow)
+		}
 		for x := 0; x < w; x++ {
 			s.SetContent(x, 4+i-start, ' ', nil, style)
 		}
@@ -157,6 +164,8 @@ func Render(s tcell.Screen, m *Model, preview string, now time.Time) {
 	put(s, 0, detailY, w, strings.Repeat("-", min(w, 512)), muted)
 	detail := []string{}
 	if choice != nil {
+		count := m.GroupCounts(now)[choice.Group]
+		put(s, 0, detailY, w, fmt.Sprintf("Group: %s | %d observations | g grouping | c collapse | C expand", choice.Group, count), muted)
 		if v := choice.Session; v != nil {
 			id := "unknown"
 			if v.BackendID != nil {
@@ -186,6 +195,10 @@ func Render(s tcell.Screen, m *Model, preview string, now time.Time) {
 				attentionTime = v.AttentionObservedAt.UTC().Format(time.RFC3339)
 			}
 			detail = append(detail, "Attention: "+choice.Attention()+" | source: "+v.AttentionSource+" | observed "+attentionTime)
+			if choice.Observation != nil {
+				o := choice.Observation
+				detail[len(detail)-1] += " | validation=" + o.Validation + " | " + o.Observation.Fresh(now).Freshness
+			}
 			extra := "Receipt: none | turn complete: unknown"
 			if v.Receipt != nil {
 				extra = fmt.Sprintf("Receipt: %s", v.Receipt.Outcome)
@@ -224,6 +237,6 @@ func Render(s tcell.Screen, m *Model, preview string, now time.Time) {
 			readOnlyHint = "o read-only"
 		}
 	}
-	put(s, 0, h-1, w, "↑↓/jk move | / search | Tab filter | b backend | "+attachHint+" | "+readOnlyHint+" | p preview | r refresh | q quit", muted)
+	put(s, 0, h-1, w, "↑↓/jk move | [] blocked | g group | c/C collapse/expand | / search | Tab filter | b backend | "+attachHint+" | "+readOnlyHint+" | p preview | r refresh | q quit", muted)
 	s.Show()
 }

@@ -194,7 +194,12 @@ func (s *coordinator) observe(ctx context.Context, r *Record) (v View, retErr er
 	v = View{ID: r.ID, ManagedID: r.ManagedID, InstanceID: r.InstanceID, Locator: r.Locator, Supervised: r.Supervised, Lifecycle: "unknown", Attention: "unknown", AttentionSource: "no verified hooks", Source: "unverified backend binding", ObservedAt: supervisor.Now()}
 	defer func() {
 		if retErr == nil && ctx.Err() == nil {
-			v = hookView(v, *r)
+			projected, err := projectExternalHook(s.state, *r)
+			if err != nil {
+				retErr = err
+				return
+			}
+			v = hookView(v, projected)
 			if s.hub != nil {
 				s.hub.track(v)
 			}
@@ -253,6 +258,9 @@ func (s *coordinator) handle(ctx context.Context, q Request) ([]View, error) {
 	if e := q.validate(); e != nil {
 		return nil, e
 	}
+	if q.Op == "start-metrics" {
+		q.Op = "start"
+	}
 	if q.Op == "stop" || q.Op == "ping" {
 		return []View{}, nil
 	}
@@ -269,7 +277,12 @@ func (s *coordinator) handle(ctx context.Context, q Request) ([]View, error) {
 			}
 		}
 	}
-	if q.Op == "hooks-enable" || q.Op == "hooks-info" || q.Op == "signal" {
+	if q.Op == "start" && q.Provider == "claude" {
+		if err := ValidateAutomaticClaudeArgs(q.Argv); err != nil {
+			return nil, err
+		}
+	}
+	if q.Op == "hooks-enable" || q.Op == "hooks-info" || q.Op == "signal" || q.Op == "provider-event" {
 		return s.hookRequest(ctx, q)
 	}
 	if q.Op != "start" && q.Op != "register" && q.Op != "list" && q.Op != "status" && q.Op != "refresh" {
@@ -380,6 +393,7 @@ func (s *coordinator) handle(ctx context.Context, q Request) ([]View, error) {
 	m.ManagedID = id
 	m.InstanceID = instance
 	m.Receipt = supervisor.ReceiptName(instance)
+	m.Metrics = q.Metrics
 	if _, e = b.Lookup(ctx, q.Name); e == nil {
 		return nil, core.Failure("conflict", "session already exists")
 	} else if core.Normalize(e).Code != "not_found" {
@@ -388,20 +402,32 @@ func (s *coordinator) handle(ctx context.Context, q Request) ([]View, error) {
 	r.Supervised = true
 	r.ManagedID = &id
 	r.InstanceID = &instance
+	var hookCredential *Credential
 	cleanupHooks := func() {
-		if r.Hook != nil {
-			_ = s.state.RemovePrivate(credentialName(r.Hook.Generation))
-			_ = s.state.RemovePrivate("p-" + r.Hook.Generation + ".json")
+		if hookCredential != nil {
+			_ = s.state.RemovePrivate(credentialName(hookCredential.Generation))
+			_ = s.state.RemovePrivate(externalCredentialName(hookCredential.Generation))
+			_ = s.state.RemovePrivate("p-" + hookCredential.Generation + ".json")
+			if !legacyProvider(hookCredential.Provider, hookCredential.Version) {
+				_ = s.state.RemovePrivate(externalAssociationName(id))
+			}
 		}
 	}
 	if q.Provider != "" {
 		if q.Provider != "generic" && q.Provider != "claude" {
 			return nil, core.Failure("unsupported", "automatic provider configuration unavailable; use reviewed hooks configuration")
 		}
-		c, err := s.enableHook(&r, q.Provider, q.ProviderVersion)
+		var c Credential
+		var err error
+		if legacyProvider(q.Provider, q.ProviderVersion) {
+			c, err = s.enableHook(&r, q.Provider, q.ProviderVersion)
+		} else {
+			c, err = s.enableExternalHook(&r, q.Provider, q.ProviderVersion)
+		}
 		if err != nil {
 			return nil, err
 		}
+		hookCredential = &c
 		m.Hooks = &supervisor.HookContext{AgentID: id, InstanceID: instance, Generation: c.Generation, StateHome: c.Namespace.StateHome, RuntimeDir: c.Namespace.RuntimeDir, TempDir: c.Namespace.TempDir}
 		if q.Provider == "claude" {
 			exe, err := os.Executable()

@@ -10,11 +10,31 @@ import (
 )
 
 func Probe(ctx context.Context, managed, id string) (Status, error) {
+	return probe(ctx, managed, id, false)
+}
+
+// ProbeExisting never creates a runtime namespace or starts a service.
+func ProbeExisting(ctx context.Context, managed, id string) (Status, error) {
+	return probe(ctx, managed, id, true)
+}
+
+func probe(ctx context.Context, managed, id string, existing bool) (Status, error) {
 	var result Status
 	if !runtimepath.ValidID(managed) || !runtimepath.ValidID(id) {
 		return result, core.Failure("invalid_config", "invalid supervisor identity")
 	}
-	r, e := Runtime()
+	var r *runtimepath.Root
+	var e error
+	if existing {
+		var parent *runtimepath.Root
+		parent, e = runtimepath.OpenExisting()
+		if e == nil {
+			r, e = parent.ChildExisting("agents")
+			_ = parent.Close()
+		}
+	} else {
+		r, e = Runtime()
+	}
 	if e != nil {
 		return result, e
 	}
