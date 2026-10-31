@@ -22,7 +22,7 @@ class TaskReviewChecks(unittest.TestCase):
             policy.write_text(json.dumps({'schema_version':1,'task_id':ident,'name':'timeout-setup',
                 'repository':str(source),'worktree':str(worktree),'backend':'native','base_commit':base,
                 'main_argv':['/usr/bin/touch',str(marker)],'main_env_names':['HOME','PATH','TERM'],
-                'setup_argv':['/bin/sleep','2'],'timeout_ms':500}));policy.chmod(0o600)
+                'setup_argv':[str(Path('/bin/sleep').resolve(strict=True)),'2'],'timeout_ms':500}));policy.chmod(0o600)
             args=['--backend','native','task','start','timeout-setup','--repo',str(source),'--setup-policy',str(policy)]
             digest=x.command(box,[*args,'--dry-run','--','/usr/bin/touch',str(marker)])['data']['setup_digest']
             failed=box.run([BINARY,'--json',*args,'--accept-setup',digest,'--','/usr/bin/touch',str(marker)],check=False)
