@@ -1,38 +1,34 @@
-# Binaries for programs and plugins
+# Generated executables, archives and coverage
+/bin/
+/dist/
+/completions/
+/txm
+/src/txm
 *.exe
 *.exe~
 *.dll
 *.so
 *.dylib
-bin
-
-# Project binaries
-src/txm
-txm
-
-# Test binary, built with `go test -c`
 *.test
-
-# Output of the go coverage tool, specifically when used with LiteIDE
 *.out
+coverage.*
 
-# Dependency directories (remove the comment below to include it)
-# vendor/
+# Local dependency checkouts and build caches
+/ghostty/
+/zmx_temp/
+/.ghostty-host/
+/.ghostty-release/
+/zig*/
+/zig-out/
+/zig-cache/
+/.zig-cache/
 
-# Go workspace file
+# Local workspace/editor files
 go.work
-
-
-# vscode
+go.work.sum
 .vscode/
-.vscode/*
-
-# releases
-dist/*
-
-# Ghostty
-zmx*
-*ghostty*
-
-## local zig environment
-zig*
+.idea/
+.DS_Store
+__pycache__/
+*.py[cod]
+.pytest_cache/

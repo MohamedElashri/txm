@@ -1,0 +1,1 @@
+{"schema_version":1,"data":{"locator":{"host_id":"0123456789abcdef0123456789abcdef","backend":"native","name":"sample"},"type":"screen_snapshot","format":"raw","content":"YWJj","encoding":"base64","lines":1,"bytes":3,"truncated":false,"observed_at":"2026-10-29T00:00:00Z"},"errors":[],"partial":false}

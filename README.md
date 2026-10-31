@@ -1,106 +1,69 @@
-# txm: Terminal Session Manager
+# txm
 
-**txm** is a unified command-line interface for managing terminal multiplexer sessions. It supports a built-in **native** backend for lightweight session persistence, as well as **tmux**, **zellij**, and **GNU Screen** through a single consistent set of commands.
+**Terminal workspaces for people, scripts, and coding agents.**
 
----
+txm brings persistent terminal sessions, supervised commands, Git worktrees, and
+SSH hosts into one CLI. Use its built-in native backend or manage existing tmux,
+Zellij, and GNU Screen sessions. Work interactively, watch jobs in a dashboard,
+or build automation with structured output and events.
 
-## Installation
+[Get started](docs/getting-started.md) · [Documentation](docs/README.md) ·
+[Releases](https://github.com/MohamedElashri/txm/releases) · [Changelog](docs/CHANGELOG.md)
 
-### Quick Install (recommended)
+## What you can do
 
-Downloads and installs the latest release automatically.
+- **Keep work running.** Create persistent sessions, detach, reconnect, and
+  inspect terminal output. Native sessions need no external multiplexer.
+- **Describe your workspace.** Apply TOML profiles with commands, working
+  directories, and tmux window and pane layouts.
+- **Supervise jobs and agents.** Launch commands with recorded exit results,
+  wait for completion, and follow explicit attention signals through events.
+- **See your sessions in one place.** Search and filter the keyboard-driven
+  dashboard, preview output, and attach to the session you need.
+- **Work across projects and hosts.** Run tasks in fresh Git worktrees and
+  discover or attach to sessions on explicitly configured SSH hosts.
 
-**User-local** (installs to `~/.local/bin`):
-```bash
-curl -s https://raw.githubusercontent.com/MohamedElashri/txm/main/utils/install.sh | bash
+Sessions work independently of the optional agent coordinator. You can supervise
+ordinary commands without an AI provider; coding-agent attention hooks are opt-in.
+
+## Get started
+
+Download a published archive from [Releases](https://github.com/MohamedElashri/txm/releases),
+then extract it and run `./txm install` on Linux or macOS. The
+[installation guide](docs/getting-started.md#installation) covers platform
+selection, the stable installer, and source builds.
+
+These docs describe **v2.0.0**. Use the matching release archive or
+[build this checkout](docs/getting-started.md#build-from-source).
+
+```sh
+# Start a persistent terminal using the built-in backend.
+txm --backend native create work
+txm attach native/work
+
+# Detach with Ctrl+backslash, then find your session again.
+txm --backend native list
+txm dashboard --backend native
 ```
 
-**System-wide** (installs to `/usr/local/bin`, requires root):
-```bash
-curl -s https://raw.githubusercontent.com/MohamedElashri/txm/main/utils/install.sh | sudo bash -s -- --system
+To supervise a command in a Go project:
+
+```sh
+txm --backend native agent start build -- go test ./...
+txm agent wait AGENT_ID --until exited --timeout 5m --fail-on-nonzero
 ```
 
-### Pre-built Binaries
+Replace `AGENT_ID` with the ID returned by `agent start`.
+[Automation](docs/automation.md) covers receipts, coding-agent hooks, worktree
+tasks, and remote sessions.
 
-Download the appropriate archive for your platform from the [releases page](https://github.com/MohamedElashri/txm/releases) and extract. For maximum portability on Alpine Linux or minimal Docker containers, use the `-musl` binaries which are 100% statically linked.
-
-| Platform | Architecture | Download Link (Latest) |
-|----------|--------------|------------------------|
-| Linux    | x86_64       | [txm_Linux_x86_64.zip](https://github.com/MohamedElashri/txm/releases/latest/download/txm_Linux_x86_64.zip) |
-| Linux    | ARM64        | [txm_Linux_arm64.zip](https://github.com/MohamedElashri/txm/releases/latest/download/txm_Linux_arm64.zip) |
-| Linux (Static) | x86_64 | [txm_Linux_x86_64-musl.zip](https://github.com/MohamedElashri/txm/releases/latest/download/txm_Linux_x86_64-musl.zip) |
-| Linux (Static) | ARM64  | [txm_Linux_arm64-musl.zip](https://github.com/MohamedElashri/txm/releases/latest/download/txm_Linux_arm64-musl.zip) |
-| macOS    | x86_64       | [txm_Darwin_x86_64.zip](https://github.com/MohamedElashri/txm/releases/latest/download/txm_Darwin_x86_64.zip) |
-| macOS    | Apple Silicon| [txm_Darwin_arm64.zip](https://github.com/MohamedElashri/txm/releases/latest/download/txm_Darwin_arm64.zip) |
-| Windows  | x86_64       | [txm_Windows_x86_64.zip](https://github.com/MohamedElashri/txm/releases/latest/download/txm_Windows_x86_64.zip) |
-| Windows  | ARM64        | [txm_Windows_arm64.zip](https://github.com/MohamedElashri/txm/releases/latest/download/txm_Windows_arm64.zip) |
-
-```bash
-unzip txm_Linux_x86_64.zip
-# or unzip txm_Linux_x86_64-musl.zip for fully static binary
-./txm install          # user-local (~/.local/bin)
-# or
-./txm install --system # system-wide (/usr/local/bin) — requires sudo
-```
-
-### Build from Source
-
-Requirements: Go 1.26+
-```bash
-git clone https://github.com/MohamedElashri/txm
-cd txm
-make build
-./bin/txm install
-```
-
----
-
-## Quick Start
-
-```bash
-# Launch interactive session picker (fuzzy finder with previews)
-txm
-
-# Create and attach to a session (using short aliases)
-txm create my-project
-txm attach my-project
-
-# Or create a session running a specific command
-txm session create my-server npm run dev
-
-# List sessions
-txm list
-
-# Start a session from a declarative TOML profile
-txm profile dev.toml
-
-# Create a window inside the session
-txm window create my-project editor
-
-# Split the window vertically
-txm window split my-project editor v
-
-# Delete the session when done
-txm session delete my-project
-```
-
-For a comprehensive guide covering configuration, window/pane management, backends, environment variables, and SSH workflows, see the **[User Guide](docs/user-guide.md)**.
-
----
-
-## Documentation
-
-- Full command reference & guide: **[User Guide](docs/user-guide.md)**
-- Changelog: [`docs/CHANGELOG.md`](docs/CHANGELOG.md)
-- Future Plans : **[Roadmap](docs/ROADMAP.md)**
-- Man page: `man txm` (installed alongside the binary)
-
----
+Linux and macOS are the primary runtime platforms. Backend capabilities vary;
+see the [user guide](docs/user-guide.md) and
+[compatibility matrix](docs/releasing.md#platforms-and-backends).
 
 ## Contributing
 
-Contributions are welcome! Please open an issue or submit a pull request on [GitHub](https://github.com/MohamedElashri/txm).
+See [CONTRIBUTING.md](CONTRIBUTING.md) for builds, tests, and pull requests.
+Report bugs or propose features through [GitHub Issues](https://github.com/MohamedElashri/txm/issues).
 
-## License
-
-GNU General Public License v3.0 - see [LICENSE](LICENSE)
+Licensed under [GPL-3.0](LICENSE).

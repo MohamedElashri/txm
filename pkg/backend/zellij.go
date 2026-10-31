@@ -1,319 +1,216 @@
 package backend
 
 import (
+	"context"
+	"errors"
 	"fmt"
-	"os"
-	"os/exec"
-	"regexp"
-	"strconv"
 	"strings"
+	"time"
+
+	"github.com/MohamedElashri/txm/pkg/core"
 )
 
-var commonZellijPaths = []string{
-	"/usr/bin/zellij",
-	"/usr/local/bin/zellij",
-	"/opt/homebrew/bin/zellij",
-	"/home/linuxbrew/.linuxbrew/bin/zellij",
+var commonZellijPaths = []string{"/usr/bin/zellij", "/usr/local/bin/zellij", "/opt/homebrew/bin/zellij", "/home/linuxbrew/.linuxbrew/bin/zellij"}
+
+type ZellijBackend struct{ external }
+
+func NewZellijBackend(ctx ...context.Context) *ZellijBackend {
+	return &ZellijBackend{newExternal("zellij", commonZellijPaths, ctx...)}
 }
-
-type ZellijBackend struct{}
-
-func NewZellijBackend() *ZellijBackend {
-	return &ZellijBackend{}
-}
-
-func (b *ZellijBackend) Name() string {
-	return "zellij"
-}
-
-func (b *ZellijBackend) IsAvailable() bool {
-	if _, err := exec.LookPath("zellij"); err == nil {
-		return true
-	}
-
-	for _, path := range commonZellijPaths {
-		if _, err := os.Stat(path); err == nil {
-			return true
+func (b *ZellijBackend) Name() string      { return "zellij" }
+func (b *ZellijBackend) IsAvailable() bool { return b.path != "" }
+func (b *ZellijBackend) Sessions(ctx context.Context) ([]core.Session, error) {
+	out, diag, _, e := b.output(ctx, core.MaxBytes, false, "list-sessions", "--short", "--no-formatting")
+	empty := "No active zellij sessions found."
+	if strings.TrimSpace(out) == empty || strings.TrimSpace(diag) == empty {
+		if e == nil {
+			return []core.Session{}, nil
+		}
+		var exit interface{ ExitCode() int }
+		if errors.As(e, &exit) && exit.ExitCode() == 1 {
+			return []core.Session{}, nil
 		}
 	}
-
-	return false
+	if e != nil {
+		return nil, e
+	}
+	result := []core.Session{}
+	seen := map[string]bool{}
+	for _, line := range strings.Split(strings.TrimSuffix(out, "\n"), "\n") {
+		if line == "" {
+			continue
+		}
+		if strings.TrimSpace(line) != line || strings.ContainsAny(line, "\t\r\x1b") || seen[line] {
+			return nil, core.Failure("protocol_error", "invalid or duplicate zellij session listing")
+		}
+		seen[line] = true
+		result = append(result, observed("zellij", line, core.String(line)))
+	}
+	sortSessions(result)
+	return result, nil
 }
-
-func (b *ZellijBackend) runCommand(args ...string) error {
-	cmd := exec.Command("zellij", args...)
-	preserveEnvironment(cmd)
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
-	cmd.Stdin = os.Stdin
-	return cmd.Run()
+func (b *ZellijBackend) session(name string) (core.Session, error) {
+	s, e := b.Sessions(b.ctx)
+	if e != nil {
+		return core.Session{}, e
+	}
+	v, e := exact(s, name)
+	if e != nil {
+		return v, core.Scope(e, b.Name())
+	}
+	return v, nil
 }
-
-func (b *ZellijBackend) runCommandWithSession(session string, args ...string) error {
-	fullArgs := append([]string{"-s", session}, args...)
-	cmd := exec.Command("zellij", fullArgs...)
-	preserveEnvironment(cmd)
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
-	cmd.Stdin = os.Stdin
-	return cmd.Run()
+func (b *ZellijBackend) GetSessions() ([]string, error) {
+	s, e := b.Sessions(b.ctx)
+	return names(s), e
 }
-
-func (b *ZellijBackend) runCommandOutput(args ...string) ([]byte, error) {
-	cmd := exec.Command("zellij", args...)
-	preserveEnvironment(cmd)
-	return cmd.Output()
+func (b *ZellijBackend) LookupSession(name string) (bool, error) {
+	_, e := b.session(name)
+	if e != nil && core.Normalize(e).Code == "not_found" {
+		return false, nil
+	}
+	return e == nil, e
 }
-
 func (b *ZellijBackend) SessionExists(name string) bool {
-	output, err := b.runCommandOutput("list-sessions")
-	if err != nil {
-		return false
-	}
-	return strings.Contains(string(output), name)
+	ok, e := b.LookupSession(name)
+	return ok && e == nil
 }
-
 func (b *ZellijBackend) CreateSession(name string, command ...string) error {
-	if b.SessionExists(name) {
-		return fmt.Errorf("session with name \"%s\" already exists", name)
+	found, e := b.LookupSession(name)
+	if e != nil {
+		return e
 	}
-
+	if found {
+		return core.Failure("conflict", "session already exists")
+	}
 	args := []string{"attach", "--create-background", name}
 	if len(command) > 0 {
 		args = append(args, "--")
 		args = append(args, command...)
 	}
-
-	cmd := exec.Command("zellij", args...)
-	preserveEnvironment(cmd)
-
-	cmd.Stdout = nil
-	cmd.Stderr = nil
-	cmd.Stdin = nil
-
-	err := cmd.Run()
-	if err != nil {
-		return fmt.Errorf("failed to create zellij session: %v", err)
+	if e = b.run(args...); e != nil {
+		return e
 	}
-
-	if !b.SessionExists(name) {
-		return fmt.Errorf("session creation appeared to succeed but session not found")
-	}
-
-	return nil
-}
-
-func (b *ZellijBackend) ListSessions() error {
-	return b.runCommand("list-sessions")
-}
-
-func (b *ZellijBackend) DumpSession(name string) (string, error) {
-	return "<preview not supported for zellij>", nil
-}
-
-func (b *ZellijBackend) GetSessions() ([]string, error) {
-	output, err := b.runCommandOutput("list-sessions")
-	if err != nil {
-		return nil, err
-	}
-
-	var sessions []string
-	lines := strings.Split(string(output), "\n")
-	re := regexp.MustCompile(`\x1b\[[0-9;]*[a-zA-Z]`)
-
-	for _, line := range lines {
-		line = strings.TrimSpace(line)
-		if line == "" {
-			continue
+	// Background startup can outlive the CLI acknowledgement. Observe exact
+	// readiness within one finite budget; never retry the mutating request.
+	ctx, cancel := request(b.ctx)
+	defer cancel()
+	observer := *b
+	observer.ctx = ctx
+	ticker := time.NewTicker(50 * time.Millisecond)
+	defer ticker.Stop()
+	for {
+		found, e = observer.LookupSession(name)
+		if e != nil {
+			return e
 		}
-		cleanLine := re.ReplaceAllString(line, "")
-		parts := strings.Fields(cleanLine)
-		if len(parts) > 0 {
-			sessions = append(sessions, parts[0])
+		if found {
+			return nil
+		}
+		select {
+		case <-ctx.Done():
+			return ctx.Err()
+		case <-ticker.C:
 		}
 	}
-
-	return sessions, nil
 }
-
 func (b *ZellijBackend) AttachSession(name string) error {
-	return b.runCommand("attach", name)
+	s, e := b.session(name)
+	if e != nil {
+		return e
+	}
+	return b.interactive("attach", s.Locator.Name)
 }
-
 func (b *ZellijBackend) KillSession(name string) error {
-	if !b.SessionExists(name) {
-		return fmt.Errorf("session '%s' does not exist", name)
+	s, e := b.session(name)
+	if e != nil {
+		return e
 	}
-	err := b.runCommand("delete-session", name)
-	if err != nil {
-		return b.runCommand("delete-session", "--force", name)
-	}
-	return nil
+	return b.run("kill-session", s.Locator.Name)
 }
-
-func (b *ZellijBackend) RenameSession(oldName, newName string) error {
-	return fmt.Errorf("zellij does not support session renaming")
+func (b *ZellijBackend) RenameSession(string, string) error {
+	return unsupported(b.Name(), "session rename")
 }
-
 func (b *ZellijBackend) NewWindow(session, name string) error {
-	if !b.SessionExists(session) {
-		return fmt.Errorf("session '%s' does not exist", session)
+	s, e := b.session(session)
+	if e != nil {
+		return e
 	}
+	args := []string{"-s", s.Locator.Name, "action", "new-tab"}
 	if name != "" {
-		return b.runCommandWithSession(session, "action", "new-tab", "--name", name)
+		args = append(args, "--name", name)
 	}
-	return b.runCommandWithSession(session, "action", "new-tab")
+	return b.run(args...)
 }
-
-func (b *ZellijBackend) ListWindows(session string) error {
-	if !b.SessionExists(session) {
-		return fmt.Errorf("session '%s' does not exist", session)
-	}
-	err := b.runCommandWithSession(session, "action", "dump-layout")
-	if err != nil {
-		output, listErr := b.runCommandOutput("list-sessions")
-		if listErr != nil {
-			return fmt.Errorf("failed to get session information: %v", listErr)
-		}
-		lines := strings.Split(string(output), "\n")
-		for _, line := range lines {
-			if strings.Contains(line, session) {
-				fmt.Println(line)
-			}
-		}
-		return nil
-	}
-	return nil
-}
-
-func (b *ZellijBackend) KillWindow(session, window string) error {
-	if !b.SessionExists(session) {
-		return fmt.Errorf("session '%s' does not exist", session)
-	}
-	return b.runCommandWithSession(session, "action", "close-tab")
-}
-
 func (b *ZellijBackend) NextWindow(session string) error {
-	if !b.SessionExists(session) {
-		return fmt.Errorf("session '%s' does not exist", session)
+	s, e := b.session(session)
+	if e != nil {
+		return e
 	}
-	return b.runCommandWithSession(session, "action", "go-to-next-tab")
+	return b.run("-s", s.Locator.Name, "action", "go-to-next-tab")
 }
-
 func (b *ZellijBackend) PreviousWindow(session string) error {
-	if !b.SessionExists(session) {
-		return fmt.Errorf("session '%s' does not exist", session)
+	s, e := b.session(session)
+	if e != nil {
+		return e
 	}
-	return b.runCommandWithSession(session, "action", "go-to-previous-tab")
+	return b.run("-s", s.Locator.Name, "action", "go-to-previous-tab")
 }
-
-func (b *ZellijBackend) RenameWindow(session, oldName, newName string) error {
-	return fmt.Errorf("renaming tabs not directly supported in zellij")
+func (b *ZellijBackend) KillWindow(string, string) error {
+	return unsupported(b.Name(), "exact window close")
 }
-
-func (b *ZellijBackend) SplitWindow(session, window, direction string) error {
-	if !b.SessionExists(session) {
-		return fmt.Errorf("session '%s' does not exist", session)
-	}
-	switch direction {
-	case "v":
-		return b.runCommandWithSession(session, "action", "new-pane", "--direction", "down")
-	case "h":
-		return b.runCommandWithSession(session, "action", "new-pane", "--direction", "right")
-	default:
-		return fmt.Errorf("invalid split direction for zellij: %s", direction)
-	}
+func (b *ZellijBackend) RenameWindow(string, string, string) error {
+	return unsupported(b.Name(), "exact window rename")
 }
-
-func (b *ZellijBackend) focusPane(session, window, pane string) error {
-	if pane == "" || pane == "0" {
-		return nil
+func (b *ZellijBackend) SplitWindow(string, string, string) error {
+	return unsupported(b.Name(), "exact window split")
+}
+func (b *ZellijBackend) KillPane(string, string, string) error {
+	return unsupported(b.Name(), "exact pane close")
+}
+func (b *ZellijBackend) Exec(string, string, string, string) error {
+	return unsupported(b.Name(), "exact pane input")
+}
+func (b *ZellijBackend) DetachSession() error { return unsupported(b.Name(), "CLI detach") }
+func (b *ZellijBackend) Windows(context.Context, string) ([]core.Window, error) {
+	return nil, unsupported(b.Name(), "typed window listing")
+}
+func (b *ZellijBackend) Panes(context.Context, string, string) ([]core.Pane, error) {
+	return nil, unsupported(b.Name(), "pane listing")
+}
+func (b *ZellijBackend) Capture(context.Context, string, core.CaptureOptions) (core.Snapshot, error) {
+	return core.Snapshot{}, unsupported(b.Name(), "output snapshot")
+}
+func (b *ZellijBackend) DumpSession(string) (string, error) {
+	return "", unsupported(b.Name(), "output snapshot")
+}
+func (b *ZellijBackend) ListSessions() error {
+	s, e := b.Sessions(b.ctx)
+	if e != nil {
+		return e
 	}
-	// Best-effort navigation; errors are intentionally ignored since focus
-	// operations are best-effort in zellij's focus-based model.
-	_ = b.runCommandWithSession(session, "action", "move-focus-or-tab", "left")
-	_ = b.runCommandWithSession(session, "action", "move-focus-or-tab", "up")
-	targetPane := 1
-	if p, err := strconv.Atoi(pane); err == nil && p > 0 {
-		targetPane = p
-	}
-	for i := 1; i < targetPane; i++ {
-		if err := b.runCommandWithSession(session, "action", "focus-next-pane"); err != nil {
-			break
-		}
+	for _, v := range s {
+		fmt.Println(v.Locator.Name)
 	}
 	return nil
 }
-
-func (b *ZellijBackend) ListPanes(session, window string) error {
-	if !b.SessionExists(session) {
-		return fmt.Errorf("session '%s' does not exist", session)
-	}
-	return b.runCommandWithSession(session, "action", "dump-screen", "/dev/stdout")
+func (b *ZellijBackend) ListWindows(string) error {
+	return unsupported(b.Name(), "typed window listing")
 }
-
-func (b *ZellijBackend) KillPane(session, window, pane string) error {
-	if !b.SessionExists(session) {
-		return fmt.Errorf("session '%s' does not exist", session)
-	}
-	if err := b.focusPane(session, window, pane); err != nil {
-		return err
-	}
-	return b.runCommandWithSession(session, "action", "close-pane")
-}
-
-func (b *ZellijBackend) Exec(session, window, pane, command string) error {
-	if !b.SessionExists(session) {
-		return fmt.Errorf("session '%s' does not exist", session)
-	}
-	if err := b.focusPane(session, window, pane); err != nil {
-		return err
-	}
-	// Write command and then an enter key (newline)
-	if err := b.runCommandWithSession(session, "action", "write-chars", command); err != nil {
-		return err
-	}
-	return b.runCommandWithSession(session, "action", "write", "10") // 10 is newline
-}
-
-func (b *ZellijBackend) DetachSession() error {
-	return fmt.Errorf("detach operation not supported in zellij")
-}
-
+func (b *ZellijBackend) ListPanes(string, string) error { return unsupported(b.Name(), "pane listing") }
 func (b *ZellijBackend) NukeAllSessions() error {
-	if err := b.runCommand("delete-all-sessions", "-y", "-f"); err == nil {
-		return nil
+	s, e := b.Sessions(b.ctx)
+	if e != nil {
+		return e
 	}
-
-	output, err := b.runCommandOutput("list-sessions")
-	if err != nil {
-		return fmt.Errorf("failed to list zellij sessions: %v", err)
-	}
-
-	lines := strings.Split(string(output), "\n")
-	killCount := 0
-	re := regexp.MustCompile(`\x1b\[[0-9;]*[a-zA-Z]`)
-
-	for _, line := range lines {
-		line = strings.TrimSpace(line)
-		if line == "" {
-			continue
-		}
-		cleanLine := re.ReplaceAllString(line, "")
-		parts := strings.Fields(cleanLine)
-		if len(parts) > 0 {
-			sessionName := parts[0]
-			if err := b.runCommand("delete-session", sessionName); err != nil {
-				// Best-effort force delete; ignore secondary error
-				_ = b.runCommand("delete-session", "--force", sessionName)
-			}
-			killCount++
+	var failures []error
+	for _, v := range s {
+		if e = b.KillSession(v.Locator.Name); e != nil {
+			failures = append(failures, e)
 		}
 	}
-
-	if killCount == 0 {
-		return fmt.Errorf("no zellij sessions found to delete")
-	}
-
-	return nil
+	return errors.Join(failures...)
+}
+func (b *ZellijBackend) BackendCapabilities(ctx context.Context) (core.BackendCapabilities, error) {
+	return externalCapabilities(ctx, b.external, "--version")
 }

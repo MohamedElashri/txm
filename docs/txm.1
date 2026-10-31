@@ -1,38 +1,66 @@
-.TH TXM 1 "September 2026" "txm 1.2.5" "User Commands"
+.TH TXM 1 "October 2026" "txm 2.0.0" "User Commands"
 .SH NAME
-txm \- A terminal session manager with multi-backend support
+txm \- terminal sessions, supervised jobs and workspace workflows
 .SH SYNOPSIS
 .B txm
 [\fICOMMAND\fR] [\fIOPTIONS\fR] [\fB\-v\fR|\fB\-\-verbose\fR]
 .SH DESCRIPTION
-\fBtxm\fR is a command-line utility for managing terminal multiplexer sessions with support for multiple backends: native, tmux, zellij, and GNU Screen. It automatically detects available backends and provides a unified interface for session management using a concrete noun-verb structure.
+\fBtxm\fR manages persistent terminal sessions, supervised commands, Git
+worktree tasks and SSH hosts through one CLI. Use the built-in native backend or
+work with tmux, Zellij and GNU Screen, with capabilities reported per backend.
+.PP
+Run txm without a command to pick a session. Use dashboard to find your work,
+profile for repeatable layouts, and agent to supervise jobs. Ordinary sessions
+do not require the optional agent coordinator or an AI provider.
 .SH BACKEND SUPPORT
 \fBtxm\fR supports four terminal multiplexer backends:
 .TP
 \fBnative\fR
-Built-in lightweight backend using libghostty for high-performance accurate VT terminal emulation with session persistence and scrollback restoration.
+Built-in native persistence using libghostty, implemented by Linux/macOS CGO builds (Linux amd64 and macOS arm64 runtime validated); Windows native persistence is unsupported. Framed v1 IPC uses a private per-user runtime directory. Legacy native sockets remain untouched and require the old binary.
 .TP
 \fBtmux\fR
-Full feature set with advanced pane operations, window management, and session control.
+Exact session/window/pane IDs and names, bounded screen/history capture and read-only attach. Requires a compatible 3.x CLI; runtime evidence covers Linux 3.4 and macOS 3.8.
 .TP
 \fBzellij\fR
-Modern workspace paradigm with tab-based workflow and plugin system.
+Degraded session/tab adapter; Linux/macOS Zellij 0.45.1 basic runtime tested. Exact pane, window close/rename/split and output capture are unsupported. Listings may include resurrectable sessions, with unknown process state.
 .TP
 \fBGNU Screen\fR
-Reliable fallback with basic session and window operations.
+Degraded session adapter retaining full PID.name identity. Duplicate short names are ambiguous. Exact pane/window mutations and output capture are unsupported until verified.
 
 Backend selection follows this priority order:
+0. Strict \fB\-\-backend\fR or qualified \fBbackend/name\fR target, without fallback.
 1. \fBTXM_DEFAULT_BACKEND\fR environment variable
 2. User configuration in \fI~/.txm/config\fR
-3. Auto-detection (native → tmux → zellij → screen)
+3. Default preference tmux; fallback order tmux, screen, zellij, native. Preferences may fall back when unavailable.
+.SH READ OPTIONS
+.TP
+.B \-\-backend native|tmux|zellij|screen
+Strict selection for reads and mutations. Qualified backend/name targets must agree with this flag; canonical targets do not receive the session prefix again.
+.TP
+.B \-\-all\-backends
+Aggregate session list/capability reads or dashboard scope, attempting all four backends. Conflicts with --backend. Mutations and nuke always remain scoped to one backend.
+.TP
+.B \-\-json
+One version-1 envelope on stdout for session list/inspect/output and backend capabilities, including expected failures. Required fields: schema_version, data, errors, partial. Same-named sessions remain separate; unmanaged sessions have no managed ID or child exit status.
+.TP
+.B \-\-lines N, \-\-bytes N
+Output collection limits: 1..10000 lines (default 100), 1..1048576 bytes (default 1048576). Requests have finite deadlines; truncated output is explicit in JSON.
+.TP
+.B \-\-plain, \-\-raw
+Output defaults to safe plain UTF-8 with terminal controls removed. Raw is explicit opt-in, conflicts with plain, and uses base64 content in JSON. Hidden dump shares the same limits and safe default.
+.TP
+.B \-\-history
+Explicit bounded history, currently tmux-only. Otherwise capture is the visible screen snapshot, not a transcript or command-completion receipt.
+.PP
+Put flags before positional arguments on create/attach/exec; trailing argv and terminal input, including leading dashes, remain literal.
 .SH CONFIGURATION
 \fBtxm\fR supports configuration via:
 .TP
 \fB~/.txm/config\fR
-JSON configuration file for persistent settings.
+Key=value configuration file for persistent settings. Invalid backend values and unreadable files return errors.
 .TP
 \fBTXM_DEFAULT_BACKEND\fR
-Environment variable to override backend selection (values: tmux, zellij, screen).
+Backend preference (values: native, tmux, zellij, screen), permitting fallback.
 .TP
 Configuration commands:
 .B txm config set backend [BACKEND]
@@ -41,14 +69,18 @@ Set or show the default backend.
 Show all configuration.
 .SH COMMANDS
 .TP
-\fBsession\fR [\fIcreate|list|attach|detach|delete|rename|nuke\fR]
+\fBsession\fR [\fIcreate|list|inspect|output|attach|detach|delete|rename|nuke\fR]
 Manage sessions. (Aliases: \fBcreate\fR, \fBlist\fR, \fBattach\fR, \fBdetach\fR, \fBdelete\fR, \fBrename-session\fR, \fBnuke\fR are available at the root level).
 .br
 \fBsession create\fR [\fISESSION_NAME\fR] - Create a new session. Use \fB\-\-log\fR to log PTY output.
 .br
 \fBsession list\fR - List active sessions.
 .br
-\fBsession attach\fR [\fISESSION_NAME\fR] - Attach to a session. Use \fB\-r\fR for read-only.
+\fBsession inspect\fR TARGET - Inspect one exact session and its capabilities.
+.br
+\fBsession output\fR TARGET - Capture bounded terminal output.
+.br
+\fBsession attach\fR [\fISESSION_NAME\fR] - Attach to a session, creating only after proven absence. With \fB\-r\fR, native/tmux enforce read-only attach and never create a missing session; other adapters return unsupported.
 .br
 \fBsession detach\fR - Detach from the current session.
 .br
@@ -56,10 +88,139 @@ Manage sessions. (Aliases: \fBcreate\fR, \fBlist\fR, \fBattach\fR, \fBdetach\fR,
 .br
 \fBsession rename\fR [\fIOLD\fR] [\fINEW\fR] - Rename a session.
 .br
-\fBsession nuke\fR - Remove all sessions.
+\fBsession nuke\fR - Remove sessions in the selected backend. Native refuses when incompatible legacy sessions are present.
+.TP
+\fBbackend capabilities\fR
+Report supported/degraded/unsupported capability levels, version and availability. Missing or incompatible backends are errors, including in aggregate results.
 .TP
 \fBprofile\fR [\fIPATH_TO_TOML\fR]
-Load and start a session declaratively from a TOML profile. Profiles allow defining windows, panes, splits, and commands to run automatically.
+Strictly validate and apply a tmux 3.4+ or native single-terminal profile. Unknown
+fields, invalid cwd/names/splits/layouts and unsupported backend shapes fail before
+creation. Profile backend is strict and must agree with --backend. Relative cwd
+resolves against the profile file; omitted cwd inherits invocation cwd.
+.br
+\fBprofile --dry-run\fR PATH shows targets/capabilities/cwd and command presence,
+without printing commands, discovering sessions or creating runtime/host state.
+.br
+\fBprofile --detach\fR PATH applies without attachment. By default, apply attaches.
+Existing sessions conflict unless --attach-existing permits unchanged attachment;
+--read-only additionally requires that flag and proven existence, never creation.
+.br
+Limits: 1 MiB, 32 windows, 128 panes. Unnamed tmux windows become window-1, etc.
+First panes cannot split; additional splits default vertical from the preceding
+returned pane ID. Layout presets: even-horizontal, even-vertical, main-horizontal,
+main-vertical, tiled. Native permits one unnamed/0 virtual window and one pane.
+.br
+Shells launch at the requested cwd using SHELL (default /bin/sh), overriding tmux
+default-command. Commands are terminal input, without completion receipts. All
+topology is built before input. New panes disable synchronization; ordinary exec
+refuses synchronization. Screen/Zellij profiles are unsupported.
+.br
+Rollback checks exact creation identity and ownership. Uncertain resources remain
+intact with partial error 7; cancellation exits 130. Accepted input may have
+external effects that rollback cannot undo.
+.TP
+\fBdashboard\fR [--backend NAME|--all-backends] [--agents] [--preview] [--refresh D]
+Interactive local session observations and optional agent registrations. Separate
+from the unchanged bare txm picker. Requires terminal stdin/stdout; non-TTY use
+fails with exit 2 before backend/state access. Default all local adapters;
+--backend is strict. --refresh defaults to 2s (500ms..1m). Only explicit --agents
+starts/subscribes to the optional coordinator. Dashboard runtime supports Linux and macOS with a deny-only ancestry/TTY feedback guard. Other platforms remain unsupported.
+.PP
+Arrow/j/k and page keys navigate; / edits search; Escape clears search/query
+before quitting; Tab cycles state/type filters; b cycles backend filters; Enter
+attaches and o attaches read-only where verified; p toggles bounded plain preview;
+r refreshes; q quits; Ctrl-C cancels (130). Unsupported/stale actions are disabled.
+.PP
+Session and agent rows are separate, never associated by reusable name. Agent
+lifecycle, attention source/time, turn completion and exit receipts stay distinct.
+Missing heartbeats become stale/unknown. Native attach/capture pins the instance;
+tmux IDs are current-server scoped. Screen/Zellij dashboard actions are disabled.
+.PP
+Independent two-second reads cannot block keyboard input. At most 2048 session
+rows plus 256 registrations are displayed, with explicit truncation. Preview is
+opt-in, selected session only, at most 16 KiB/100 visible-screen lines. Controls
+are stripped and no output is recorded. Screen storage is capped at 512x200.
+TTY attributes/file flags restore on quit, cancellation and attach return.
+Inherited platform release gates and provider runtime limits remain in force.
+.TP
+\fBagent start\fR [\fB--cwd\fR DIR] [\fB--env\fR NAME] NAME -- EXECUTABLE [ARGS...]
+Opt in to supervised execution in a new detached native/tmux 3.4+ session. Argv
+is executed directly from a private one-use manifest, without a shell. Cwd is
+applied before execution. --env permits variable names from the backend wrapper
+environment; HOME, PATH, TERM are defaults. Backend environments may predate the
+CLI request. Values/argv are never retained in the registry or diagnostics.
+.br
+Returns an opaque agent ID. Exit 0 means the launch or a durable exit receipt was
+observed; inspect receipt.exit_code/outcome to determine the child's result.
+Failed exec has start_failed with no invented child exit code. Ambiguous launch
+returns partial failure and its ID; do not automatically retry.
+.TP
+\fBagent register\fR TARGET
+Register an existing exact native/tmux session without supervision. Registration
+has no managed-session ID, launch identity or retroactive exit receipt.
+.TP
+\fBagent list\fR / \fBagent status\fR ID
+Query/reconcile local agent state. --json uses the version-1 envelope. Status uses
+a full opaque ID; --backend filters list and must agree with a status target.
+Lifecycle, attention, source and observation time are separate. Attention remains
+unknown until verified hooks exist. Missing receipts after wrapper/server loss
+mean unknown, never exit 0. Recovery does not rerun commands.
+.TP
+\fBagent prune\fR ID [\fB--dry-run\fR | \fB--confirm\fR ID]
+Remove one exact registration. Supervised agents require a validated exit
+receipt; unsupervised pruning leaves the terminal session running. Retain exit
+receipts and a bounded replay-prevention ID history. No process is killed.
+.TP
+\fBtask prune\fR ID [\fB--dry-run\fR | \fB--confirm\fR ID]
+Remove one cleaned task record only after its worktree is absent and supervised
+exit is proven. Retain Git branches, commits, receipts and agent registration.
+Prune the task before its agent. Actual pruning requires the matching full ID.
+.TP
+\fBagent start --provider\fR generic|claude NAME -- EXECUTABLE [ARGS...]
+Explicitly provide private hook context to a managed child. Claude receives a
+private generated settings file; user/project settings are not edited. Only exact
+verified provider versions are accepted. Generic operation needs no provider.
+.TP
+\fBagent hooks enable\fR ID [--provider generic|claude|codex]
+Create or rotate a mode-0600 per-instance/generation credential. Same UID is the
+trust boundary. Tokens never enter argv, environment, public status or events.
+.TP
+\fBagent hooks config\fR ID / \fBagent providers\fR [--json]
+Print reviewable provider settings or installed adapter availability. Codex
+requires manual provider trust review. OpenCode v2 remains unsupported. No
+permission bypass or automatic approval is provided.
+.TP
+\fBagent signal\fR ID --instance I --generation G --sequence N --time RFC3339 --state STATE
+Report authenticated unknown, working, needs-input, idle or turn-complete. A
+managed child may instead use --from-env with --state. Sequences must increase;
+timestamps must be fresh. Attention expires after two minutes. Signals cannot
+establish process exit. Turn completion is separate and clears on new work.
+.TP
+\fBevents --jsonl\fR [--id ID] [--timeout D]
+Stream safe version-1 epoch/sequence events. Initial resync_required includes an
+atomic current snapshot; overflow/reconnect resnapshots. Eight subscribers,
+16-event queues, bounded writes, no durable replay or exactly-once guarantee.
+No prompts, transcripts or terminal contents are included.
+.TP
+\fBagent wait\fR ID [--until exited|needs-input|idle] [--timeout D] [--fail-on-nonzero]
+Wait using atomic snapshot/subscription. Default 30s, maximum 24h. Exit 0 means
+observed condition; a nonzero child exit also satisfies exited. With
+--fail-on-nonzero an unsuccessful receipt returns 1. Timeout 6, cancellation 130,
+unsupported 4, unproven loss 1. JSON retains the last observation on failure.
+.TP
+\fBagent notify\fR -- EXECUTABLE [ARGS...]
+Explicitly run an action for future needs-input, turn-complete or exit events.
+Safe JSON metadata arrives on stdin. Two-second deadline, five-second per-agent
+throttle, bounded local queue; snapshot/resync never replays actions. Default off.
+.TP
+\fBagent stop-coordinator\fR
+Stop only the matching local agent service, leaving managed sessions/children
+running. Only agent workflows/events start/contact the optional service; ordinary session
+commands remain independent. Private versioned registry/manifest/receipt files
+are under the state directory. Sessions, supervision, hooks/events/waits and
+TTY restoration have Linux amd64 and macOS ARM64 runtime coverage. Other
+platform/provider gates remain separate; see docs/releasing.md.
 .TP
 \fBwindow\fR [\fInew|list|kill|next|prev|rename|split\fR]
 Manage windows within a session.
@@ -71,7 +232,7 @@ Manage windows within a session.
 \fBpane\fR [\fIlist|kill|exec\fR]
 Manage panes within a window.
 .br
-\fBpane exec\fR [\fISESSION_NAME\fR] [\fIWINDOW_NAME\fR] [\fIPANE_NUMBER\fR] [\fICOMMAND\fR] - Execute a command remotely. (Alias: \fBexec\fR is available at the root level).
+\fBpane exec\fR [\fISESSION_NAME\fR] [\fIWINDOW_NAME\fR] [\fIPANE_NUMBER\fR] [\fICOMMAND\fR] - Send terminal input without a completion/exit-status promise. Native accepts window 0 and pane 0 only. (Alias: \fBexec\fR is available at the root level).
 .TP
 \fBcompletion\fR [\fIbash|zsh|fish|powershell\fR] [\fB\-\-install\fR]
 Generate the autocompletion script. Use \fB\-\-install\fR to configure RC files automatically.
@@ -86,9 +247,11 @@ Install txm binary and man page.
 Uninstall txm cleanly from your system.
 .TP
 \fBupdate\fR
-Update txm to the latest version directly from GitHub Releases.
+Update stable builds only to a newer stable semantic version from GitHub Releases.
+Older, malformed or prerelease release metadata never triggers a download. Development and prerelease builds
+refuse automatic updates; install a chosen release explicitly.
 .TP
-\fBversion\fR [\fB\-\-check-update\fR]
+\fBversion\fR
 Show version information.
 .SH OPTIONS
 .TP
@@ -127,7 +290,30 @@ Create and split a window:
 .TP
 Execute a command in a pane:
 .B txm pane exec mysession mywindow 0 "ls -la"
+.SH OPTIONAL EXTENSIONS
+.TP
+.B task start NAME --repo DIR [--base REV] [--branch NEW] [--dry-run] [--allow-repo-commands] -- EXECUTABLE [ARGS...]
+Create a fresh Git branch and private worktree with a managed agent ID. Strict native default or explicit tmux. Dry-run redacts command/environment values and creates no task state. Hooks and external filters require opt-in; no setup script is inferred.
+.TP
+.B task list | inspect ID | stop ID | cleanup ID
+Actions require full task IDs. Cleanup requires an exit receipt or an authoritative orphan, verifies filesystem ownership, and refuses modified/untracked/ignored files. Force requires --force --confirm ID and never bypasses process or ownership proof. Branches/commits remain. Interrupted starts are inspectable; no automatic launch replay or rollback.
+.TP
+.B remote allow ALIAS [--host-id ID] [--executable PATH] | hosts | probe ALIAS | pin ALIAS ID | forget ALIAS
+Explicit private SSH alias allowlist and host pins. Reuses OpenSSH configuration/authentication with batch mode and strict host keys. Probe negotiates schema/protocol 1; unpinned hosts cannot list/attach.
+.TP
+.B remote list [ALIAS...] [--timeout DURATION]
+List allowed pinned hosts using native (default) or explicit tmux. Per-host bounds are 1..30 seconds with concurrency four; reports alias-scoped partial failures. No network service is exposed.
+.TP
+.B remote attach ALIAS --host-id ID --backend BACKEND --name NAME --session-id ID [--instance ID] [--read-only]
+TTY-only attachment to an exact observed native/tmux session. Native requires its exact instance. Requests use encoded JSON tokens; local TTY settings/flags are restored. JSON attachment is unsupported.
+.PP
+Extensions have Linux amd64 and macOS ARM64 fixture coverage, including actual
+private loopback OpenSSH servers and native/tmux PTYs. Other platform/provider
+gates remain separate. See docs/automation.md and docs/releasing.md.
 .SH FILES
+.TP
+.I $XDG_STATE_HOME/txm/v1/host.json
+Private random local host ID, otherwise ~/.local/state/txm/v1/host.json. Structured-state reads initialize it atomically; corrupt/unsafe files are errors. Picker previews and ordinary mutations do not initialize this state or start an agent coordinator. Private structured state is unsupported on unverified platforms.
 .TP
 .I ~/.txm/config
 Configuration file (if supported).
@@ -137,6 +323,14 @@ Default user installation location.
 .TP
 .I /usr/local/bin/txm
 System-wide installation location.
+.SH EXIT STATUS
+0 success/empty; 1 general/config failure; 2 invalid usage/target; 3 not found;
+4 unsupported; 5 conflict/ambiguous; 6 timeout; 7 unavailable/partial; 8 denied;
+130 cancelled. Partial aggregate data exits 7 unless interrupted (130). JSON
+errors include code, message, backend/locator when applicable, and retryable.
+.PP
+Linux amd64 and macOS arm64 are locally validated. Other OS/architecture runtime and archive
+verification remain required gates; Windows native persistence is unsupported.
 .SH AUTHOR
 Written by Mohamed Elashri.
 .SH BUGS

@@ -1,48 +1,184 @@
 name: Release
 
 on:
+  pull_request:
+    branches: [main]
   push:
     tags:
       - 'v*'
 
 permissions:
-  contents: write
+  contents: read
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
-  goreleaser:
-    runs-on: ubuntu-latest
+  validate:
+    if: github.event_name == 'push'
+    uses: ./.github/workflows/ci.yml
+
+  build:
+    needs: validate
+    if: ${{ !cancelled() && (needs.validate.result == 'success' || github.event_name == 'pull_request') }}
+    runs-on: macos-15
     steps:
-      - name: Checkout
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # sanad: ref=v7.0.1
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0
-          
-      - name: Set up Go
-        uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # sanad: ref=v7.0.0
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
         with:
-          go-version: '1.26.0'
-          
+          go-version: '1.26.10'
       - name: Set up Zig
+        run: bash scripts/install-ci-zig.sh
+      - name: Validate stable tag and prepare notes and SDK
         run: |
-          ZIG_URL=$(curl -s https://ziglang.org/download/index.json | jq -r '.["0.16.0"]."x86_64-linux".tarball')
-          cd /tmp
-          wget $ZIG_URL -O zig.tar.xz
-          tar xf zig.tar.xz
-          DIR=$(ls -d zig-x86_64-linux-* | head -n 1)
-          echo "/tmp/$DIR" >> $GITHUB_PATH
-          
-      - name: Download macOS SDK
-        run: |
-          cd /tmp
-          wget https://github.com/joseluisq/macosx-sdks/releases/download/14.4/MacOSX14.4.sdk.tar.xz
-          tar xf MacOSX14.4.sdk.tar.xz
-          echo "MACOS_SDK_PATH=/tmp/MacOSX14.4.sdk" >> $GITHUB_ENV
-          
-      - name: Run GoReleaser
-        uses: goreleaser/goreleaser-action@f06c13b6b1a9625abc9e6e439d9c05a8f2190e94 # sanad: ref=v7.2.3
+          if [[ "$GITHUB_REF_TYPE" == tag ]]; then
+            python3 scripts/check-release.py --stable --tag "$GITHUB_REF_NAME" --notes "$RUNNER_TEMP/release-notes.md"
+          else
+            python3 scripts/check-release.py --stable --notes "$RUNNER_TEMP/release-notes.md"
+          fi
+          echo "TXM_SNAPSHOT_VERSION=$(cat VERSION)" >> "$GITHUB_ENV"
+          echo "MACOS_SDK_PATH=$(xcrun --show-sdk-path)" >> "$GITHUB_ENV"
+      - name: Build archives without uploading a release
+        uses: goreleaser/goreleaser-action@f06c13b6b1a9625abc9e6e439d9c05a8f2190e94 # v7.2.3
         with:
           distribution: goreleaser
-          version: latest
-          args: release --clean
+          version: v2.19.0
+          args: release --clean --skip=publish ${{ github.event_name == 'pull_request' && '--snapshot' || '' }} --release-notes "${{ runner.temp }}/release-notes.md"
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TXM_RELEASE_ROOT: ${{ github.workspace }}
+      - name: Verify complete bundle and checksums
+        run: |
+          mkdir "$RUNNER_TEMP/bundle"
+          cp dist/*.zip dist/checksums.txt "$RUNNER_TEMP/bundle/"
+          python3 scripts/check-release-artifacts.py --directory "$RUNNER_TEMP/bundle" --report "$RUNNER_TEMP/bundle-check.json"
+      - name: Retain the immutable build bundle
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: release-bundle
+          path: ${{ runner.temp }}/bundle/*
+          if-no-files-found: error
+          retention-days: 14
+
+  packages:
+    needs: build
+    # Override the default success() gate: validate is intentionally skipped on
+    # PRs, but a successful snapshot build must still run every package job.
+    if: ${{ !cancelled() && needs.build.result == 'success' }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-24.04
+            archive: txm_Linux_x86_64.zip
+          - os: ubuntu-24.04
+            archive: txm_Linux_x86_64-musl.zip
+          - os: ubuntu-24.04-arm
+            archive: txm_Linux_arm64.zip
+          - os: ubuntu-24.04-arm
+            archive: txm_Linux_arm64-musl.zip
+          - os: macos-15
+            archive: txm_Darwin_arm64.zip
+          - os: macos-15-intel
+            archive: txm_Darwin_x86_64.zip
+          - os: windows-2025
+            archive: txm_Windows_x86_64.zip
+          - os: windows-11-arm
+            archive: txm_Windows_arm64.zip
+    runs-on: ${{ matrix.os }}
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          name: release-bundle
+          path: ${{ runner.temp }}/bundle
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
+        with:
+          python-version: '3.13'
+      - name: Verify downloaded bundle against source and checksums
+        run: python scripts/check-release-artifacts.py --directory "$RUNNER_TEMP/bundle"
+      - name: Install Unix test backends
+        if: runner.os != 'Windows'
+        run: |
+          if [[ "$RUNNER_OS" == Linux ]]; then
+            sudo apt-get update
+            sudo apt-get install -y tmux
+          else
+            brew install tmux
+            bash scripts/install-ci-zellij.sh
+          fi
+      - name: Validate Unix install and packaged runtime
+        if: runner.os != 'Windows'
+        env:
+          ARCHIVE: ${{ matrix.archive }}
+        run: |
+          set -euo pipefail
+          mkdir "$RUNNER_TEMP/package" "$RUNNER_TEMP/reports"
+          python3 tests/archive_checks.py --archive "$RUNNER_TEMP/bundle/$ARCHIVE" --expected-version "$(cat VERSION)" --report "$RUNNER_TEMP/reports/install.json"
+          unzip -q "$RUNNER_TEMP/bundle/$ARCHIVE" txm -d "$RUNNER_TEMP/package"
+          chmod +x "$RUNNER_TEMP/package/txm"
+          for suite in cli_errors native_checks structured_checks profile_checks agent_checks agent_events_checks dashboard_checks extension_checks prune_checks; do
+            python3 "tests/$suite.py" --binary "$RUNNER_TEMP/package/txm"
+          done
+          if [[ "$RUNNER_OS" == macOS ]]; then
+            python3 tests/macos_backend_checks.py --binary "$RUNNER_TEMP/package/txm" --report "$RUNNER_TEMP/reports/backends.json" -v
+            python3 tests/ssh_checks.py --binary "$RUNNER_TEMP/package/txm" --report "$RUNNER_TEMP/reports/ssh.json" -v
+          fi
+      - name: Verify actual foreign-UID rejection on macOS
+        if: runner.os == 'macOS'
+        run: |
+          sudo env GITHUB_ACTIONS=true TXM_ISOLATED_CI=1 "$(command -v python3)" tests/peer_checks.py \
+            --binary "$RUNNER_TEMP/package/txm" --report "$RUNNER_TEMP/reports/peer-credentials.json" -v
+      - name: Verify actual foreign-UID rejection in a Linux container
+        if: runner.os == 'Linux'
+        run: |
+          docker build --tag txm-peer-fixture --file tests/containers/Dockerfile.linux tests/containers
+          docker run --rm --init --network none --read-only --tmpfs /tmp:rw,exec,size=512m \
+            --env TXM_LINUX_FIXTURE=1 --env PYTHONDONTWRITEBYTECODE=1 \
+            --mount "type=bind,src=$GITHUB_WORKSPACE/tests,dst=/work/tests,readonly" \
+            --mount "type=bind,src=$RUNNER_TEMP/package/txm,dst=/opt/txm,readonly" \
+            --mount "type=bind,src=$RUNNER_TEMP/reports,dst=/reports" \
+            txm-peer-fixture python3 /work/tests/peer_checks.py --binary /opt/txm --report /reports/peer-credentials.json -v
+      - name: Smoke Windows CLI and unsupported refusals
+        if: runner.os == 'Windows'
+        env:
+          ARCHIVE: ${{ matrix.archive }}
+        run: |
+          mkdir "$RUNNER_TEMP/reports"
+          python tests/windows_archive_checks.py --archive "$RUNNER_TEMP/bundle/$ARCHIVE" --expected-version "$(cat VERSION)" --report "$RUNNER_TEMP/reports/windows-cli.json"
+      - name: Retain package reports
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: package-${{ matrix.archive }}
+          path: ${{ runner.temp }}/reports/
+          if-no-files-found: warn
+          retention-days: 14
+
+  draft:
+    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')
+    needs: [build, packages]
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          name: release-bundle
+          path: ${{ runner.temp }}/bundle
+      - name: Verify final bundle and create a stable draft
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          python3 scripts/check-release.py --stable --tag "$GITHUB_REF_NAME" --notes "$RUNNER_TEMP/release-notes.md"
+          python3 scripts/check-release-artifacts.py --directory "$RUNNER_TEMP/bundle"
+          gh release create "$GITHUB_REF_NAME" "$RUNNER_TEMP"/bundle/*.zip "$RUNNER_TEMP/bundle/checksums.txt" \
+            --verify-tag --draft --title "txm $(cat VERSION)" --notes-file "$RUNNER_TEMP/release-notes.md"

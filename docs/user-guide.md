@@ -1,386 +1,197 @@
-# txm Documentation
+# User guide
 
-`txm` is a powerful terminal session manager that supports a built-in **native** backend, as well as **tmux**, **zellij**, and **GNU Screen**. This documentation covers all available commands, configuration options, and backend-specific features.
+[Documentation](README.md) / User guide
 
-## Table of Contents
+Use this guide for interactive sessions, workspace profiles, and the dashboard.
+[Getting started](getting-started.md) covers installation;
+[Automation](automation.md) covers supervised jobs, Git tasks, and SSH hosts.
+Use `txm COMMAND --help` for the full command reference.
 
-- [Configuration System](#configuration-system)
-- [Backend Support](#backend-support)
-- [Command Line Options](#command-line-options)
-- [Session Management](#session-management)
-- [Window Management](#window-management)
-- [Pane Operations](#pane-operations)
-- [Configuration Commands](#configuration-commands)
-- [Environment Variables](#environment-variables)
-- [Seamless SSH Workflow](#seamless-ssh-workflow)
-- [Backend-Specific Notes](#backend-specific-notes)
-- [Troubleshooting](#troubleshooting)
+## Choose a backend
 
-## Configuration System
+Use the native backend for a persistent terminal without installing another
+multiplexer. Choose tmux for exact window and pane control, layouts, and history.
+Zellij and GNU Screen provide basic session management through the same CLI.
+Creating Zellij sessions with a custom command requires Zellij 0.45.1 or newer.
 
-txm includes a comprehensive configuration system that allows you to set your preferred backend and customize behavior.
+| Capability | Native | tmux | Zellij / GNU Screen |
+| --- | --- | --- | --- |
+| Create, list, attach, delete sessions | Yes | Yes | Yes, with adapter limits |
+| Read-only attachment | Yes | Yes | Unsupported |
+| Capture visible output | Yes | Yes | Unsupported |
+| Capture history | Unsupported | Yes | Unsupported |
+| Exact window/pane operations and layouts | One terminal only | Yes | Unsupported |
+| Profiles | One terminal | Full layouts, tmux 3.4+ | Unsupported |
+| Supervised jobs and Git tasks | Yes | Yes | Unsupported |
 
-### Configuration File
+Available capabilities depend on the installed backend. Inspect them directly:
 
-Configuration is stored in `~/.txm/config` using a simple `key=value` format:
-
-```
-backend=native
-scrollback_size=131072
-```
-
-### Backend Selection Priority
-
-1. **Environment Variable**: `TXM_DEFAULT_BACKEND` (highest priority)
-2. **Config File**: `~/.txm/config` (persistent setting)
-3. **Default**: Auto-detection (tmux → zellij → screen → native)
-
-### Configuration Commands
-
-```bash
-# Set default backend
-txm config set backend native
-
-# Get specific configuration
-txm config get backend
-
-# Show all configuration
-txm config show
+```sh
+txm --backend tmux backend capabilities --json
+txm backend capabilities --all-backends --json
 ```
 
-## Backend Support
+Aggregate queries attempt every backend and report missing or failed adapters
+explicitly. They can return useful data with a nonzero partial-failure exit.
+[Compatibility and releases](releasing.md#platforms-and-backends) records tested
+platforms and versions.
 
-| Backend | Session Mgmt | Window/Tab Mgmt | Pane/Panel Ops | Advanced Features |
-|---------|--------------|-----------------|----------------|-------------------|
-| **native** | ✓ | ✗ | ✗ | Built-in, libghostty-vt core, scrollback restoration |
-| **tmux** | ✓ | ✓ | ✓ | Full feature set |
-| **zellij** | ✓ | ✓ | ✓ | Modern workspace |
-| **screen** | ✓ | ✓ | Basic | Fallback support |
+## Sessions and targets
 
-## Command Line Options
-
-```
-txm [command] [arguments] [-v|--verbose]
-```
-
-The `-v` or `--verbose` flag enables detailed logging, useful for debugging or learning how commands work.
-
-## Autocompletion
-
-`txm` automatically installs native shell autocompletion for `bash`, `zsh`, and `fish` when you run `txm install`. The installer places the generated completion scripts into standard locations dynamically:
-
-- **Bash**: `~/.local/share/bash-completion/completions/txm` (or `/usr/share/bash-completion/` for system installs)
-- **Zsh**: `~/.zfunc/_txm` (You must add `fpath+=~/.zfunc` to your `.zshrc`)
-- **Fish**: `~/.config/fish/completions/txm.fish`
-
-For a temporary session, or for PowerShell, you can generate it on the fly:
-```bash
-source <(txm completion bash)   # bash
-source <(txm completion zsh)    # zsh
-txm completion fish | source    # fish
-txm completion powershell       # powershell
+```sh
+txm --backend native create work
+txm attach native/work
+txm attach --read-only native/work
+txm session inspect native/work --json
+txm delete native/work
 ```
 
-When you uninstall the app using `txm uninstall`, these autocompletion files are automatically purged from your system.
+`--backend` is strict: an unavailable backend is an error. A qualified target such
+as `native/work` selects that backend and avoids ambiguity. An unqualified name
+uses the selected backend; it does not search all backends. Names use ASCII
+letters, digits, underscores, and dashes, up to 128 characters.
 
-## Session Management (`txm session`)
+Without explicit selection, txm uses `TXM_DEFAULT_BACKEND`, then the configured
+preference, then its default preference of tmux. Preferences can fall back to an
+available adapter, in the order tmux, Screen, Zellij, native. Set a preference with
+`txm config set backend tmux`; use explicit selectors in scripts.
 
-Commands for managing sessions. The most common commands (`create`, `list`, `attach`) are available at the root level as aliases.
+Native detaches with Ctrl+backslash. Other backends retain their own bindings;
+tmux defaults to Ctrl-b, then d. `txm detach` delegates to the current backend.
+Ordinary attach can create a missing session after discovery proves it absent.
+Read-only attach requires an existing session and never creates one.
 
-### Interactive picker
-Launch interactive fuzzy-finder picker to select and preview sessions
-```bash
-txm
+Root commands such as `create`, `attach`, `delete`, and `list` are shortcuts for
+`session create`, `session attach`, `session delete`, and `session list`.
+`rename-session` aliases `session rename`; renaming is backend-dependent.
+`nuke` removes sessions only from the selected backend.
+
+Put options **before positional arguments** on `create`, `attach`, and `exec`.
+Subsequent arguments are interpreted as the command or literal terminal input.
+
+## Output, windows, and panes
+
+Capture the native visible screen, or request bounded tmux history explicitly:
+
+```sh
+txm session output native/work --plain --lines 100
+txm session output tmux/work --history --lines 1000 --json
 ```
 
-### create
-Create a new session (optionally run a specific command).
-**Alias:** `txm create`
-```bash
-txm session create [session_name] [command...]
-```
-- `--log`: Mirror PTY output to a persistent file with automatic size-based log rotation.
+Plain output strips terminal controls. `--raw` explicitly preserves them and uses
+base64 when combined with JSON. Truncation is disclosed. Native capture is a
+screen snapshot; it has no history API. `--lines` and `--bytes` bound collection.
 
-### list
-List all active sessions and display the number of active clients attached.
-**Alias:** `txm list`, `txm ls`
-```bash
-txm session list
-```
+For multiple windows and panes, use tmux:
 
-### attach
-Attach to an existing session. If no name is provided, it automatically attaches to the only available session or creates a default one. Can also accept custom startup commands.
-**Alias:** `txm attach`
-```bash
-txm session attach [session_name] [command...]
-```
-- `-r`, `--read-only`: Attach in read-only mode for safe, interference-free session monitoring.
-
-### detach
-Detach from current session. (Alternatively, use `Ctrl+\` when in a native session to gracefully detach).
-**Alias:** `txm detach`
-```bash
-txm session detach
+```sh
+txm --backend tmux create dev
+txm --backend tmux window new dev editor
+txm --backend tmux window split dev editor v
+txm --backend tmux pane list dev editor
+txm --backend tmux pane exec dev editor PANE_ID 'printf hello'
 ```
 
-### delete
-Delete a session.
-**Alias:** `txm delete`
-```bash
-txm session delete [session_name]
-```
+Replace `PANE_ID` with an exact ID returned by `pane list`; quote IDs containing
+shell metacharacters. txm rejects ambiguous targets and synchronized tmux input
+rather than broadcasting. The native backend accepts input only at window `0`,
+pane `0`: `txm exec native/work 0 0 'printf hello'`.
 
-### rename
-Rename a session.
-**Alias:** `txm rename-session`
-```bash
-txm session rename [old_name] [new_name]
-```
+Terminal input is not a supervised job: accepting it does not establish a child
+exit result. Use [agent start](automation.md#supervised-jobs) when completion matters.
 
-### nuke
-Remove all sessions across all backends.
-**Alias:** `txm nuke`
-```bash
-txm session nuke
-```
+## Profiles
 
-### profile
-Create a full session structure (windows, panes, commands) declaratively from a TOML configuration file.
-```bash
-txm profile [path_to_toml]
-```
+A TOML profile describes a workspace to create. Save this as `dev.toml`:
 
-**Example TOML Profile:**
 ```toml
-name = "dev-workspace"
+name = "dev"
 backend = "tmux"
 
 [[window]]
-name = "server"
+name = "editor"
+layout = "even-horizontal"
+
 [[window.pane]]
-command = "npm run start"
+dir = "."
+command = "vim"
 
-[[window]]
-name = "client"
 [[window.pane]]
-command = "npm run dev"
-[[window.pane]]
-split = "v"
-command = "npm run test"
+dir = "."
+split = "h"
 ```
 
-### generate-ssh-config
-Automatically generate zmx-style `ControlMaster` SSH configurations for seamless SSH workflows.
-```bash
-txm generate-ssh-config
+Preview the plan, then apply it:
+
+```sh
+txm profile --dry-run dev.toml
+txm profile --detach dev.toml
+txm profile --attach-existing dev.toml
 ```
 
-### update
-Update txm to the latest version
-```bash
-txm update
+Dry-run checks names, directories, topology, and capabilities without creating
+sessions or runtime state. Relative directories resolve against the profile
+file; `~` and environment variables are not expanded. The profile backend is
+strict and must agree with `--backend` if both are given.
+
+Applying attaches by default; `--detach` leaves the workspace running. An
+existing session requires `--attach-existing` and is attached unchanged. Combine
+it with `--read-only` to observe. Native profiles allow one unnamed window and one
+pane. Profile commands are terminal input, with the same completion limits as
+`exec`. Rollback removes only resources whose ownership can be proven.
+
+## Dashboard
+
+```sh
+txm dashboard
+txm dashboard --backend native
+txm dashboard --agents --preview
 ```
 
-### uninstall
-Uninstall txm from your system
-```bash
-txm uninstall
+The dashboard lists local sessions across backends by default. Use `--backend`
+to narrow the view and `--agents` to include agent registrations. The latter
+opts into the local coordinator; a session-only dashboard does not start it.
+
+| Key | Action |
+| --- | --- |
+| Arrows / j / k, Page Up / Page Down | Move through rows |
+| / | Search |
+| Tab / b | Cycle state/type filters / backend filters |
+| Enter / o | Attach / attach read-only |
+| p / r | Toggle output preview / refresh |
+| q / Ctrl-C | Quit / cancel |
+
+Preview captures bounded plain output for the selected session and is off by
+default. Stale and unsupported actions are disabled. Session and agent rows remain
+separate, with lifecycle and attention shown independently. Screen/Zellij actions
+are disabled in the dashboard even though their sessions can be listed.
+The dashboard requires a real terminal on Linux or macOS.
+
+## Configuration
+
+```sh
+txm config set backend tmux
+txm config get backend
+txm config show
+txm completion zsh --install
 ```
 
-### version
-Show version and check for updates
-```bash
-txm version [--check-update]
-```
+Config lookup uses the first existing file: `~/.txm/config`,
+`~/.txm/config.txt`, then `~/.txmrc`. Files use `key=value` entries.
 
-## Window Management (`txm window`)
+| Variable | Purpose |
+| --- | --- |
+| `TXM_DEFAULT_BACKEND` | Backend preference; explicit selection takes precedence |
+| `TXM_SESSION_PREFIX` | Prefix unqualified session names once; qualified targets are already canonical |
+| `NO_COLOR` | Disable colored output |
+| `XDG_STATE_HOME` | Absolute path for private persistent state |
+| `XDG_RUNTIME_DIR` | Private runtime directory for sockets |
+| `TERM` | Describe the actual terminal's capabilities |
 
-### new
-Create a new window (supported across most backends except native)
-```bash
-txm window new [session_name] [window_name]
-```
+Unsafe ownership, permissions, or explicit state paths cause errors rather than
+silently switching to another namespace. Keep the original state directory for
+managed work; [CLI contracts](contracts.md#identity-supervision-and-events)
+explain identity and recovery.
 
-### list
-List windows in a session
-```bash
-txm window list [session_name]
-```
-
-### kill
-Remove a window
-```bash
-txm window kill [session_name] [window_name]
-```
-
-### next
-Switch to next window in session
-```bash
-txm window next [session_name]
-```
-
-### prev
-Switch to previous window in session
-```bash
-txm window prev [session_name]
-```
-
-### rename
-Rename a window
-```bash
-txm window rename [session_name] [old_window_name] [new_window_name]
-```
-
-### split
-Split a window into panes
-```bash
-txm window split [session_name] [window_name] [v|h]
-```
-- `v`: vertical split
-- `h`: horizontal split
-
-## Pane Operations (`txm pane`)
-
-Note: These commands are available in tmux and zellij, with limited support in screen.
-
-### list
-List panes in a window
-```bash
-txm pane list [session_name] [window_name]
-```
-
-### kill
-Remove a pane
-```bash
-txm pane kill [session_name] [window_name] [pane_number]
-```
-
-### exec
-Remotely execute commands inside background panes.
-**Alias:** `txm exec`
-```bash
-txm pane exec [session] [window] [pane] [cmd]
-```
-
-## Environment Variables
-
-### TXM_DEFAULT_BACKEND
-Override the default backend temporarily:
-```bash
-export TXM_DEFAULT_BACKEND=native
-# or
-TXM_DEFAULT_BACKEND=tmux txm create my-session
-```
-
-### TXM_SESSION_PREFIX
-Automatically prefixes all session names globally.
-```bash
-export TXM_SESSION_PREFIX=my_env_
-```
-
-### NO_COLOR
-Disable colored output:
-```bash
-export NO_COLOR=1
-```
-
-### TERM
-Terminal type for capability detection. Common values:
-- xterm
-- xterm-256color
-- screen
-- screen-256color
-- tmux
-- tmux-256color
-- linux
-
-## Seamless SSH Workflow
-
-Using `txm` with SSH is a first-class citizen. Instead of using SSH to remote into a system with a single terminal and managing `n` `tmux` panes remotely, we can open `n` local terminal tabs and run `ssh` for all of them. This allows us to leverage our local terminal emulator's native tabs, splits, and scrollback, while perfectly preserving the sessions remotely.
-
-To make this a delightful workflow, we can add an SSH config entry for our remote dev server. Generate the recommended setup block instantly by running:
-```bash
-txm generate-ssh-config
-```
-
-The output will look something like this. Add it to our `~/.ssh/config`:
-```bash
-Host d.*
-    HostName 192.168.1.xxx
-    
-    # Automatically attach to a txm session on the remote server
-    # named after the remote host we're connecting to (%h).
-    RemoteCommand txm attach %h
-    RequestTTY yes
-
-    # Multiplex multiple PTY sessions to a single server over one connection
-    ControlMaster auto
-    ControlPath ~/.ssh/cm-%r@%h:%p
-    ControlPersist 10m
-```
-
-Architecturally, SSH supports multiplexing multiple channels of communication within a single TCP connection to a server. `ControlMaster` is the setting that tells SSH to multiplex multiple PTY sessions over that one connection.
-
-Now we can spawn as many terminal sessions as we'd like:
-```bash
-ssh d.term
-ssh d.irc
-ssh d.dotfiles
-```
-
-Because `txm attach` is an "upsert" command, the first `ssh` command will automatically create the session on the remote host, and subsequent commands to the same host will attach to it (or create entirely new sessions if connecting to different hosts). 
-
-### Auto-Reconnection
-We can use the `autossh` tool to make SSH connections auto-reconnect. If we close our laptop lid, it will automatically reconnect all our SSH connections when we reopen it:
-```bash
-autossh -M 0 -q d.term
-```
-*(Tip: create an alias/abbr for this, e.g., `alias ash="autossh -M 0 -q"`)*
-
-Now we can set up our OS tiling windows how we like them for our project and have as many windows as we'd like, replicating exactly what `tmux` does but with native windows, tabs, splits, and scrollback!
-
-## Backend-Specific Notes
-
-### native
-- **Zero dependencies**: No external multiplexer needed (statically compiled with `txm`)
-- **State & Scrollback**: Powered by the cutting-edge **Ghostty** (`libghostty-vt`) terminal emulator core, maintaining a highly accurate VT state and configurable scrollback ring buffer.
-- **Lightweight**: Optimized for simple persistent single-pane sessions
-- **Graceful Detach**: Keybinding `Ctrl+\` to detach cleanly
-- **Portability**: Available as a 100% statically linked `linux-musl` distribution for drop-in use on Alpine Linux and minimal containers without `glibc`.
-
-### tmux
-- **Full feature support**: Complete implementation of all window and pane operations
-- **Session persistence**: Robust session management with server/client architecture
-- **Configuration**: Extensive customization via `.tmux.conf`
-
-### zellij
-- **Modern workspace paradigm**: Tab-based workflow with floating panes
-- **Built-in layouts**: Predefined and custom layouts
-- **Session management**: Contemporary approach to terminal multiplexing
-
-### GNU Screen
-- **Legacy compatibility**: Reliable fallback for older systems
-- **Basic session management**: Core session operations
-
-## Troubleshooting
-
-### Backend Selection Issues
-
-1. **Check available backends**:
-```bash
-which tmux zellij screen
-```
-
-2. **Test backend functionality**:
-```bash
-# Test each backend individually
-TXM_DEFAULT_BACKEND=native txm -v list
-TXM_DEFAULT_BACKEND=tmux txm -v list
-TXM_DEFAULT_BACKEND=zellij txm -v list
-```
-
-3. **Reset configuration**:
-```bash
-rm -rf ~/.txm
-txm config show  # Will recreate with defaults
-```
+For installation, updates, and migration, see
+[Getting started](getting-started.md) and [upgrade review](releasing.md#upgrade-review).

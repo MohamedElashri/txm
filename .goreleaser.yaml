@@ -4,20 +4,31 @@ project_name: txm
 
 before:
   hooks:
-    - ./.github/scripts/build-ghostty.sh
+    - bash .github/scripts/build-ghostty.sh
+    - bash scripts/generate-completions.sh
 
 builds:
   - id: default
     env:
       - CGO_ENABLED=1
-      - CC=zig cc -target {{ if eq .Os "linux" }}{{ if eq .Arch "amd64" }}x86_64-linux-gnu{{ else }}aarch64-linux-gnu{{ end }}{{ else if eq .Os "darwin" }}{{ if eq .Arch "amd64" }}x86_64-macos{{ else }}aarch64-macos{{ end }}{{ else if eq .Os "windows" }}{{ if eq .Arch "amd64" }}x86_64-windows-gnu{{ else }}aarch64-windows-gnu{{ end }}{{ end }}{{ if eq .Os "darwin" }} --sysroot {{ .Env.MACOS_SDK_PATH }}{{ end }}
-      - CXX=zig c++ -target {{ if eq .Os "linux" }}{{ if eq .Arch "amd64" }}x86_64-linux-gnu{{ else }}aarch64-linux-gnu{{ end }}{{ else if eq .Os "darwin" }}{{ if eq .Arch "amd64" }}x86_64-macos{{ else }}aarch64-macos{{ end }}{{ else if eq .Os "windows" }}{{ if eq .Arch "amd64" }}x86_64-windows-gnu{{ else }}aarch64-windows-gnu{{ end }}{{ end }}{{ if eq .Os "darwin" }} --sysroot {{ .Env.MACOS_SDK_PATH }}{{ end }}
-      - PKG_CONFIG_PATH=/tmp/ghostty-{{ .Os }}-{{ .Arch }}/share/pkgconfig
+      - CC=zig cc -target {{ if eq .Os "linux" }}{{ if eq .Arch "amd64" }}x86_64-linux-gnu{{ else }}aarch64-linux-gnu{{ end }}{{ else if eq .Os "darwin" }}{{ if eq .Arch "amd64" }}x86_64-macos{{ else }}aarch64-macos{{ end }}{{ end }}{{ if eq .Os "darwin" }} --sysroot {{ .Env.MACOS_SDK_PATH }}{{ end }}
+      - CXX=zig c++ -target {{ if eq .Os "linux" }}{{ if eq .Arch "amd64" }}x86_64-linux-gnu{{ else }}aarch64-linux-gnu{{ end }}{{ else if eq .Os "darwin" }}{{ if eq .Arch "amd64" }}x86_64-macos{{ else }}aarch64-macos{{ end }}{{ end }}{{ if eq .Os "darwin" }} --sysroot {{ .Env.MACOS_SDK_PATH }}{{ end }}
+      - PKG_CONFIG_PATH={{ .Env.TXM_RELEASE_ROOT }}/.ghostty-release/{{ .Os }}-{{ .Arch }}/share/pkgconfig
       - CGO_LDFLAGS={{ if eq .Os "darwin" }}-L/usr/lib -F{{ .Env.MACOS_SDK_PATH }}/System/Library/Frameworks{{ end }}
       - CGO_LDFLAGS_ALLOW=.*
     goos:
       - linux
       - darwin
+    goarch:
+      - amd64
+      - arm64
+    ldflags:
+      - -s -w -X github.com/MohamedElashri/txm/pkg/cmd.Version={{.Version}}
+
+  - id: windows
+    env:
+      - CGO_ENABLED=0
+    goos:
       - windows
     goarch:
       - amd64
@@ -30,7 +41,7 @@ builds:
       - CGO_ENABLED=1
       - CC=zig cc -target {{ if eq .Arch "amd64" }}x86_64-linux-musl{{ else }}aarch64-linux-musl{{ end }}
       - CXX=zig c++ -target {{ if eq .Arch "amd64" }}x86_64-linux-musl{{ else }}aarch64-linux-musl{{ end }}
-      - PKG_CONFIG_PATH=/tmp/ghostty-linux-musl-{{ .Arch }}/share/pkgconfig
+      - PKG_CONFIG_PATH={{ .Env.TXM_RELEASE_ROOT }}/.ghostty-release/linux-musl-{{ .Arch }}/share/pkgconfig
       - CGO_LDFLAGS_ALLOW=.*
     goos:
       - linux
@@ -42,21 +53,32 @@ builds:
 
 archives:
   - id: default
-    builds:
+    ids:
       - default
-    format: zip
+      - windows
+    formats: [zip]
+    files:
+      - LICENSE
+      - README.md
+      - docs/txm.1
+      - completions/*
     name_template: '{{ .ProjectName }}_{{ title .Os }}_{{ if eq .Arch "amd64" }}x86_64{{ else if eq .Arch "386" }}i386{{ else }}{{ .Arch }}{{ end }}'
   - id: musl
-    builds:
+    ids:
       - musl
-    format: zip
+    formats: [zip]
+    files:
+      - LICENSE
+      - README.md
+      - docs/txm.1
+      - completions/*
     name_template: '{{ .ProjectName }}_{{ title .Os }}_{{ if eq .Arch "amd64" }}x86_64{{ else if eq .Arch "386" }}i386{{ else }}{{ .Arch }}{{ end }}-musl'
 
 checksum:
   name_template: 'checksums.txt'
 
 snapshot:
-  name_template: "{{ incpatch .Version }}-next"
+  version_template: '{{ if .Env.TXM_SNAPSHOT_VERSION }}{{ .Env.TXM_SNAPSHOT_VERSION }}{{ else }}{{ incpatch .Version }}-next{{ end }}'
 
 changelog:
   sort: asc
@@ -64,3 +86,7 @@ changelog:
     exclude:
       - '^docs:'
       - '^test:'
+
+release:
+  draft: true
+  prerelease: false

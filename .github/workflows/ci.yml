@@ -3,29 +3,33 @@ name: CI
 on:
   push:
     branches: [ "main" ]
+  workflow_dispatch:
+  workflow_call:
   pull_request:
     branches: [ "main" ]
+
+concurrency:
+  group: ci-${{ github.head_ref || github.ref_name }}
+  cancel-in-progress: true
 
 jobs:
   build-and-test:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # sanad: ref=v7.0.1
+    - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # ref=v7.0.1
 
     - name: Set up Go
-      uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # sanad: ref=v7.0.0
+      uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # ref=v7.0.0
       with:
-        go-version: '1.26.0'
+        go-version: '1.26.10'
         check-latest: true
 
     - name: Set up Zig
       run: |
-        ZIG_URL=$(curl -s https://ziglang.org/download/index.json | jq -r '.["0.16.0"]."x86_64-linux".tarball')
-        cd /tmp
-        wget $ZIG_URL -O zig.tar.xz
-        tar xf zig.tar.xz
-        DIR=$(ls -d zig-x86_64-linux-* | head -n 1)
-        echo "/tmp/$DIR" >> $GITHUB_PATH
+        bash scripts/install-ci-zig.sh
+
+    - name: Check release metadata
+      run: python3 scripts/check-release.py
 
     - name: Verify dependencies
       run: go mod verify
@@ -38,32 +42,57 @@ jobs:
     - name: Run Tests
       run: make test
 
+    - name: Guarded PTY and tmux integration
+      run: make test-integration
+
+    - name: Race tests
+      run: make test-race
+
+    - name: Native framing fuzz
+      run: make test-fuzz
+
+    - name: Native lifecycle with race detector
+      run: make test-integration-race
+
+  macos-integration:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [macos-15, macos-15-intel]
+    runs-on: ${{ matrix.os }}
+    steps:
+    - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # ref=v7.0.1
+    - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # ref=v7.0.0
+      with:
+        go-version: '1.26.10'
+    - name: Set up Zig
+      run: bash scripts/install-ci-zig.sh
+    - name: Install tmux
+      run: brew install tmux
+    - name: Test and integrate on macOS
+      run: make test test-race test-integration test-ssh
+
   lint:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # sanad: ref=v7.0.1
-    
+    - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # ref=v7.0.1
+
     - name: Set up Go
-      uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # sanad: ref=v7.0.0
+      uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # ref=v7.0.0
       with:
-        go-version: '1.26.0'
+        go-version: '1.26.10'
 
     - name: Set up Zig
       run: |
-        ZIG_URL=$(curl -s https://ziglang.org/download/index.json | jq -r '.["0.16.0"]."x86_64-linux".tarball')
-        cd /tmp
-        wget $ZIG_URL -O zig.tar.xz
-        tar xf zig.tar.xz
-        DIR=$(ls -d zig-x86_64-linux-* | head -n 1)
-        echo "/tmp/$DIR" >> $GITHUB_PATH
+        bash scripts/install-ci-zig.sh
 
     - name: Build dependencies
       run: make build-deps
-        
+
     - name: golangci-lint
-      uses: golangci/golangci-lint-action@ba0d7d2ec06a0ea1cb5fa41b2e4a3ab91d21278a # sanad: ref=v9.3.0
+      uses: golangci/golangci-lint-action@ba0d7d2ec06a0ea1cb5fa41b2e4a3ab91d21278a # ref=v9.3.0
       with:
-        version: latest
+        version: v2.11.4
         args: --timeout=5m
       env:
         PKG_CONFIG_PATH: ${{ github.workspace }}/.ghostty-host/share/pkgconfig

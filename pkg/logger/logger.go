@@ -9,15 +9,15 @@ import (
 )
 
 const (
-	colorRed     = "\x1b[31m"
-	colorGreen   = "\x1b[32m"
-	colorYellow  = "\x1b[33m"
-	colorBlue    = "\x1b[34m"
-	colorMagenta = "\x1b[35m"
-	colorCyan    = "\x1b[36m"
-	colorGray    = "\x1b[90m"
+	colorRed         = "\x1b[31m"
+	colorGreen       = "\x1b[32m"
+	colorYellow      = "\x1b[33m"
+	colorBlue        = "\x1b[34m"
+	colorMagenta     = "\x1b[35m"
+	colorCyan        = "\x1b[36m"
+	colorGray        = "\x1b[90m"
 	colorBrightGreen = "\x1b[92m"
-	colorReset   = "\x1b[0m"
+	colorReset       = "\x1b[0m"
 )
 
 const (
@@ -104,12 +104,12 @@ func (l *Logger) Success(msg string) {
 
 func (l *Logger) Warning(msg string) {
 	prefix := l.Colorize(colorYellow, "[WARNING]")
-	fmt.Printf("%s %s\n", prefix, msg)
+	fmt.Fprintf(os.Stderr, "%s %s\n", prefix, msg)
 }
 
 func (l *Logger) Error(msg string) {
 	prefix := l.Colorize(colorRed, "[ERROR]")
-	fmt.Printf("%s %s\n", prefix, msg)
+	fmt.Fprintf(os.Stderr, "%s %s\n", prefix, msg)
 }
 
 func (l *Logger) Verbose(msg string) {
