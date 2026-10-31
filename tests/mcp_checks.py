@@ -136,7 +136,7 @@ class MCPChecks(unittest.TestCase):
 
     def test_wait_capacity_and_modern_cancellation_leave_job_running(self):
         with a.fixture() as box, a.coordinator(box):
-            job = a.start(box, 'cancellable', ['/usr/bin/sleep', '3'])
+            job = a.start(box, 'cancellable', ['/bin/sleep', '3'])
             with wire(box, ['--read-id', job['id'], '--read-backend', 'native']) as client:
                 client.initialize()
                 waits = [client.send('tools/call', {'name': 'wait_agent', 'arguments': {

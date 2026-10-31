@@ -7,15 +7,24 @@ package metrics
 #include <libproc.h>
 #include <sys/resource.h>
 #include <sys/proc_info.h>
+#include <mach/mach_time.h>
+#include <stdint.h>
 static int txm_sample(int pid, unsigned long long *start, unsigned long long *cpu, unsigned long long *rss, int *parent) {
   struct proc_bsdinfo b;
   struct rusage_info_v2 r;
   if (proc_pidinfo(pid, PROC_PIDTBSDINFO, 0, &b, sizeof(b)) != sizeof(b)) return -1;
   if (proc_pid_rusage(pid, RUSAGE_INFO_V2, (rusage_info_t *)&r) != 0) return -1;
   *start = b.pbi_start_tvsec * 1000000ULL + b.pbi_start_tvusec;
-  *cpu = r.ri_user_time + r.ri_system_time;
+  // libproc reports CPU in Mach absolute ticks, not nanoseconds. The timebase
+  // differs across architectures (notably Apple Silicon); widen before both
+  // addition and multiplication so overflow fails closed rather than wrapping.
+  mach_timebase_info_data_t timebase;
+  if (mach_timebase_info(&timebase) != KERN_SUCCESS || !timebase.numer || !timebase.denom) return -1;
+  __uint128_t nanos = ((__uint128_t)r.ri_user_time + r.ri_system_time) * timebase.numer / timebase.denom;
+  if (nanos > INT64_MAX) return -1;
+  *cpu = (uint64_t)nanos;
   *rss = r.ri_resident_size;
- *parent = b.pbi_ppid;
+  *parent = b.pbi_ppid;
   return 0;
 }
 */

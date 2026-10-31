@@ -5,32 +5,118 @@ Changes follow [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) and
 
 ## [Unreleased]
 
-### Documentation
+## [2.1.0] - 2026-10-31
 
-- Consolidate installation, interactive, and automation workflows in the user
-  guide, development and release instructions in one maintainer guide, and
-  native wire details in the contracts reference. Routine documentation uses
-  repository version metadata; release-specific evidence stays in the changelog.
+Release preparation; no tag or published release is implied by this entry.
+The final signed-source and matching-platform archive gates remain required.
+
+### Upgrade notes
+
+- Public JSON schema 1, exit codes, native protocol v1 and strict private v1
+  registry/receipt formats remain compatible. Canonical provider observations
+  and current-version associations use separate private sidecars. Actual tagged
+  v2.0/current coordinator fixtures cover both directions and credential rotation.
+- Restart an older coordinator explicitly before requesting new operations;
+  `agent stop-coordinator` leaves sessions and children running. Old coordinators
+  refuse unsupported metrics creation before launching work. Keep the original
+  state directory and previous binary for existing work.
+- Provider compatibility, validation and trust are separate. Unknown versions
+  refuse hook activation. No provider account, trust setting or permission is
+  enabled by upgrading. Claude automatic setup refuses an existing `--settings`
+  argument; manually review composition instead. Codex configuration/trust stays
+  manual. Other inherited-policy combinations and platforms remain unverified.
+- Merge apply is limited to a clean checked-out target and an explicitly reviewed
+  fast-forward, with operator quiescence and immutable worker exit proof.
+  Ref-only targets, sparse worktrees and submodules are refused. Retained uncertain
+  intents require inspection; retry never reapplies or rolls back a merge.
+- MCP reads and creation are independent default-deny grants. Preserve permanent
+  operation-ID journals after dropped responses or uncertainty. Stop, cleanup
+  and merge remain human CLI handoffs, not executable MCP tools.
+- Metrics are off by default and cover only the exact supervised child PID.
+  CPU 100% means one logical CPU; RSS is bytes. No descendant totals are claimed.
+
+### Added
+
+- Version-specific neutral Claude/Codex lifecycle observations with independent
+  process, attention and turn identity; stale/replay/foreign-session rejection,
+  natural expiry and restart preservation. Discovery reports capability,
+  compatibility, validation and nullable trust/enablement separately.
+- Strict existing-state CLI reads and scoped stdio MCP through the pinned Go SDK,
+  independently tested legacy initialization and modern per-request protocol
+  eras, bounded pagination/waits and reviewed fixed creation templates.
+- Config/executable-bound task setup acceptance, retained setup receipts, pure
+  bounded task review and checked-out fast-forward merge with frozen OIDs,
+  review digest and durable uncertain/applied outcomes.
+- Attention-first dashboard navigation, repository/task grouping and stable
+  selection; explicit sourced fresh/unknown observations and bounded previews.
+- Opt-in Linux/macOS child-PID CPU/RSS samples with kernel identity checks,
+  bounded sampler/storage/retention quotas and existing-only reads. Disabled jobs
+  allocate no sampling artifacts; observer failure leaves the job running.
+- Provider-free quick start, reviewed CLI/man/completion examples and a real
+  roughly 60-second generic CLI/PTY demonstration on Linux and macOS.
 
 ### Fixed
 
+- Convert Darwin libproc CPU Mach ticks with the kernel timebase instead of
+  treating them as nanoseconds. Native Apple Silicon regression tests compare
+  CPU against getrusage and RSS against ps; the previous CPU value was about
+  42 times too small on the tested host.
+- Preserve provider prompt/session identity, resumed state and real failure/end
+  observations without treating provider turn completion as process exit.
+- Canonicalize owned temporary fixture roots on macOS, use portable sleep paths,
+  retain bounded race-test task deadlines and verify recorder TTY restoration
+  before Darwin revokes its controlling session.
 - Publish native fixture identity receipts atomically and tolerate temporary
   connection-pool refusals only in the bounded recovery probe. Rejected test
   handshakes close their sockets.
 
-### Release engineering
+### Provider validation scope
 
-- Skip expensive automatic Linux/macOS build, runtime, and lint jobs when only
-  Markdown or the man page changes. Keep lightweight scope/metadata checks and
-  full manual CI for exact-commit release validation.
-- Reserve full package validation for tags and explicit dry runs. Reuse successful
-  CI of the exact release commit, build Linux/Windows archives on Linux alongside
-  a separate Darwin build, and cache verified native dependencies before tests.
-- Retain independently retryable build partitions and the complete package bundle,
-  bound job runtime, and distinguish package reports by run attempt. All eight
-  target runtime/CLI gates remain required before draft creation.
-- Run Linux foreign-UID checks in a pinned minimal Python image without building
-  a full SSH/backend test image for each archive.
+| Provider | Evidence and limits |
+| --- | --- |
+| Generic | Offline authenticated worker signals and immutable native/tmux exit receipts; no provider account |
+| Claude 2.1.309 | Authorized Linux/amd64 interactive restricted/default-permission reference: eight callback kinds, turns, permission cancellation, tool success/failure, resume, API failure/recovery, exit, restart/expiry and negative identities. Direct user-cancellation signaling and other modes/platforms remain unverified or unsupported. |
+| Codex CLI 0.166.0 | Authorized Linux/amd64 interactive no-daemon reference with normally trusted neutral hooks: seven callback kinds, turns, permission cancellation, interrupt, resume, tool/turn/session end, restart/expiry and fork-rebind refusal. Other modes/platforms remain unverified. |
+| Claude 2.1.308 / Codex CLI 0.165.0 | Schema/fixture compatibility retained; no equivalent full live-lifecycle claim |
+| OpenCode 2.2.5 | Linux/macOS arm64 SDK/loader/auth/session-metadata/crash-restart fixtures pass, including a retry against the upgraded installed v2 CLI. Signed-out free-model attempts emitted real execution-started/failed events and returned provider free-limit HTTP 429 at zero reported cost. Successful completion, permission/resume lifecycle and canonical activation remain unverified/disabled. A separate earlier v1.19.5 free-model attempt timed out; it does not establish v2 compatibility. |
+
+Exact reference executable hashes/platforms are checked by diagnostics; matching
+only a version string does not attest a running instance or its trust settings.
+OpenCode's final release disposition remains a maintainer gate.
+
+### Validation and remaining release gates
+
+- Linux reference evidence covers the development checkpoint's Go/race/fuzz,
+  runtime, MCP/Git/metrics, provider lifecycles and GNU/static-musl build partition.
+  It does not certify changed final release bytes or native ARM64/Windows runners.
+- Native macOS 27.2 arm64 passes Go 1.27.3 unit/race, Go 1.26.10 minimum-toolchain
+  tests, lint, module checks, five fuzz targets, all applicable normal/race runtime
+  suites, exact tagged compatibility, child metrics, isolated tmux 3.8,
+  Zellij 0.45.1, Apple Screen 4.00.03 and real private OpenSSH loopback checks.
+- Both Darwin architectures build and pass archive structural checks. The arm64
+  2.1.0 snapshot also passes private installation and the complete functional
+  runtime matrix. Intel runtime, final signed-source archive validation,
+  macOS foreign-UID CI, native Linux
+  ARM64, Windows CLI smoke and the complete final eight-archive gate remain open.
+- Three alternating full-scale macOS/v2.0 comparisons pass every fixed and 20%
+  relative budget: median startup +15.7%, list10 +19.9%, list100 -3.6%, and peak
+  server RSS +1.9%. The final arm64 snapshot runtime check passes the 100-session
+  fixed budgets. Earlier attempts below the unchanged 4 GiB available-memory
+  guard remain recorded as refusals. These fixture measurements are not a
+  performance SLA; historical Linux evidence retains its original scope.
+- A separate authorized live-provider demonstration and a final signed candidate
+  source/CI run remain pending. No new macOS provider inference or trust approval
+  is claimed by generic runtime tests.
+
+### Documentation and release engineering
+
+- Consolidate operator workflows in the existing guides and publish the actual
+  MCP, setup/review/merge, metrics and provider validation limits. No installed
+  agent-skill package is supplied.
+- Keep lightweight CI scope/metadata checks for documentation-only changes and
+  full manual CI for exact-source release validation. Retain independently
+  retryable build partitions and all eight matching-runner archive gates before
+  draft creation; no required check is disabled by local validation.
 
 ## [2.0.0] - 2026-10-31
 

@@ -10,12 +10,13 @@ import select
 import shlex
 import shutil
 import struct
+import sys
 import termios
 import time
 
 import agent_checks as a
 import extension_checks as x
-from tty_state import attributes
+from tty_state import configured_attributes, configured_flags
 
 
 def record(binary, destination):
@@ -39,13 +40,13 @@ def record(binary, destination):
         worker = box.root / 'generic-worker'
         worker.write_text('#!/bin/sh\nset -eu\n' + '\n'.join([
             shlex.quote(str(installed))+' agent signal --from-env --state working >/dev/null',
-            '/usr/bin/sleep 2',
+            '/bin/sleep 2',
             shlex.quote(str(installed))+' agent signal --from-env --state needs-input >/dev/null',
-            '/usr/bin/sleep 18',
+            '/bin/sleep 18',
             shlex.quote(str(installed))+' agent signal --from-env --state working >/dev/null',
-            '/usr/bin/sleep 2',
+            '/bin/sleep 2',
             shlex.quote(str(installed))+' agent signal --from-env --state turn-complete >/dev/null',
-            '/usr/bin/sleep 2'])+'\n')
+            '/bin/sleep 2'])+'\n')
         worker.chmod(0o700)
         def run(second, args, structured=False):
             at(second); emit('\r\n$ '+shlex.join(['txm', *map(str,args)])+'\r\n')
@@ -58,16 +59,29 @@ def record(binary, destination):
             started = time.monotonic()
             emit('Persistent terminals. Supervised jobs. One CLI.\r\nDevelopment build; synthetic generic fixture; no provider account.\r\n')
             run(0, ['version'])
-            run(3, ['--backend','native','session','create','demo-terminal','/usr/bin/sleep','70'])
+            run(3, ['--backend','native','session','create','demo-terminal','/bin/sleep','70'])
             run(5, ['--backend','native','list','--json'])
             job = run(7, ['--backend','native','agent','start','demo-worker','--provider','generic',
                 '--cwd',source,'--json','--',worker], True)['agent']
             at(12); emit('\r\n$ txm dashboard --backend native --agents\r\n')
             master, slave = os.openpty()
             fcntl.ioctl(slave, termios.TIOCSWINSZ, struct.pack('HHHH',40,140,0,0))
-            original = attributes(slave)
-            original_flags = fcntl.fcntl(slave, fcntl.F_GETFL)
-            proc = box.start([installed,'dashboard','--backend','native','--agents'],stdin=slave,stdout=slave,stderr=slave,preexec_fn=lambda: fcntl.ioctl(0,termios.TIOCSCTTY,0))
+            # Darwin revokes a controlling PTY when its session leader exits.
+            # A fixture wrapper checks restoration while it still owns the
+            # terminal, then writes the result before ending that session.
+            result = box.root/'demo-tty-result.json'
+            wrapper = box.root/'demo-console.py'
+            wrapper.write_text(f'''import fcntl,json,signal,subprocess,sys,termios
+from pathlib import Path
+before=termios.tcgetattr(0);flags=[fcntl.fcntl(fd,fcntl.F_GETFL) for fd in (0,1)]
+p=subprocess.Popen({[str(installed),'dashboard','--backend','native','--agents']!r})
+signal.signal(signal.SIGTERM,lambda *_:p.terminate() if p.poll() is None else None)
+code=p.wait()
+value={{"code":code,"term_before":before,"term_after":termios.tcgetattr(0),"flags_before":flags,"flags_after":[fcntl.fcntl(fd,fcntl.F_GETFL) for fd in (0,1)]}}
+Path({str(result)!r}).write_text(json.dumps(value,default=lambda b:b.hex()))
+sys.exit(code)
+''')
+            proc = box.start([sys.executable,str(wrapper)],stdin=slave,stdout=slave,stderr=slave,preexec_fn=lambda: fcntl.ioctl(0,termios.TIOCSCTTY,0))
             dashboard = bytearray()
             schedule = [(15,b']'),(17,b'g'),(19,b'g'),(23,b'q')]
             try:
@@ -83,8 +97,12 @@ def record(binary, destination):
                         chunk = os.read(master,65536); dashboard.extend(chunk); emit(chunk.decode('utf-8','replace'))
                     if elapsed > 30:
                         raise AssertionError('dashboard exit deadline')
-                if proc.wait(timeout=3) != 0 or attributes(slave) != original or fcntl.fcntl(slave, fcntl.F_GETFL) != original_flags:
-                    raise AssertionError(('dashboard failed or did not restore TTY',proc.returncode,repr(original),repr(attributes(slave)),original_flags,fcntl.fcntl(slave,fcntl.F_GETFL),dashboard[-1024:].decode('utf-8','replace')))
+                code = proc.wait(timeout=3)
+                restored = json.loads(result.read_text())
+                if (code != 0 or restored['code'] != 0
+                    or configured_attributes(restored['term_before']) != configured_attributes(restored['term_after'])
+                    or list(map(configured_flags,restored['flags_before'])) != list(map(configured_flags,restored['flags_after']))):
+                    raise AssertionError(('dashboard failed or did not restore TTY',code,restored))
             finally:
                 if proc.poll() is None:
                     proc.terminate(); proc.wait(timeout=6)
@@ -97,7 +115,7 @@ def record(binary, destination):
             run(48, ['task','cleanup',task['id'],'--dry-run','--json'])
             run(52, ['task','cleanup',task['id'],'--json'])
             run(56, ['--backend','native','session','delete','demo-terminal'])
-            at(59); emit('\r\nGeneric exit receipts verified. Owned task cleaned; branch retained.\r\nLive provider gates, ref-only merge and macOS metrics validation remain pending.\r\n')
+            at(59); emit('\r\nGeneric exit receipts verified. Owned task cleaned; branch retained.\r\nDevelopment demonstration; release approval and remaining platform/provider gates are separate.\r\n')
             at(60)
     header = {'version':2,'width':140,'height':40,'timestamp':int(time.time()),
               'title':'txm development: generic supervised work','env':{'TERM':'xterm-256color'}}

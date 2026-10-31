@@ -10,6 +10,7 @@ supervise background jobs, or manage work across Git repositories and SSH hosts.
 | Install, manage sessions, use profiles/dashboard, or automate jobs, tasks, and SSH hosts | [User guide](user-guide.md) |
 | Check platform support or upgrade an existing installation | [Platform scope](user-guide.md#platforms-and-backends) and [updates](user-guide.md#updates-and-migration) |
 | Integrate with JSON, exit codes, state, events, or native IPC | [Contracts reference](contracts.md) |
+| Connect a local MCP client or inspect opt-in process metrics | [MCP](user-guide.md#mcp-for-local-clients) and [metrics](user-guide.md#optional-process-metrics) |
 | Build, test, validate packages, or prepare a release | [Development and releases](development.md) |
 | Review version-specific changes, migration notes, and validation evidence | [Changelog](CHANGELOG.md) |
 

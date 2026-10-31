@@ -30,9 +30,11 @@ Screen setup.
 | **[Workspace profiles](docs/user-guide.md#profiles)** | Recreate commands, working directories, and tmux pane layouts from TOML. |
 | **[Jobs & coding agents](docs/user-guide.md#supervised-jobs)** | Supervise any command, record its exit result, and add opt-in attention hooks. |
 | **[Keyboard dashboard](docs/user-guide.md#dashboard)** | Search sessions, preview output, and attach without leaving the terminal. |
-| **[Git worktree tasks](docs/user-guide.md#git-worktree-tasks)** | Run project tasks in dedicated worktrees with tracked jobs and explicit cleanup. |
+| **[Git worktree tasks](docs/user-guide.md#git-worktree-tasks)** | Run isolated tasks, review changes, and explicitly apply a checked-out fast-forward merge. |
 | **[SSH hosts](docs/user-guide.md#ssh-hosts)** | Discover and attach to remote sessions through configured OpenSSH hosts. |
 | **[Automation](docs/user-guide.md#json-for-scripts)** | Query versioned JSON, stream live events, and wait on job state. |
+| **[Scoped MCP](docs/user-guide.md#mcp-for-local-clients)** | Read allowlisted local metadata over stdio; optionally create work from reviewed templates. |
+| **[Optional metrics](docs/user-guide.md#optional-process-metrics)** | Sample the managed child’s CPU and RSS with bounded local storage. |
 
 Linux and macOS are the primary platforms. See
 [platform and backend support](docs/user-guide.md#platforms-and-backends) for the full scope.
@@ -57,8 +59,8 @@ txm attach native/work
 # Find sessions and preview their output.
 txm dashboard --backend native
 
-# Supervise a test run from a Go project.
-txm --backend native agent start tests -- go test ./...
+# Supervise a command without a provider account or project setup.
+txm --backend native agent start hello -- /bin/sh -c 'printf "hello from txm\n"; sleep 2'
 txm agent wait AGENT_ID --until exited --timeout 5m --fail-on-nonzero
 ```
 

@@ -30,11 +30,20 @@ func fixtureOwner(i int) Owner {
 	return Owner{fmt.Sprintf("%032x", i), fmt.Sprintf("%032x", i+2048), "native"}
 }
 
+func metricsTempDir(t *testing.T) string {
+	t.Helper()
+	root, err := filepath.EvalSymlinks(t.TempDir())
+	if err != nil {
+		t.Fatal(err)
+	}
+	return root
+}
+
 func TestNonChildPIDCannotStartSampler(t *testing.T) {
 	if !Supported() {
 		t.Skip("native metrics platform")
 	}
-	root := t.TempDir()
+	root := metricsTempDir(t)
 	t.Setenv("XDG_STATE_HOME", filepath.Join(root, "state"))
 	if stop, e := Start(context.Background(), fixtureOwner(1), os.Getpid(), Config{2}); e == nil {
 		stop()
@@ -49,7 +58,7 @@ func TestInactiveEvictionOrderAndAggregateQuotaValidation(t *testing.T) {
 	if !Supported() {
 		t.Skip("native metrics platform")
 	}
-	root := t.TempDir()
+	root := metricsTempDir(t)
 	_ = os.Chmod(root, 0700)
 	t.Setenv("XDG_STATE_HOME", filepath.Join(root, "state"))
 	t.Setenv("HOME", root)
@@ -95,7 +104,7 @@ func TestSamplerCapacityAndRetention(t *testing.T) {
 	if !Supported() {
 		t.Skip("native metrics platform")
 	}
-	root := t.TempDir()
+	root := metricsTempDir(t)
 	_ = os.Chmod(root, 0700)
 	t.Setenv("XDG_STATE_HOME", filepath.Join(root, "state"))
 	t.Setenv("HOME", root)

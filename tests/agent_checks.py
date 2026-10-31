@@ -130,7 +130,7 @@ def rpc(box, body, fragmented=False):
 class AgentChecks(unittest.TestCase):
     def test_human_stop_requires_exact_confirmation_and_backend(self):
         with fixture() as box, coordinator(box):
-            job = start(box, 'human-stop', ['/usr/bin/sleep', '30'])
+            job = start(box, 'human-stop', ['/bin/sleep', '30'])
             registry = state(box) / 'registry.json'
             before = registry.read_bytes()
             envelope(box, ['agent', 'stop', job['id'], '--confirm', 'f'*32], code=2)

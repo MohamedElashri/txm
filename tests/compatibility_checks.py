@@ -14,7 +14,7 @@ class CompatibilityChecks(unittest.TestCase):
             with a.fixture() as box:
                 box.executable(provider,'#!/bin/sh\necho '+repr(version)+'\n')
                 with a.coordinator(box):
-                    job=a.start(box,provider+'-compatible',['/usr/bin/sleep','60'])
+                    job=a.start(box,provider+'-compatible',['/bin/sleep','60'])
                     registry=a.state(box)/'registry.json'
                     before=registry.read_bytes()
                     current=a.envelope(box,['agent','hooks','enable',job['id'],'--provider',provider])['data']['agent']
@@ -47,7 +47,7 @@ class CompatibilityChecks(unittest.TestCase):
     def test_old_coordinator_rejects_new_ops_then_new_coordinator_upgrades_state(self):
         with a.fixture() as box:
             with a.coordinator(box, binary=OLD_BINARY):
-                job = a.start(box, 'compatible', ['/usr/bin/sleep','30'], extra=['--provider','generic'])
+                job = a.start(box, 'compatible', ['/bin/sleep','30'], extra=['--provider','generic'])
                 self.assertIsNone(signal_request(box,job,1,'working')['error'])
                 legacy = a.status(box,job['id'])
                 self.assertEqual(legacy['attention'],'working')

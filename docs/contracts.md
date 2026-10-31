@@ -12,6 +12,8 @@ operation is available.
 - [JSON and exits](#json-and-exits)
 - [Output and profiles](#output-and-profiles)
 - [Identity, supervision and events](#identity-supervision-and-events)
+- [Scoped MCP over stdio](#scoped-mcp-over-stdio)
+- [Process metrics](#process-metrics)
 - [Dashboard, tasks and SSH](#dashboard-tasks-and-ssh)
 - [Native protocol v1](#native-protocol-v1)
 
@@ -106,11 +108,113 @@ sequence/time checks prevent replay. Attention expires. Terminal text is never
 used to infer success or attention. Provider payloads exclude transcripts,
 prompts, tool contents and credentials from registry/events.
 
+Provider observations additionally bind provider session/thread and optional
+turn identity. Process exit, a completed turn, a permission request and confirmed
+needs-input are independent facts. Foreign sessions, stale generations and
+out-of-order events cannot replace fresher observations; coordinator restart
+does not refresh expired attention. Resumed/forked sessions are not silently
+rebound to another managed instance. Hook bridges emit neutral output and never
+approve, deny or continue provider operations.
+
+Provider discovery reports availability, schema compatibility, validation level,
+enablement/trust and event capabilities separately. The legacy `supported` field
+means exact schema compatibility only. A live-reference record is not attestation
+of an arbitrary running instance. Unknown versions fail closed for hook
+activation, leaving generic process supervision available.
+
+The strict v1 registry/receipt/native IPC contracts remain unchanged. New
+canonical observations use private sidecars. Current Claude/Codex associations
+use separate schema-2 association/credential sidecars rather than values an old
+strict v1 reader cannot decode. Tagged v2.0/current coordinator fixtures verify
+process-state compatibility and observation restoration; legacy credential
+rotation explicitly revokes the newer credential. Older coordinators refuse
+new operation kinds such as metrics creation before launching the job.
+
 Events are bounded ephemeral notifications, with atomic initial snapshots and
 resync on gaps, overflow or restart. They promise neither replay nor exactly-once
 delivery. Wait consumes these observations: exit 0 means the requested condition
 was observed; use `--fail-on-nonzero` to propagate an unsuccessful child receipt.
 Notifications are explicit, bounded and off by default.
+
+`agent list/status --existing` require an explicit backend and exact managed IDs
+and use the same scoped existing-state reads as MCP. They do not create paths,
+lock files, host identity, services or workers, repair unsafe state, or rewrite
+existing metadata. A bounded read-only query subprocess is distinct from a
+managed worker. Ordinary agent reconciliation is not a pure-read guarantee.
+
+## Scoped MCP over stdio
+
+MCP is opt-in local stdio, using newline-delimited JSON-RPC through the pinned
+Go SDK. It does not use native IPC framing and opens no HTTP/TCP listener.
+Stdout contains protocol messages only; diagnostics use stderr. `--json` is
+invalid for `mcp serve`.
+
+| Protocol era | Lifecycle |
+| --- | --- |
+| `2025-11-25` | `initialize`, then `notifications/initialized` |
+| `2026-07-28` | Namespaced per-request `_meta`, optional `server/discover`; no legacy initialization handshake |
+
+Do not mix the two lifecycle paths. Unsupported protocol versions are refused.
+Messages are limited to 1 MiB, with 16 concurrent requests, four waits and a
+60-second maximum wait. At most 8192 unique request IDs are accepted per process;
+reconnect before exhausting the budget. Lists are bounded/paginated; cursors
+expire on inventory changes or server restart.
+
+Read scopes default to deny and bind local backend plus exact managed IDs and/or
+canonical owned repository roots. Supplied selectors intersect. Disallowed
+identities/paths are rejected before probing them. Reads never create/repair
+state or start a coordinator, sampler, provider or job. Missing proof remains
+unknown. Session tools expose managed registration metadata, not live backend
+attachment proof, unmanaged discovery or terminal text. Remote reads and output
+preview are absent.
+
+Creation is independently disabled unless an operator loads an owned regular
+mode-0600 policy file of at most 64 KiB. The schema is:
+
+```json
+{"schema_version":1,"namespace":"11111111111111111111111111111111","templates":[{"id":"worker","kind":"agent","name":"reviewed-worker","backend":"native","directory":"/owned/canonical/repo","argv":["/usr/bin/true"]}]}
+```
+
+Replace the example path/namespace with reviewed values. Up to 32 templates bind
+fixed argv, canonical directory identity and a verified executable digest. Task
+templates use `"kind":"task"` and additionally require `base_commit` as a full
+frozen commit OID; repository commands remain disabled. The child environment
+is empty. Revalidation precedes creation. A shell/interpreter template grants
+its exact code; executable allowlisting alone cannot constrain arbitrary code.
+Same-UID code remains the trust boundary.
+
+`start_agent`/`start_task` accept only `operation_id` (32 lowercase hex) and
+`template_id`. A permanent namespace journal binds the operation ID to an
+immutable request hash and reserved resource ID. Identical retries return the
+recorded accepted/uncertain outcome; conflicting reuse fails. Neither a dropped
+response nor an uncertain outcome starts another job. The journal retains up
+to 1024 entries within 1 MiB, refuses new requests at capacity and has no automatic
+expiry/eviction. Namespace deletion or replacement is not a safe retry mechanism.
+
+`stop_agent`, `cleanup_task` and `merge_task` are never executable MCP tools in
+this release. Capability results provide human CLI handoffs only. Tool
+annotations describe behavior and do not grant authority.
+
+## Process metrics
+
+Sampling is opt-in and local to a supervisor's unreaped direct child. Every
+sample validates kernel process start identity and parent identity; scope is
+`child_pid`, never inferred descendant aggregation. CPU normalizes 100% to one
+logical CPU and permits values above 100%; RSS is bytes. Darwin CPU ticks are
+converted using the kernel Mach timebase. The first CPU value is null, and
+missing/failed observations are unavailable rather than zero.
+
+Intervals are 2–60 seconds. There are at most 32 active samplers, 1 MiB per
+instance and 32 MiB aggregate, including publication headroom. Actual retained
+history limits are 512 KiB/2048 samples per instance and 30 MiB aggregate. The
+tighter quota wins over the maximum 24-hour age. Eviction is oldest inactive
+history first with deterministic identity tie-breaks; another sampler cannot
+evict an active history. Capacity/observer failure leaves the job running.
+
+The supervisor owns sampling across coordinator restart. Supervisor failure does
+not trigger PID-based sampler recovery. Disabled jobs allocate no metrics state,
+leases or timers. Explicit reads consume existing private histories without
+starting or repairing anything.
 
 ## Dashboard, tasks and SSH
 
@@ -124,6 +228,21 @@ lifecycle. Cleanup preserves dirty/untracked/ignored work unless explicitly
 forced with full-ID confirmation; force cannot bypass ownership or exit proof.
 Pruning removes eligible metadata, retaining branches and receipts. Retired
 managed IDs cannot be replayed. Recovery never guesses associations from names.
+
+Task review/merge dry-run are bounded existing-state reads with explicit local
+target refs. Diff content is opt-in, control-stripped and limited to 16 KiB;
+secrets are not redacted. Setup execution requires a mode-0600 policy binding
+exact argv, environment names, task/worktree, executable digests and configuration
+provenance, plus acceptance of the exact reviewed dry-run digest. Failure/timeout
+retains uncertain setup state and prevents main launch.
+
+Merge apply supports only a distinct clean checked-out target worktree and
+`git merge --ff-only`. It binds reviewed OIDs/configuration/worktree identity,
+requires successful task/setup receipts and registered-worker exit proof, and
+requires the human's explicit external-writer quiescence assertion. Ref-only
+updates, sparse worktrees, submodules and non-fast-forward operations are refused.
+A durable uncertain intent precedes mutation. Replays return recorded outcomes
+or uncertainty, never retry/rollback, push, delete branches or clean up.
 
 SSH requires an explicit alias allowlist and verified host pin, in addition to
 OpenSSH authentication/host-key checks. Encoded requests bind protocol, host and

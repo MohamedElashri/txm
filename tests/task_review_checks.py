@@ -22,7 +22,7 @@ class TaskReviewChecks(unittest.TestCase):
             policy.write_text(json.dumps({'schema_version':1,'task_id':ident,'name':'timeout-setup',
                 'repository':str(source),'worktree':str(worktree),'backend':'native','base_commit':base,
                 'main_argv':['/usr/bin/touch',str(marker)],'main_env_names':['HOME','PATH','TERM'],
-                'setup_argv':['/usr/bin/sleep','2'],'timeout_ms':500}));policy.chmod(0o600)
+                'setup_argv':['/bin/sleep','2'],'timeout_ms':500}));policy.chmod(0o600)
             args=['--backend','native','task','start','timeout-setup','--repo',str(source),'--setup-policy',str(policy)]
             digest=x.command(box,[*args,'--dry-run','--','/usr/bin/touch',str(marker)])['data']['setup_digest']
             failed=box.run([BINARY,'--json',*args,'--accept-setup',digest,'--','/usr/bin/touch',str(marker)],check=False)
@@ -61,10 +61,13 @@ os.execve({x.GIT!r},[{x.GIT!r},*sys.argv[1:]],env)
             args = [BINARY,'--json','task','merge',ident,'--target','refs/heads/main','--dry-run=false',
                 '--quiescent','--confirm',ident,'--expected-task',review['task_commit'],
                 '--expected-target',review['target_commit'],'--review-digest',dry['review_digest']]
-            first = box.run(args,check=False); self.assertNotEqual(first.returncode,0)
+            # Apply performs several revalidations and hashes the Git wrapper.
+            # Use the same bounded budget as the other task operations, also
+            # for race-instrumented runs on macOS.
+            first = box.run(args,check=False,timeout=35); self.assertNotEqual(first.returncode,0)
             self.assertEqual(json.loads(first.stdout)['data']['state'],'uncertain')
             self.assertEqual(x.git(box,'rev-parse','HEAD'),review['task_commit'])
-            repeated = box.run(args,check=False); self.assertNotEqual(repeated.returncode,0)
+            repeated = box.run(args,check=False,timeout=35); self.assertNotEqual(repeated.returncode,0)
             self.assertEqual(json.loads(repeated.stdout)['data']['state'],'uncertain')
             self.assertEqual(attempts.read_text().splitlines(),['attempt'])
 

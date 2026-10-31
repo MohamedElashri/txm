@@ -11,6 +11,7 @@ automation. Use `txm COMMAND --help` or `man txm` for command and flag reference
 - [Sessions and targets](#sessions-and-targets), [output and panes](#output-windows-and-panes)
 - [Profiles](#profiles), [dashboard](#dashboard), and [configuration](#configuration)
 - [Supervised jobs](#supervised-jobs) and [JSON for scripts](#json-for-scripts)
+- [Local MCP](#mcp-for-local-clients) and [optional metrics](#optional-process-metrics)
 - [Coding agents](#coding-agents-and-attention), [events and waits](#events-waits-and-notifications)
 - [Git worktree tasks](#git-worktree-tasks) and [metadata retention](#metadata-retention)
 - [SSH hosts](#ssh-hosts)
@@ -283,12 +284,18 @@ opts into the local coordinator; a session-only dashboard does not start it.
 | Tab / b | Cycle state/type filters / backend filters |
 | Enter / o | Attach / attach read-only |
 | p / r | Toggle output preview / refresh |
+| [ / ] | Previous / next fresh needs-input agent |
+| g / c / C | Toggle repository/task grouping / collapse / expand |
 | q / Ctrl-C | Quit / cancel |
 
 Preview captures bounded plain output for the selected session and is off by
 default. Stale and unsupported actions are disabled. Session and agent rows remain
 separate, with lifecycle and attention shown independently. Screen/Zellij actions
 are disabled in the dashboard even though their sessions can be listed.
+Fresh, sourced needs-input agents come first; expired observations become
+unknown rather than remaining attention requests. Repository/task groups retain
+selection by exact identity across refreshes. A permission request observation
+alone does not prove that an interactive permission dialog is open.
 The dashboard requires a real terminal on Linux or macOS.
 
 ## Configuration
@@ -354,6 +361,44 @@ Restart does not replay commands. Missing exit proof remains unknown.
 `txm agent register tmux/existing-session` tracks an existing session without
 supervising it; registration cannot provide a retroactive child exit result.
 
+For automation that must read existing metadata without initializing state or
+starting a coordinator, select the backend and exact managed IDs explicitly:
+
+```sh
+txm --backend native agent list --existing --read-id AGENT_ID --json
+txm --backend native agent status AGENT_ID --existing --json
+```
+
+These reads report existing registrations and receipts. They do not discover
+unmanaged sessions or prove backend attachment. Ordinary agent queries retain
+their reconciliation behavior; `--existing` is the stricter read path.
+
+## Optional process metrics
+
+Metrics are off by default. Opt in when starting a supervised native/tmux job:
+
+```sh
+txm --backend native agent start --metrics --metrics-interval 2 build -- go test ./...
+txm agent metrics AGENT_ID --json
+```
+
+CPU percent is normalized to one logical CPU: 100% means one fully busy core,
+and a multithreaded child may exceed 100%. RSS is in bytes. Scope is explicitly
+`child_pid`, covering only the exact supervised direct child, not descendants.
+The first CPU value is unknown; missing samples are unavailable rather than zero.
+Kernel start identity is checked while the supervisor retains the child PID.
+Sampling survives coordinator restart; a crashed supervisor is not replaced by
+a sampler that guesses ownership from a PID.
+
+Intervals range from 2 to 60 seconds, with at most 32 active samplers. Storage
+is bounded by 1 MiB per instance and 32 MiB overall, including publication
+headroom; retained histories use stricter limits of 512 KiB/2048 samples per
+instance and 30 MiB overall. Samples expire after at most 24 hours, subject to
+the tighter quotas. Oldest inactive histories are evicted first. A full sampler
+quota or observer failure does not stop the job. Reading metrics does not start
+a coordinator or sampler; jobs without metrics allocate no sampling artifacts.
+See the [changelog](CHANGELOG.md#210---2026-10-31) for tested platform scope.
+
 ## JSON for scripts
 
 Use `--json` for supported session, agent, task, and remote queries. Responses
@@ -370,6 +415,46 @@ launch="$(txm --backend native agent start --json build -- go test ./...)"
 agent_id="$(printf '%s\n' "$launch" | jq -er '.data.agent.id')"
 txm agent wait "$agent_id" --until exited --timeout 5m --fail-on-nonzero --json
 ```
+
+## MCP for local clients
+
+Configure an MCP client to launch txm over stdio with an explicit read scope:
+
+```sh
+txm mcp serve --read-backend native --read-id AGENT_ID
+```
+
+Replace `AGENT_ID` with the full managed ID returned at launch. Repeat selectors
+as needed. `--read-repo /owned/canonical/repo` permits owned tasks in that
+repository; when combined with IDs, the selectors intersect. `--read-host`
+restricts the local host identity and never enables SSH discovery. With no read
+scope, reads are denied. Omit `--json`: stdout belongs to the MCP transport.
+
+The read catalog contains `list_agents`, `get_agent`, `list_sessions`,
+`get_session`, `list_tasks`, `get_task`, `wait_agent`, and `get_capabilities`.
+Session tools describe managed registrations, with backend liveness unverified.
+There is no unmanaged discovery, output preview, provider setup or remote read.
+Reads and finite waits neither start services nor create or repair state.
+
+Creation is a separate grant through `--create-policy /private/create.json`.
+Review the owned mode-0600 file before enabling it. It binds fixed argv,
+executable identity and canonical working directory to named templates; tasks
+also bind a committed base and disable repository commands. The child environment
+is empty. A policy that launches a shell or other interpreter still authorizes
+its exact code; an executable name alone is not a safe grant.
+
+Only approved kinds expose `start_agent`/`start_task`. Calls require a unique
+32-hex `operation_id` and a `template_id`. Retry the same operation ID and
+request after a lost response. An uncertain outcome requires inspection of its
+reserved resource ID; do not retry it under a new ID. Retain the namespace's
+journal: it permanently reserves up to 1024 operation IDs within 1 MiB and refuses
+new creation at capacity. Changing a grant requires a separately reviewed
+namespace; deleting the journal cannot preserve retry safety.
+
+Stop, cleanup and merge are human CLI handoffs, absent from the executable MCP
+tool catalog. See the [MCP contracts](contracts.md#scoped-mcp-over-stdio) for
+transport eras, limits and the policy schema. Same-UID code remains trusted;
+these grants do not sandbox arbitrary programs.
 
 ## Coding agents and attention
 
@@ -401,20 +486,42 @@ creates or rotates credentials. Hook input is authenticated, generation-bound,
 and checked for freshness and replay. Attention expires when it is no longer
 fresh; it does not remain a permanent success label.
 
-`txm agent providers --json` reports installed adapter availability. Claude
-launches can opt in with `--provider claude`; generated settings stay private and
-do not edit user or project settings. `txm agent hooks config AGENT_ID` prints
-provider configuration for review. Exact version guards apply; check the command's reported support before enabling
-hooks. Accepted versions are defined in [the adapter implementation](../pkg/agent/hooks.go).
-Provider configuration requires review and applicable trust; txm does not bypass
-provider permissions or activate trust automatically.
+Inspect discovery separately from explicit executable/version probing:
+
+```sh
+txm agent doctor --json
+txm agent doctor --probe --json
+txm agent providers --json
+```
+
+Availability, exact schema compatibility, validation level and nullable
+enablement/trust are separate fields. A compatible version is not proof of a
+validated conversation or the trust configuration of a running instance.
+Live-reference verification also checks the recorded executable hash/platform.
+Unknown versions refuse hook activation while generic process supervision
+remains available. Historical exact versions and validation limits are in the
+[changelog](CHANGELOG.md#210---2026-10-31).
+
+Claude launches can opt in with `--provider claude`; generated settings stay
+private and do not edit user/project settings. Existing `--settings` arguments
+are refused by automatic composition, so review and compose those settings
+manually. Inspect all inherited hooks, managed policies and permissions before
+starting real work. `txm agent hooks config AGENT_ID` emits a standalone settings
+document for review; omit `--json` for this command.
+
+Codex uses manual configuration and the provider's normal trust flow. Supervise
+the process without `--provider` when only its exit receipt is needed. For a
+reviewed observation setup, associate it with
+`txm agent hooks enable AGENT_ID --provider codex`, inspect the generated
+configuration, and review it in the intended private provider configuration and
+`/hooks` trust flow. txm does not install or trust Codex hooks automatically.
 
 | Adapter | Integration scope |
 | --- | --- |
 | Generic | Authenticated worker signals; no AI provider required |
-| Claude | Opt-in private generated settings; isolated initialization coverage, full conversations unverified |
-| Codex | Manual configuration and trust review; runtime/trusted lifecycle unverified |
-| OpenCode | Unsupported; no older-version examples are applied automatically |
+| Claude | Exact-version neutral lifecycle hooks; authorized live reference covers only the recorded Linux/amd64 interactive mode |
+| Codex | Exact-version neutral lifecycle hooks with manual configuration/trust; authorized live reference covers only the recorded Linux/amd64 interactive mode |
+| OpenCode | Canonical activation disabled; v2 SDK/loader/session-metadata evidence does not establish provider lifecycle support |
 
 Any supported executable can be supervised as a process without a provider
 adapter. Attention and turn signals require an explicit integration. Historical
@@ -459,6 +566,47 @@ chooses the starting revision; `--branch NEW_BRANCH` names a fresh branch.
 Repository hooks and filters require explicit `--allow-repo-commands`; no setup
 script is inferred. The task ID is also its managed agent ID, so `agent wait`
 can observe its exit.
+
+Review committed changes against an exact local target branch before applying
+anything:
+
+```sh
+txm task setup-status TASK_ID --json
+txm task review TASK_ID --target refs/heads/main --json
+txm task review TASK_ID --target refs/heads/main --diff --json
+txm task merge TASK_ID --target refs/heads/main --json
+```
+
+Review and merge dry-run do not initialize state or start services. Diff output
+requires `--diff`, is limited to 16 KiB and strips terminal controls; it does not
+redact secrets. Treat repository content as untrusted. `merge` defaults to a
+read-only plan containing exact task/target OIDs and a review digest.
+
+A human may apply that exact reviewed fast-forward only after stopping all
+writers and external Git clients:
+
+```sh
+txm task merge TASK_ID --target refs/heads/main --dry-run=false --quiescent \
+  --confirm TASK_ID --expected-task TASK_OID --expected-target TARGET_OID \
+  --review-digest REVIEW_DIGEST --json
+```
+
+Replace every placeholder with the full identity/value from the dry run.
+The target must be checked out in a distinct, positively identified clean
+worktree. All registered workers need immutable exit receipts; the task needs
+successful setup/main exit proof. Ref-only targets, sparse worktrees, submodules,
+dirty state, changed configuration and non-fast-forward merges are refused.
+The quiescence assertion includes editors, external Git clients and escaped
+descendants; a txm lock cannot exclude them. No push, branch deletion or cleanup
+is implied. An uncertain merge intent is retained for manual reconciliation;
+retry neither reapplies nor rolls back the operation.
+
+Optional setup uses an explicitly reviewed mode-0600 JSON `--setup-policy`.
+It binds the exact task/worktree, committed base, setup/main argv, environment
+names and executable/configuration identities. Review `task start --dry-run`
+and supply its exact `--accept-setup` digest before applying. No repository setup
+command is inferred. Failure or timeout retains the setup worker/receipt and
+blocks the main launch; inspect `setup-status` before any cleanup.
 
 Inspect the task before cleaning up:
 

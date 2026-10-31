@@ -103,6 +103,24 @@ commands, source/artifact hashes, OS, architecture, backend versions, and skip
 reasons. A configured CI job or cross-build is not evidence of an executed runtime
 gate.
 
+Provider fixtures and live-provider validation are separate. The ordinary matrix
+does not authorize authentication, inference cost, workspace/hook trust changes,
+or use of personal provider configuration. Keep exact executable hashes,
+platforms, versions and modes with a separately authorized live run. An SDK
+loader test or a parsed callback fixture does not verify a provider lifecycle.
+
+`make test-opencode-runtime` additionally requires an explicit exact OpenCode
+executable and a new report path through `OPENCODE_BINARY`/`OPENCODE_REPORT`.
+It runs a private loopback SDK/loader/session-metadata fixture with provider use
+denied and no inference. Version mismatch is a blocker, not a passing skip.
+Canonical OpenCode lifecycle activation remains disabled.
+
+`tests/record_demo.py --binary /absolute/txm --destination /absolute/new-demo`
+records roughly 60 seconds of real generic CLI/PTY activity after installation.
+It needs no provider account. The fixture checks TTY/file flags before Darwin
+revokes the controlling PTY, then reaps its own dashboard child. Recordings and
+visual-review artifacts stay outside the source tree.
+
 ## Validate packaged builds
 
 The runtime runner takes existing binaries and archives. It verifies race
@@ -132,6 +150,14 @@ read-only fixture/artifact mounts. Never run those probes as host root.
 `tests/archive_checks.py` validates ZIP inventory, version identity, private
 installation, the man page, and completions. Match the archive to the runtime
 host; cross-compilation does not replace a native runtime check.
+
+The full 100-session performance fixture requires at least 4 GiB available
+memory. If that preflight refuses, preserve the failure and rerun on a suitable
+idle host; do not reduce the guard or report the scale gate as passing.
+Smaller matched startup/1/10-session measurements must be labeled with their
+actual scope and do not replace the full gate. Relative comparisons should use
+the same toolchain, native dependency and harness, without concurrent runtime
+workers; investigate repeatable regressions above 20%.
 
 Use `scripts/audit-artifacts.py` on explicit outputs for known credential forms;
 it reports redacted findings. Pair the scan with a review of fixture provenance.

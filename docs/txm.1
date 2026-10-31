@@ -32,8 +32,9 @@ headroom within 32 MiB. Oldest inactive histories are evicted first; another
 active registration is never evicted to admit a sampler. The first quota wins;
 24 hours of samples is not guaranteed. Served data has a 24-hour age cap;
 physical retention cleanup runs on the next opted-in writer. Limits count logical
-file bytes, including atomic publication headroom. Linux runtime is fixture-tested; macOS
-implementation still requires matching-runner validation before a support claim.
+file bytes, including atomic publication headroom. Linux/amd64 and macOS/arm64
+runtime fixtures pass for child-PID scope. Other architectures and final archive
+bytes require their own matching-runner validation.
 .SH DASHBOARD TRIAGE
 Plain dashboard does not start an agent coordinator; \fB--agents\fR explicitly
 subscribes. Fresh authenticated needs-input agents sort first. Attention expiry

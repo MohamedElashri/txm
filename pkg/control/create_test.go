@@ -14,7 +14,10 @@ import (
 )
 
 func TestCreateReservationSurvivesUncertainFailureAndPolicyChange(t *testing.T) {
-	root := t.TempDir()
+	root, err := filepath.EvalSymlinks(t.TempDir())
+	if err != nil {
+		t.Fatal(err)
+	}
 	_ = os.Chmod(root, 0700)
 	t.Setenv("XDG_STATE_HOME", filepath.Join(root, "state"))
 	t.Setenv("HOME", root)
@@ -53,7 +56,10 @@ func TestCreateReservationSurvivesUncertainFailureAndPolicyChange(t *testing.T) 
 }
 
 func TestJournalCapacityPreservesPermanentTombstones(t *testing.T) {
-	root := t.TempDir()
+	root, err := filepath.EvalSymlinks(t.TempDir())
+	if err != nil {
+		t.Fatal(err)
+	}
 	_ = os.Chmod(root, 0700)
 	t.Setenv("XDG_STATE_HOME", filepath.Join(root, "state"))
 	t.Setenv("HOME", root)

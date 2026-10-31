@@ -21,7 +21,10 @@ func TestExistingAgentReadsDoNotInitializeMissingState(t *testing.T) {
 	if !supervisor.Supported() {
 		t.Skip("private Unix observations")
 	}
-	base := t.TempDir()
+	base, err := filepath.EvalSymlinks(t.TempDir())
+	if err != nil {
+		t.Fatal(err)
+	}
 	state, runtime := filepath.Join(base, "missing-state"), filepath.Join(base, "missing-runtime")
 	t.Setenv("XDG_STATE_HOME", state)
 	t.Setenv("XDG_RUNTIME_DIR", runtime)
