@@ -1,9 +1,55 @@
-# Testing
+# Building and testing
 
-Use Go 1.26+, Zig 0.16.0, a C compiler, pkg-config and Git. Native VT requires CGO;
-macOS Command Line Tools suffice. `scripts/dependencies.env` pins the matching
-Ghostty/Zig pair. Dirty/mismatched dependency source is rejected without reset.
-Python 3 and tmux are required for the integration suites.
+[Documentation](README.md) / Building and testing
+
+Start with [Contributing](../CONTRIBUTING.md) for pull request expectations.
+[Installation](getting-started.md#build-from-source) lists the build prerequisites.
+This guide covers dependency configuration and validation without touching active
+sessions or personal configuration.
+
+## Dependency configuration
+
+`scripts/dependencies.env` pins Zig 0.16.0 and the Ghostty revision compatible
+with the Go binding. `make build` builds the native library before compiling txm
+and stamps the version from `VERSION`. A direct Go build defaults to `dev`.
+
+The helper accepts these overrides:
+
+| Variable | Purpose |
+| --- | --- |
+| `GHOSTTY_SOURCE_DIR` | Dedicated source checkout at the pinned revision |
+| `GHOSTTY_HOST_DIR` | Native library installation prefix |
+| `ZIG` | Path to the pinned Zig executable |
+
+Existing dependency checkouts must be clean and at the pinned revision. The
+helper fails rather than resetting a different or dirty checkout. Build in a
+separate checkout or use private paths when preserving existing build artifacts.
+Inspect custom paths before running `make clean`, which removes build outputs
+and the configured host prefix.
+
+Direct Go tests need the native library's pkg-config metadata:
+
+```sh
+PKG_CONFIG_PATH="$PWD/.ghostty-host/share/pkgconfig" CGO_ENABLED=1 go test ./...
+```
+
+Use the actual verified prefix if you override `GHOSTTY_HOST_DIR`. Building the
+native library needs CGO, a C compiler, and pkg-config. Go installation alone is
+not sufficient. Python 3 and tmux are required for the integration harness;
+`make lint` additionally requires golangci-lint.
+
+## Checks by change type
+
+| Change | Run |
+| --- | --- |
+| Go behavior | `make test test-race lint` |
+| CLI, backend, or lifecycle behavior | `make test-integration test-integration-race` |
+| Fixture/build/validation harness | `make test-harness` |
+| Protocol or decoder | `make test-fuzz` plus relevant unit/integration checks |
+| Performance | `make test-performance` |
+| Release metadata or packaging | `make release-check` and actual archive checks |
+
+For a complete local pass:
 
 ```sh
 make build
@@ -14,54 +60,75 @@ make test-fuzz test-performance
 make release-check
 ```
 
-Override `GHOSTTY_SOURCE_DIR`, `GHOSTTY_HOST_DIR` and `ZIG` for private dependency
-checkouts/prefixes. Direct Go tests need `CGO_ENABLED=1` and the verified prefix's
-`share/pkgconfig` in `PKG_CONFIG_PATH`. Inspect custom paths before `make clean`.
+To focus an existing regression, pass its unittest selector:
 
-## Isolation
+```sh
+python3 tests/native_checks.py --binary "$PWD/bin/txm" \
+  NativeChecks.test_concurrent_attach_resize_and_output
+```
 
-`tests/sandbox.py` constructs private HOME/XDG/runtime/temp paths, environment and
-backend wrappers. tmux uses an owned foreground server and explicit socket/config.
-Native fixtures use owned process handles and framed IPC. Cleanup validates
-ownership, namespace entries and process identity; it never discovers real
-sessions, worktrees, SSH config or provider credentials.
+For documentation, check local links and anchors, compare commands with help,
+and run the release metadata checker. Update the man page when command semantics
+change; it is embedded in the binary.
 
-PTY tests consume output and check terminal/file-flag restoration. Darwin
-comparisons exclude only kernel bookkeeping bits. Same UID is a trust boundary;
-these fixtures are not a sandbox against malicious code or escaping descendants.
+## Fixture isolation
 
-The feature suites cover native lifecycle/protocol, exact CLI/backend behavior,
-profiles, supervision, signals/events, dashboard, tasks/pruning and SSH. Unit tests
-cover build/isolation guards, release identity, decoding, ownership and recovery.
-Keep regression tests for shipped behavior; generated reports, demonstrations and
-one-time development probes do not belong in source control.
+`tests/sandbox.py` builds private HOME, XDG, runtime, temp, and environment
+namespaces. tmux uses an owned foreground server with an explicit socket and
+configuration. Native fixtures retain process handles and use framed IPC.
+Cleanup checks ownership, namespace entries, and process identity before acting.
+It never discovers personal sessions, worktrees, SSH configuration, or credentials.
 
-## Artifact matrix
+PTY tests drain output and check terminal and descriptor restoration. Darwin
+comparisons exclude only kernel bookkeeping bits. Fixtures protect against
+accidental cross-test access; same-UID malicious code and escaping descendants
+are outside their isolation guarantee.
 
-The runner checks existing binaries/archives, verifies race instrumentation,
-refuses reused output directories and binds results to source/artifact hashes.
-It runs at most two flavors concurrently, then measures performance alone.
+Keep regression tests for shipped behavior. Save logs, recordings, manifests, and
+archive outputs outside the repository or as CI/release artifacts. Include exact
+commands, source/artifact hashes, OS, architecture, backend versions, and skip
+reasons. A configured CI job or cross-build is not evidence of an executed runtime
+gate.
+
+## Validate packaged builds
+
+The runtime runner takes existing binaries and archives. It verifies race
+instrumentation, refuses an existing output directory, and binds results to the
+source and artifact hashes. It tests at most two flavors concurrently and
+measures performance after the workers finish.
 
 ```sh
 python3 scripts/validate-runtime.py \
-  --binary /private/tmp/check/txm --race-binary /private/tmp/check/txm-race \
-  --archive /private/tmp/check/txm_Darwin_arm64.zip \
-  --expected-version 2.0.0-rc.1 --macos-backends --loopback-ssh \
-  --output /private/tmp/runtime-new
+  --binary /absolute/check/txm --race-binary /absolute/check/txm-race \
+  --archive /absolute/check/txm_Darwin_arm64.zip \
+  --expected-version 2.0.0 --macos-backends --loopback-ssh \
+  --output /absolute/new-runtime-report
 ```
 
-The macOS flags require installed Screen/Zellij and an unprivileged loopback sshd.
-SSH uses fresh keys in private TMPDIR, strict known hosts and a forced fixture
-endpoint with private HOME/ZDOTDIR. It does not modify Remote Login or accounts.
-`make test-ssh` runs that suite alone.
+The example is for macOS. `--macos-backends` requires installed Screen/Zellij;
+`--loopback-ssh` uses an unprivileged local sshd with fresh keys, strict known
+hosts, a forced fixture endpoint, and private HOME/ZDOTDIR. It does not change
+Remote Login or user accounts. `make test-ssh` runs the SSH suite alone on macOS.
 
-`python3 scripts/validate-linux.py --help` describes the separate Linux amd64
-container matrix. Root/foreign-UID probes run only in disposable containers with
-no external runtime network and read-only source/artifact mounts; never as host
-root. `tests/archive_checks.py` checks ZIP inventory, expected version and private
-install/completions. Cross-builds do not establish runtime support.
+For Linux amd64 foreign-UID, backend, and loopback SSH coverage, use
+`python3 scripts/validate-linux.py --help`. That matrix runs root/foreign-UID
+probes only inside disposable containers, with no external runtime network and
+read-only fixture/artifact mounts. Never run those probes as host root.
 
-Keep generated logs, archives and validation manifests outside the repository or
-as CI/release artifacts. `scripts/audit-artifacts.py` scans explicit paths for
-bounded known credential forms without echoing matches. Review fixture provenance
-too. Release steps and remaining platform gates are in [Releasing](releasing.md).
+`tests/archive_checks.py` validates ZIP inventory, version identity, private
+installation, the man page, and completions. Match the archive to the runtime
+host; cross-compilation does not replace a native runtime check.
+
+Use `scripts/audit-artifacts.py` on explicit outputs for known credential forms;
+it reports redacted findings. Pair the scan with a review of fixture provenance.
+[Compatibility and releases](releasing.md) tracks the platform matrix and gates.
+
+
+Pull requests run the full package matrix using non-publishing snapshot builds.
+The tag workflow rebuilds the exact release artifacts. Both verify the complete eight-ZIP
+bundle with `scripts/check-release-artifacts.py`, and tests archives on matching
+runners before the tag workflow can create a stable draft. PR runs never create releases. `tests/peer_checks.py` shares the actual
+foreign-UID regressions between Linux containers and disposable macOS CI; it
+refuses ordinary host-root execution. Windows checks intentionally cover only
+version/help/completions and unsupported refusals. See the
+[release process](releasing.md#release-process) for the complete gate sequence.

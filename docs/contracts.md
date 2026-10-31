@@ -1,5 +1,13 @@
 # CLI and state contracts
 
+[Documentation](README.md) / CLI and state contracts
+
+This is the reference for scripts and integrations. For command recipes, read
+[Automation](automation.md); for interactive use, read the [user guide](user-guide.md).
+The guarantees below apply to supported operations. Check installed capabilities
+and the [platform matrix](releasing.md#platforms-and-backends) before assuming an
+operation is available.
+
 ## Backend selection and exact targets
 
 `--backend native|tmux|zellij|screen` is strict: unavailable means failure.
@@ -67,6 +75,17 @@ Private directories are owned and mode 0700; state/locks/receipts are 0600.
 Reject unsafe ownership, symlinks, hard links and corrupt state rather than
 repairing foreign paths. Host identity is random and atomically published.
 Names and PIDs are observations; managed and launch instance IDs are distinct.
+
+| Identity | Scope |
+| --- | --- |
+| `host_id` | Persisted random identity of the private local state |
+| `locator` | Host, backend, and observed session name |
+| `backend_id` | Backend session identity; unmanaged tmux IDs remain server-scoped |
+| `instance_id` | One native or supervised launch, distinct from a reusable name |
+| `managed_id` | Supervised work identity, independent of terminal text |
+| Agent `id` | Registration identity; unsupervised registrations need not have a managed ID |
+
+Preserve returned opaque IDs rather than deriving them from names or PIDs.
 
 The optional coordinator owns the registry. Ordinary sessions and the picker do
 not start or contact it. A supervised wrapper executes structured argv, owns and

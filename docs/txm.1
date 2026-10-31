@@ -1,11 +1,17 @@
-.TH TXM 1 "October 2026" "txm" "User Commands"
+.TH TXM 1 "October 2026" "txm 2.0.0" "User Commands"
 .SH NAME
-txm \- A terminal session manager with multi-backend support
+txm \- terminal sessions, supervised jobs and workspace workflows
 .SH SYNOPSIS
 .B txm
 [\fICOMMAND\fR] [\fIOPTIONS\fR] [\fB\-v\fR|\fB\-\-verbose\fR]
 .SH DESCRIPTION
-\fBtxm\fR is a command-line utility for managing terminal multiplexer sessions with support for multiple backends: native, tmux, zellij, and GNU Screen. It automatically detects available backends and provides a unified interface for session management using a concrete noun-verb structure.
+\fBtxm\fR manages persistent terminal sessions, supervised commands, Git
+worktree tasks and SSH hosts through one CLI. Use the built-in native backend or
+work with tmux, Zellij and GNU Screen, with capabilities reported per backend.
+.PP
+Run txm without a command to pick a session. Use dashboard to find your work,
+profile for repeatable layouts, and agent to supervise jobs. Ordinary sessions
+do not require the optional agent coordinator or an AI provider.
 .SH BACKEND SUPPORT
 \fBtxm\fR supports four terminal multiplexer backends:
 .TP
@@ -241,7 +247,8 @@ Install txm binary and man page.
 Uninstall txm cleanly from your system.
 .TP
 \fBupdate\fR
-Update stable builds from GitHub Releases. Development and prerelease builds
+Update stable builds only to a newer stable semantic version from GitHub Releases.
+Older, malformed or prerelease release metadata never triggers a download. Development and prerelease builds
 refuse automatic updates; install a chosen release explicitly.
 .TP
 \fBversion\fR
@@ -302,7 +309,7 @@ TTY-only attachment to an exact observed native/tmux session. Native requires it
 .PP
 Extensions have Linux amd64 and macOS ARM64 fixture coverage, including actual
 private loopback OpenSSH servers and native/tmux PTYs. Other platform/provider
-gates remain separate. See docs/user-guide.md and docs/releasing.md.
+gates remain separate. See docs/automation.md and docs/releasing.md.
 .SH FILES
 .TP
 .I $XDG_STATE_HOME/txm/v1/host.json

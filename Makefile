@@ -88,5 +88,5 @@ test-ssh: build test-harness
 	python3 tests/ssh_checks.py --binary "$(CURDIR)/bin/$(BINARY_NAME)" --report "$(CURDIR)/bin/ssh.json" -v
 
 release-check:
-	python3 scripts/check-release.py
+	python3 scripts/check-release.py --stable
 	goreleaser check

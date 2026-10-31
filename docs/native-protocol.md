@@ -1,5 +1,10 @@
 # Native protocol v1
 
+[Documentation](README.md) / Native protocol
+
+This reference is for native-backend and client contributors. User-facing JSON,
+exit codes, and lifecycle guarantees are defined in [CLI contracts](contracts.md).
+
 The native server owns one PTY/VT, child process group, listener and bounded client
 queues. Ordinary sessions do not need an agent coordinator. Linux/macOS CGO builds
 support native; Windows persistence is unsupported.

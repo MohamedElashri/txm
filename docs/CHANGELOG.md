@@ -5,10 +5,11 @@ Changes follow [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) and
 
 ## [Unreleased]
 
-## [2.0.0-rc.1] - 2026-10-30
+## [2.0.0] - 2026-10-31
 
-This release candidate adds programmable sessions and opt-in supervision,
-a dashboard, Git tasks and SSH aggregation. See the [release checklist](releasing.md) for tested scope and open gates.
+txm 2.0 brings persistent terminal workspaces, supervised commands, a dashboard,
+Git worktree tasks, and SSH hosts into one CLI. See the [compatibility matrix](releasing.md#platforms-and-backends)
+for backend scope and platform validation.
 
 ### Upgrade notes
 
@@ -42,8 +43,12 @@ a dashboard, Git tasks and SSH aggregation. See the [release checklist](releasin
 
 ### Fixed
 
+- Stable updates compare semantic versions and retain a newer installed binary
+  when GitHub still reports an older stable release; invalid/prerelease metadata
+  cannot trigger an update download.
+
 - Development/prerelease builds refuse automatic stable updates, preventing an
-  RC from being replaced by an older stable release.
+  development build from being replaced by an older stable release.
 - Native socket permissions/peer checks, duplicate startup, bounded IPC queues,
   slow peers, process-group shutdown, detach and TTY/file-flag restoration.
 - Exact tmux input/profile targeting and literal keys, synchronized-pane refusal,
@@ -55,14 +60,22 @@ a dashboard, Git tasks and SSH aggregation. See the [release checklist](releasin
 
 ### Platform support
 
-- Real Linux amd64 GNU/static-musl and macOS ARM64 runtime/archive/install
-  coverage; matching-source Linux rerun and other platform gates remain open.
+- Linux amd64 GNU/static-musl and macOS ARM64 have local runtime/archive/install
+  coverage. Release archives require host-matching validation before draft upload;
+  configured CI gates are not claims of completed platform validation.
 - Screen/Zellij retain degraded basic lifecycle/attach support for the recorded
   versions; exact panes/layouts/capture/read-only remain unsupported.
 - Windows native persistence/private Unix state/dashboard are unsupported.
 - Generic supervision needs no AI provider. Claude has isolated initialization
   coverage; full provider lifecycle needs reviewed setup. Codex hooks require
   manual trust review; unsupported provider versions are refused.
+
+### Documentation and release engineering
+
+- A concise README, shared documentation index, getting-started and automation
+  guides, and contributor instructions organized around user workflows.
+- Stable 2.0.0 identity and release notes, checksum/archive validation, and native
+  package checks before draft creation. Publishing remains a separate step.
 
 ## [1.3.1] - 2026-09-17
 

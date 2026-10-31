@@ -1,83 +1,69 @@
-# txm: Terminal Session Manager
+# txm
 
-txm manages native, tmux, Zellij and GNU Screen sessions through one CLI. It also
-provides optional supervision, a dashboard, Git worktree tasks and SSH aggregation.
+**Terminal workspaces for people, scripts, and coding agents.**
 
-The next candidate is **2.0.0-rc.1**. See the [upgrade notes](docs/CHANGELOG.md#200-rc1---2026-10-30)
-and [release checklist](docs/releasing.md) before upgrading existing sessions.
+txm brings persistent terminal sessions, supervised commands, Git worktrees, and
+SSH hosts into one CLI. Use its built-in native backend or manage existing tmux,
+Zellij, and GNU Screen sessions. Work interactively, watch jobs in a dashboard,
+or build automation with structured output and events.
 
-## Installation
+[Get started](docs/getting-started.md) · [Documentation](docs/README.md) ·
+[Releases](https://github.com/MohamedElashri/txm/releases) · [Changelog](docs/CHANGELOG.md)
 
-Install the latest stable release to `~/.local/bin`:
+## What you can do
+
+- **Keep work running.** Create persistent sessions, detach, reconnect, and
+  inspect terminal output. Native sessions need no external multiplexer.
+- **Describe your workspace.** Apply TOML profiles with commands, working
+  directories, and tmux window and pane layouts.
+- **Supervise jobs and agents.** Launch commands with recorded exit results,
+  wait for completion, and follow explicit attention signals through events.
+- **See your sessions in one place.** Search and filter the keyboard-driven
+  dashboard, preview output, and attach to the session you need.
+- **Work across projects and hosts.** Run tasks in fresh Git worktrees and
+  discover or attach to sessions on explicitly configured SSH hosts.
+
+Sessions work independently of the optional agent coordinator. You can supervise
+ordinary commands without an AI provider; coding-agent attention hooks are opt-in.
+
+## Get started
+
+Download a published archive from [Releases](https://github.com/MohamedElashri/txm/releases),
+then extract it and run `./txm install` on Linux or macOS. The
+[installation guide](docs/getting-started.md#installation) covers platform
+selection, the stable installer, and source builds.
+
+These docs describe **v2.0.0**. Use the matching release archive or
+[build this checkout](docs/getting-started.md#build-from-source).
 
 ```sh
-curl -s https://raw.githubusercontent.com/MohamedElashri/txm/main/utils/install.sh | bash
+# Start a persistent terminal using the built-in backend.
+txm --backend native create work
+txm attach native/work
+
+# Detach with Ctrl+backslash, then find your session again.
+txm --backend native list
+txm dashboard --backend native
 ```
 
-For a system installation, run the installer with `sudo bash -s -- --system`.
-The quick installer selects stable releases; choose an exact published archive
-or build its source to test a release candidate.
-
-[Prebuilt releases](https://github.com/MohamedElashri/txm/releases) use these names:
-
-| Target | Archive |
-| --- | --- |
-| Linux x86_64 / ARM64 | `txm_Linux_x86_64.zip` / `txm_Linux_arm64.zip` |
-| Static Linux x86_64 / ARM64 | `txm_Linux_x86_64-musl.zip` / `txm_Linux_arm64-musl.zip` |
-| macOS Intel / Apple Silicon | `txm_Darwin_x86_64.zip` / `txm_Darwin_arm64.zip` |
-| Windows x86_64 / ARM64 | `txm_Windows_x86_64.zip` / `txm_Windows_arm64.zip` |
-
-Archive targets do not imply runtime certification. See [tested scope and open
-gates](docs/releasing.md#remaining-release-gates). Windows native persistence and
-dashboard are unsupported; Screen/Zellij retain degraded capabilities.
-
-## Build
-
-Use Go 1.26+, Zig 0.16.0, a C compiler, pkg-config and Git. The helper builds the
-Ghostty revision pinned in `scripts/dependencies.env` and rejects dirty/mismatched
-source without resetting it. See [Testing](docs/testing.md) for private overrides.
+To supervise a command in a Go project:
 
 ```sh
-git clone https://github.com/MohamedElashri/txm
-cd txm
-make build
-./bin/txm install
-```
-
-## Quick start
-
-```sh
-txm                                  # interactive picker
-txm create work /bin/sh
-txm list
-txm attach work
-txm attach --read-only work
-txm session inspect native/work --json
-txm session output native/work --lines 100 --plain
-txm backend capabilities --all-backends --json
-txm profile --dry-run dev.toml
 txm --backend native agent start build -- go test ./...
-txm agent wait AGENT_ID --until exited --timeout 30s --json
-txm dashboard --agents --preview
-txm task start build --repo /absolute/repo --dry-run -- go test ./...
-txm remote allow devbox
-txm remote probe devbox --json
+txm agent wait AGENT_ID --until exited --timeout 5m --fail-on-nonzero
 ```
 
-Explicit `--backend` selects strictly. Native provides one terminal; tmux supplies
-exact windows/panes/layouts. Ordinary sessions and the picker do not need an agent
-coordinator or AI provider. Supervised exit receipts establish completion; terminal
-input/output never proves success. SSH hosts require explicit allowlisting and
-verified pins. Provider hooks require opt-in and reviewed trust.
+Replace `AGENT_ID` with the ID returned by `agent start`.
+[Automation](docs/automation.md) covers receipts, coding-agent hooks, worktree
+tasks, and remote sessions.
 
-## Documentation
+Linux and macOS are the primary runtime platforms. Backend capabilities vary;
+see the [user guide](docs/user-guide.md) and
+[compatibility matrix](docs/releasing.md#platforms-and-backends).
 
-- [User guide](docs/user-guide.md) and `txm COMMAND --help`
-- [CLI/state contracts](docs/contracts.md) and [native protocol](docs/native-protocol.md)
-- [Build and tests](docs/testing.md)
-- [Release process and support](docs/releasing.md)
-- [Changelog](docs/CHANGELOG.md)
-- `man txm`, installed with the binary
+## Contributing
 
-Contributions are welcome through [GitHub](https://github.com/MohamedElashri/txm).
-Licensed under [GNU GPL v3](LICENSE).
+See [CONTRIBUTING.md](CONTRIBUTING.md) for builds, tests, and pull requests.
+Report bugs or propose features through [GitHub Issues](https://github.com/MohamedElashri/txm/issues).
+
+Licensed under [GPL-3.0](LICENSE).

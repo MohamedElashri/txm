@@ -304,7 +304,7 @@ var updateCmd = &cobra.Command{
 	Short: "Update txm to the latest stable version",
 	Args:  cobra.NoArgs,
 	RunE: func(cmd *cobra.Command, args []string) error {
-		if Version == "dev" || strings.Contains(Version, "-") {
+		if stableVersionParts(Version) == nil {
 			return core.Failure("unsupported", "automatic updates are disabled for development and prerelease builds; install an explicit release instead")
 		}
 		fmt.Println("Checking for updates...")
@@ -327,7 +327,15 @@ var updateCmd = &cobra.Command{
 		latestVersion := strings.TrimPrefix(release.TagName, "v")
 		currentVersion := strings.TrimPrefix(Version, "v")
 
-		if latestVersion == currentVersion {
+		comparison, err := compareStableVersions(latestVersion, currentVersion)
+		if err != nil {
+			return err
+		}
+		if comparison < 0 {
+			fmt.Printf("Keeping txm %s; latest published stable %s is older.\n", Version, release.TagName)
+			return nil
+		}
+		if comparison == 0 {
 			fmt.Printf("txm is already up to date (version %s)\n", Version)
 			return nil
 		}

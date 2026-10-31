@@ -59,7 +59,7 @@ class ValidationChecks(unittest.TestCase):
             (root/'tests/containers/Dockerfile.linux').write_text('changed container recipe')
             self.assertNotEqual(before, validator.source_fingerprint(root))
             before = validator.source_fingerprint(root)
-            (root/'VERSION').write_text('2.0.0-rc.1')
+            (root/'VERSION').write_text('2.0.0')
             self.assertNotEqual(before, validator.source_fingerprint(root))
             before = validator.source_fingerprint(root)
             (root/'tests/fixture.py').write_text('changed harness')

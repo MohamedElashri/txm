@@ -4,7 +4,7 @@ project_name: txm
 
 before:
   hooks:
-    - ./.github/scripts/build-ghostty.sh
+    - bash .github/scripts/build-ghostty.sh
     - bash scripts/generate-completions.sh
 
 builds:
@@ -89,4 +89,4 @@ changelog:
 
 release:
   draft: true
-  prerelease: auto
+  prerelease: false

@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 """Real Linux peer credential and installed backend regression checks. Requires a disposable root container, never host root."""
 import argparse
-import base64
 from contextlib import contextmanager
 import fcntl
 import json
@@ -21,10 +20,11 @@ import time
 import unittest
 
 import ssh_checks
+import peer_checks
+from peer_checks import ForeignUIDChecks
 from ssh_checks import LoopbackSSHChecks
 import agent_checks as a
-from sandbox import Sandbox, native_server, wait_for
-from wire import Peer, packet, HELLO, REQUEST
+from sandbox import Sandbox, wait_for
 
 BINARY = None
 REPORT = None
@@ -37,88 +37,6 @@ def envelope(box, args, code=0, timeout=20):
     assert p.returncode == code, (args[:5], p.returncode, p.stdout, p.stderr)
     assert not p.stderr, p.stderr
     return json.loads(p.stdout)
-
-
-@contextmanager
-def traversable_for_peer_test(box, sock):
-    # Prove the SO_PEERCRED gate separately from ordinary filesystem denial.
-    # Relax only this fixture's ancestors/socket temporarily; restore before
-    # Sandbox.guard/teardown or any normal owner CLI operation.
-    paths = []
-    p = sock.parent
-    while p != box.root.parent:
-        paths.append(p)
-        if p == box.root:
-            break
-        p = p.parent
-    original = [(p, stat.S_IMODE(p.stat().st_mode)) for p in paths]
-    mode = stat.S_IMODE(sock.stat().st_mode)
-    try:
-        for p, _ in original:
-            p.chmod(0o711)
-        sock.chmod(0o666)
-        yield
-    finally:
-        sock.chmod(mode)
-        for p, saved in original:
-            p.chmod(saved)
-
-
-def foreign_probe(path, payload):
-    script = '''import base64,json,os,socket,sys
-os.setgroups([]);os.setgid(65534);os.setuid(65534)
-s=socket.socket(socket.AF_UNIX);s.settimeout(4)
-result={"uid":os.geteuid(),"connected":False,"rejected":False}
-try:
- s.connect(sys.argv[1]);result['connected']=True
- try:s.sendall(base64.b64decode(sys.argv[2]));data=s.recv(4096)
- except (BrokenPipeError,ConnectionResetError):data=b''
- result['rejected']=not data
-except PermissionError:result['filesystem_denied']=True
-finally:s.close()
-print(json.dumps(result))
-'''
-    p = subprocess.run([sys.executable, '-c', script, str(path), base64.b64encode(payload).decode()],
-                       cwd='/tmp', env={'PATH': '/usr/bin:/bin', 'LANG': 'C'},
-                       capture_output=True, text=True, timeout=6)
-    assert p.returncode == 0, p.stderr
-    return json.loads(p.stdout)
-
-
-class ForeignUIDChecks(unittest.TestCase):
-    def test_native_filesystem_and_actual_foreign_peer_rejection(self):
-        with a.fixture() as box, native_server(box, BINARY, name='foreign_guard') as (server, sock, _):
-            data = packet(HELLO, 1, {'role': 'control'})+packet(REQUEST, 2, {'op': 'kill'})
-            denied = foreign_probe(sock, data)
-            self.assertEqual(denied['uid'], 65534);self.assertTrue(denied['filesystem_denied'])
-            with traversable_for_peer_test(box, sock):
-                peer = foreign_probe(sock, data)
-                self.assertTrue(peer['connected']);self.assertTrue(peer['rejected'])
-            with Peer(sock, 'control') as owner:
-                self.assertEqual(owner.identity['name'], 'foreign_guard')
-                self.assertEqual(owner.request('status')['process_state'], 'running')
-            self.assertIsNone(server.poll())
-            OBSERVATIONS['foreign_native'] = {'filesystem_denied': True, 'connected_uid': peer['uid'],
-                                               'peer_rejected': True, 'owner_and_child_survived': True}
-
-    def test_coordinator_foreign_peer_cannot_stop_or_mutate_registry(self):
-        with a.fixture() as box, a.coordinator(box) as service:
-            envelope(box, ['agent', 'list'])
-            registry = a.state(box)/'registry.json';before = registry.read_bytes()
-            metadata = json.loads((a.runtime(box)/'coordinator.json').read_text())
-            path = a.runtime(box)/('s-'+metadata['epoch']+'.sock')
-            host = json.loads((a.state(box).parent/'host.json').read_text())['host_id']
-            body = json.dumps({'schema_version': 1, 'epoch': metadata['epoch'], 'host_id': host,
-                               'state_root': str(a.state(box)), 'op': 'stop'}).encode()
-            framed = struct.pack('!I', len(body))+body
-            self.assertTrue(foreign_probe(path, framed)['filesystem_denied'])
-            with traversable_for_peer_test(box, path):
-                result = foreign_probe(path, framed)
-                self.assertTrue(result['connected']);self.assertTrue(result['rejected'])
-            self.assertIsNone(service.poll());self.assertEqual(registry.read_bytes(), before)
-            self.assertEqual(envelope(box, ['agent', 'list'])['data']['agents'], [])
-            OBSERVATIONS['foreign_coordinator'] = {'connected_uid': result['uid'], 'peer_rejected': True,
-                                                    'service_survived': True, 'registry_unchanged': True}
 
 
 @contextmanager
@@ -235,7 +153,7 @@ def main():
     if not (sys.platform.startswith('linux') and os.geteuid()==0 and Path('/.dockerenv').exists()
             and os.environ.get('TXM_LINUX_FIXTURE')=='1'):
         parser.error('requires the explicitly isolated disposable root container; never run on the host')
-    BINARY=args.binary.resolve(strict=True);a.BINARY=BINARY;ssh_checks.BINARY=BINARY;REPORT=args.report
+    BINARY=args.binary.resolve(strict=True);a.BINARY=BINARY;ssh_checks.BINARY=BINARY;peer_checks.BINARY=BINARY;REPORT=args.report
     ZELLIJ=args.zellij.resolve(strict=True) if args.zellij else None
     program=unittest.main(argv=[sys.argv[0],*remaining],exit=False)
     versions={}
@@ -243,7 +161,7 @@ def main():
         p=subprocess.run(argv,capture_output=True,text=True,timeout=5);versions[tool]=(p.stdout+p.stderr).strip()
     REPORT.write_text(json.dumps({'schema_version':1,'passed':program.result.wasSuccessful(),
          'tests_run':program.result.testsRun,'skipped':program.result.skipped,'versions':versions,
-         'observations':{**OBSERVATIONS, **ssh_checks.OBSERVATIONS},'scope':'Disposable Linux amd64 root container, network none/loopback only, readonly host source/binaries; no host accounts or real sessions/SSH config.'},indent=2)+'\n')
+         'observations':{**OBSERVATIONS, **ssh_checks.OBSERVATIONS, **peer_checks.OBSERVATIONS},'scope':'Disposable Linux amd64 root container, network none/loopback only, readonly host source/binaries; no host accounts or real sessions/SSH config.'},indent=2)+'\n')
     return 0 if program.result.wasSuccessful() else 1
 
 

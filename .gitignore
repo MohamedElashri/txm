@@ -15,6 +15,7 @@ coverage.*
 
 # Local dependency checkouts and build caches
 /ghostty/
+/zmx_temp/
 /.ghostty-host/
 /.ghostty-release/
 /zig*/

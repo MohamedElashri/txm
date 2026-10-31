@@ -9,12 +9,14 @@ REPO = Path(__file__).resolve().parents[1]
 SEMVER = re.compile(r'(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)(?:-([0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*))?')
 
 
-def release_notes(repo, tag=None):
+def release_notes(repo, tag=None, stable=False):
     version = (repo/'VERSION').read_text().strip()
     match = SEMVER.fullmatch(version)
     if not match or any(x.isdigit() and len(x) > 1 and x[0] == '0'
                         for x in (match[4] or '').split('.')):
         raise ValueError('VERSION must contain a complete semantic release version')
+    if stable and match[4] is not None:
+        raise ValueError('stable release must not have a prerelease suffix')
     if tag is not None and tag != 'v'+version:
         raise ValueError('release tag must match v'+version)
     text = (repo/'docs/CHANGELOG.md').read_text()
@@ -34,10 +36,11 @@ def release_notes(repo, tag=None):
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--tag', help='Require this exact v-prefixed tag to match VERSION')
+    parser.add_argument('--stable', action='store_true', help='Reject prerelease versions')
     parser.add_argument('--notes', type=Path, help='Write release notes to a new output file')
     args = parser.parse_args()
     try:
-        version, notes = release_notes(REPO, args.tag)
+        version, notes = release_notes(REPO, args.tag, args.stable)
         if args.notes:
             with args.notes.open('x') as output:
                 output.write(notes)

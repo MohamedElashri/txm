@@ -1,201 +1,196 @@
-# txm user guide
+# User guide
 
-Use `txm COMMAND --help` for the complete flags and aliases. See
-[CLI contracts](contracts.md) for machine-readable behavior and
-[Releasing](releasing.md) for support limits and native-session migration.
+[Documentation](README.md) / User guide
 
-## Sessions and backends
+Use this guide for interactive sessions, workspace profiles, and the dashboard.
+[Getting started](getting-started.md) covers installation;
+[Automation](automation.md) covers supervised jobs, Git tasks, and SSH hosts.
+Use `txm COMMAND --help` for the full command reference.
+
+## Choose a backend
+
+Use the native backend for a persistent terminal without installing another
+multiplexer. Choose tmux for exact window and pane control, layouts, and history.
+Zellij and GNU Screen provide basic session management through the same CLI.
+
+| Capability | Native | tmux | Zellij / GNU Screen |
+| --- | --- | --- | --- |
+| Create, list, attach, delete sessions | Yes | Yes | Yes, with adapter limits |
+| Read-only attachment | Yes | Yes | Unsupported |
+| Capture visible output | Yes | Yes | Unsupported |
+| Capture history | Unsupported | Yes | Unsupported |
+| Exact window/pane operations and layouts | One terminal only | Yes | Unsupported |
+| Profiles | One terminal | Full layouts, tmux 3.4+ | Unsupported |
+| Supervised jobs and Git tasks | Yes | Yes | Unsupported |
+
+Available capabilities depend on the installed backend. Inspect them directly:
 
 ```sh
-txm                         # existing interactive picker
-txm create work /bin/sh
-txm list
-txm attach work
-txm attach --read-only work
-txm delete work
-txm --backend tmux list
-txm session inspect tmux/work --json
+txm --backend tmux backend capabilities --json
 txm backend capabilities --all-backends --json
 ```
 
-Explicit `--backend` is strict; `backend/name` qualifies a target. Config/environment
-settings are preferences with fallback. Unqualified mutations stay in the selected
-backend. `nuke` removes that backend's sessions. Normal attach can create a missing
-session after successful discovery; read-only attach never creates one.
+Aggregate queries attempt every backend and report missing or failed adapters
+explicitly. They can return useful data with a nonzero partial-failure exit.
+[Compatibility and releases](releasing.md#platforms-and-backends) records tested
+platforms and versions.
 
-| Backend | Supported scope |
-| --- | --- |
-| Native | One persistent terminal, read-only attach, bounded visible snapshots and terminal input; no rename, windows, layouts or history |
-| tmux | Exact sessions/windows/panes, layouts, cwd, read-only attach and bounded screen/history; profiles require 3.4+ |
-| Screen/Zellij | Degraded basic session lifecycle/attach; exact pane/layout/capture/read-only operations are unsupported |
-
-Native detaches with Ctrl+backslash. tmux retains its configured detach binding
-(default Ctrl-b, then d). Input acceptance is never a command-completion result.
-
-## Output and exact pane operations
+## Sessions and targets
 
 ```sh
-txm session output native/work --lines 100 --plain
-txm session output tmux/work --history --lines 1000 --json
-txm session output native/work --raw --json
-txm --backend tmux window new work editor
-txm --backend tmux window list work
-txm --backend tmux pane list work editor
-txm --backend tmux pane exec work editor PANE_ID 'printf hello'
+txm --backend native create work
+txm attach native/work
+txm attach --read-only native/work
+txm session inspect native/work --json
+txm delete native/work
 ```
 
-Plain capture strips terminal controls and discloses truncation. Raw is explicit;
-JSON raw content is base64. Native output is the visible screen, not history.
-Native `txm exec work 0 0 'command'` sends literal input plus Enter. Exact tmux
-input refuses synchronized panes rather than broadcasting. Prefer returned IDs
-to reusable names/indexes; ambiguity and unsupported targets fail before mutation.
+`--backend` is strict: an unavailable backend is an error. A qualified target such
+as `native/work` selects that backend and avoids ambiguity. An unqualified name
+uses the selected backend; it does not search all backends. Names use ASCII
+letters, digits, underscores, and dashes, up to 128 characters.
+
+Without explicit selection, txm uses `TXM_DEFAULT_BACKEND`, then the configured
+preference, then its default preference of tmux. Preferences can fall back to an
+available adapter, in the order tmux, Screen, Zellij, native. Set a preference with
+`txm config set backend tmux`; use explicit selectors in scripts.
+
+Native detaches with Ctrl+backslash. Other backends retain their own bindings;
+tmux defaults to Ctrl-b, then d. `txm detach` delegates to the current backend.
+Ordinary attach can create a missing session after discovery proves it absent.
+Read-only attach requires an existing session and never creates one.
+
+Root commands such as `create`, `attach`, `delete`, and `list` are shortcuts for
+`session create`, `session attach`, `session delete`, and `session list`.
+`rename-session` aliases `session rename`; renaming is backend-dependent.
+`nuke` removes sessions only from the selected backend.
+
+Put options **before positional arguments** on `create`, `attach`, and `exec`.
+Subsequent arguments are interpreted as the command or literal terminal input.
+
+## Output, windows, and panes
+
+Capture the native visible screen, or request bounded tmux history explicitly:
+
+```sh
+txm session output native/work --plain --lines 100
+txm session output tmux/work --history --lines 1000 --json
+```
+
+Plain output strips terminal controls. `--raw` explicitly preserves them and uses
+base64 when combined with JSON. Truncation is disclosed. Native capture is a
+screen snapshot; it has no history API. `--lines` and `--bytes` bound collection.
+
+For multiple windows and panes, use tmux:
+
+```sh
+txm --backend tmux create dev
+txm --backend tmux window new dev editor
+txm --backend tmux window split dev editor v
+txm --backend tmux pane list dev editor
+txm --backend tmux pane exec dev editor PANE_ID 'printf hello'
+```
+
+Replace `PANE_ID` with an exact ID returned by `pane list`; quote IDs containing
+shell metacharacters. txm rejects ambiguous targets and synchronized tmux input
+rather than broadcasting. The native backend accepts input only at window `0`,
+pane `0`: `txm exec native/work 0 0 'printf hello'`.
+
+Terminal input is not a supervised job: accepting it does not establish a child
+exit result. Use [agent start](automation.md#supervised-jobs) when completion matters.
 
 ## Profiles
+
+A TOML profile describes a workspace to create. Save this as `dev.toml`:
+
+```toml
+name = "dev"
+backend = "tmux"
+
+[[window]]
+name = "editor"
+layout = "even-horizontal"
+
+[[window.pane]]
+dir = "."
+command = "vim"
+
+[[window.pane]]
+dir = "."
+split = "h"
+```
+
+Preview the plan, then apply it:
 
 ```sh
 txm profile --dry-run dev.toml
 txm profile --detach dev.toml
 txm profile --attach-existing dev.toml
-txm profile --attach-existing --read-only dev.toml
 ```
 
-```toml
-name = "dev"
-backend = "tmux"
-[[window]]
-name = "editor"
-[[window.pane]]
-dir = "."
-command = "vim"
-```
+Dry-run checks names, directories, topology, and capabilities without creating
+sessions or runtime state. Relative directories resolve against the profile
+file; `~` and environment variables are not expanded. The profile backend is
+strict and must agree with `--backend` if both are given.
 
-Strict preflight validates cwd/topology/capabilities before creation. Relative cwd
-resolves against the profile file; no implicit `~` or environment expansion occurs.
-Default apply attaches; `--detach` leaves it detached. Existing sessions are
-unchanged and require `--attach-existing`. Read-only requires an existing session.
-Native profiles permit one terminal without named windows/layouts; Screen/Zellij
-profiles are unsupported. Commands remain terminal input, without exit receipts.
-Rollback deletes only proven owned resources; uncertain survivors are reported.
-
-## Supervised agents
-
-```sh
-txm --backend native agent start build -- go test ./...
-txm --backend tmux agent start --cwd /absolute/project worker -- /path/to/worker
-txm agent list --json
-txm agent status AGENT_ID --json
-txm agent wait AGENT_ID --until exited --timeout 30s --json
-txm agent wait AGENT_ID --until exited --fail-on-nonzero --json
-txm agent register tmux/existing-session
-txm agent stop-coordinator
-```
-
-Agent workflows opt into a private local coordinator; ordinary sessions and the
-picker do not contact it. Native/tmux managed launches execute structured argv
-and publish immutable receipts. Registration is unsupervised. Missing proof is
-unknown; output text is never proof of exit. Stopping the coordinator leaves
-sessions and children running. `--env NAME` allowlists names from the launch
-environment; it does not upload the invoking client's values.
-
-Default wait success means the condition was observed, including a nonzero child
-exit. `--fail-on-nonzero` propagates an unsuccessful receipt. Default timeout is
-30 seconds; cancellation returns 130. Use full returned IDs in automation.
-
-## Signals, events and notifications
-
-```sh
-txm agent hooks enable AGENT_ID --provider generic
-txm events --jsonl --id AGENT_ID
-txm agent wait AGENT_ID --until needs-input --timeout 30s --json
-txm agent notify -- /absolute/path/to/notification-handler
-```
-
-Within an opted-in managed worker, `txm agent signal --from-env --state working`
-can submit authenticated attention; states also include needs-input and idle.
-Lifecycle, attention and turn completion are separate observations. Attention
-expires, credentials rotate and replay is rejected. Event gaps/restarts require
-resync; there is no replay log. Notifications default off and receive bounded safe
-metadata on stdin, never transcripts or raw commands.
-
-Claude hook setup is explicit; Codex config requires manual review and provider
-trust. Version guards reject unsupported providers. See
-[provider support](releasing.md#provider-support) before enabling an integration.
+Applying attaches by default; `--detach` leaves the workspace running. An
+existing session requires `--attach-existing` and is attached unchanged. Combine
+it with `--read-only` to observe. Native profiles allow one unnamed window and one
+pane. Profile commands are terminal input, with the same completion limits as
+`exec`. Rollback removes only resources whose ownership can be proven.
 
 ## Dashboard
 
 ```sh
+txm dashboard
 txm dashboard --backend native
 txm dashboard --agents --preview
 ```
 
-Search with `/`, filter with Tab/b, attach with Enter, inspect read-only with o,
-toggle bounded preview with p and quit with q. Stale and unsupported actions are
-disabled. Agent rows require explicit `--agents`; reusable names never join
-registrations to sessions. Linux/macOS guards prevent feedback into the dashboard's
-own native terminal. Terminal state restores across exit, cancellation and attach.
+The dashboard lists local sessions across backends by default. Use `--backend`
+to narrow the view and `--agents` to include agent registrations. The latter
+opts into the local coordinator; a session-only dashboard does not start it.
 
-## Git tasks
+| Key | Action |
+| --- | --- |
+| Arrows / j / k, Page Up / Page Down | Move through rows |
+| / | Search |
+| Tab / b | Cycle state/type filters / backend filters |
+| Enter / o | Attach / attach read-only |
+| p / r | Toggle output preview / refresh |
+| q / Ctrl-C | Quit / cancel |
 
-```sh
-txm task start build --repo /absolute/repo --dry-run -- go test ./...
-txm task start build --repo /absolute/repo -- go test ./...
-txm task list --json
-txm task inspect TASK_ID --json
-txm task stop TASK_ID --json
-txm task cleanup TASK_ID --dry-run --json
-txm task cleanup TASK_ID --json
-txm task prune TASK_ID --dry-run
-txm task prune TASK_ID --confirm TASK_ID
-```
+Preview captures bounded plain output for the selected session and is off by
+default. Stale and unsupported actions are disabled. Session and agent rows remain
+separate, with lifecycle and attention shown independently. Screen/Zellij actions
+are disabled in the dashboard even though their sessions can be listed.
+The dashboard requires a real terminal on Linux or macOS.
 
-Tasks use fresh owned worktrees/branches and supervised IDs. Defaults are native;
-explicit tmux is supported. Repository hooks/filters require explicit
-`--allow-repo-commands`. Failed/uncertain launches retain resources for inspection.
-Cleanup requires ownership and exit proof. Dirty/untracked/ignored removal needs
-force plus full-ID confirmation; force cannot bypass ownership. Branches and
-receipts remain. After task cleanup/pruning, `agent prune ID --confirm ID` can
-remove eligible registration metadata. Pruned managed IDs cannot be reused.
-
-## SSH aggregation
-
-```sh
-txm remote allow devbox
-txm remote probe devbox --json
-txm remote pin devbox VERIFIED_HOST_ID
-txm remote list devbox --json
-txm --backend native remote attach devbox --host-id HOST_ID --name work \
-  --session-id SESSION_ID --instance INSTANCE_ID --read-only
-txm remote forget devbox
-```
-
-OpenSSH handles authentication and host keys. txm separately requires an explicit
-alias allowlist and verified host pin. Use the executable override when the
-remote txm is not on PATH. Requests check versions and exact observed identities;
-partial failures stay explicit. Native attach requires the launch instance; tmux
-IDs are server-scoped. No remote session is created by attach. Interactive attach
-uses a real terminal and restores its settings. Remote names remain encoded data.
-`generate-ssh-config` remains available for the simpler existing SSH workflow.
-
-## Configuration and installation
-
-Config search order: `~/.txm/config`, `~/.txm/config.txt`, then `~/.txmrc`.
+## Configuration
 
 ```sh
 txm config set backend tmux
 txm config get backend
 txm config show
-txm install                 # private user installation
-txm install --system        # system installation, requires privilege
-txm uninstall
-txm version
+txm completion zsh --install
 ```
 
-`TXM_DEFAULT_BACKEND` sets a fallback preference; `TXM_SESSION_PREFIX` prefixes
-names once; `NO_COLOR` disables color. New private state honors absolute
-`XDG_STATE_HOME`; sockets honor private `XDG_RUNTIME_DIR`. Invalid ownership,
-permissions and explicit paths fail rather than silently switching namespaces.
-`TERM` should describe the actual terminal.
+Config lookup uses the first existing file: `~/.txm/config`,
+`~/.txm/config.txt`, then `~/.txmrc`. Files use `key=value` entries.
 
-Stable builds support `txm update`. Development/prerelease builds refuse automatic
-stable updates; install a selected release explicitly. For legacy native sessions,
-retain the old binary and original user/TMPDIR/configuration until they finish.
+| Variable | Purpose |
+| --- | --- |
+| `TXM_DEFAULT_BACKEND` | Backend preference; explicit selection takes precedence |
+| `TXM_SESSION_PREFIX` | Prefix unqualified session names once; qualified targets are already canonical |
+| `NO_COLOR` | Disable colored output |
+| `XDG_STATE_HOME` | Absolute path for private persistent state |
+| `XDG_RUNTIME_DIR` | Private runtime directory for sockets |
+| `TERM` | Describe the actual terminal's capabilities |
+
+Unsafe ownership, permissions, or explicit state paths cause errors rather than
+silently switching to another namespace. Keep the original state directory for
+managed work; [CLI contracts](contracts.md#identity-supervision-and-events)
+explain identity and recovery.
+
+For installation, updates, and migration, see
+[Getting started](getting-started.md) and [upgrade review](releasing.md#upgrade-review).
