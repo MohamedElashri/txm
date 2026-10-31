@@ -12,6 +12,7 @@ Use `txm COMMAND --help` for the full command reference.
 Use the native backend for a persistent terminal without installing another
 multiplexer. Choose tmux for exact window and pane control, layouts, and history.
 Zellij and GNU Screen provide basic session management through the same CLI.
+Creating Zellij sessions with a custom command requires Zellij 0.45.1 or newer.
 
 | Capability | Native | tmux | Zellij / GNU Screen |
 | --- | --- | --- | --- |

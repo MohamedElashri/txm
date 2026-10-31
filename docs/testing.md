@@ -105,7 +105,8 @@ python3 scripts/validate-runtime.py \
   --output /absolute/new-runtime-report
 ```
 
-The example is for macOS. `--macos-backends` requires installed Screen/Zellij;
+The example is for macOS. `--macos-backends` requires installed Screen and
+Zellij 0.45.1 or newer (the fixture launches an explicit child command);
 `--loopback-ssh` uses an unprivileged local sshd with fresh keys, strict known
 hosts, a forced fixture endpoint, and private HOME/ZDOTDIR. It does not change
 Remote Login or user accounts. `make test-ssh` runs the SSH suite alone on macOS.
@@ -125,6 +126,8 @@ it reports redacted findings. Pair the scan with a review of fixture provenance.
 
 
 Pull requests run the full package matrix using non-publishing snapshot builds.
+Both macOS package jobs install checksum-pinned Zellij 0.45.1 with
+`scripts/install-ci-zellij.sh` to avoid differing Homebrew package snapshots.
 The tag workflow rebuilds the exact release artifacts. Both verify the complete eight-ZIP
 bundle with `scripts/check-release-artifacts.py`, and tests archives on matching
 runners before the tag workflow can create a stable draft. PR runs never create releases. `tests/peer_checks.py` shares the actual
