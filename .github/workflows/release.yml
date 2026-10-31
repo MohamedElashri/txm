@@ -65,6 +65,9 @@ jobs:
 
   packages:
     needs: build
+    # Override the default success() gate: validate is intentionally skipped on
+    # PRs, but a successful snapshot build must still run every package job.
+    if: ${{ !cancelled() && needs.build.result == 'success' }}
     strategy:
       fail-fast: false
       matrix:
