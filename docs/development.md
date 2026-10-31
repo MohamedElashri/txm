@@ -145,8 +145,14 @@ unsupported refusals; they do not certify external backends or installers.
 
 ## Release process
 
-Pull requests into `main` run normal CI. Full archive builds and the eight-target
-package matrix run only for version tags or an explicit Release workflow dispatch.
+Automatic pushes and pull requests into `main` run a lightweight scope and
+release-metadata check. Changes limited to Markdown and `docs/txm.1` skip the
+expensive Linux, macOS, and lint jobs. Code under `docs/`, mixed code/docs changes,
+and changes whose scope cannot be determined still run the full suite. Manual
+CI dispatches and reusable calls run the full suite by default.
+
+Full archive builds and the eight-target package matrix run only for version
+tags or an explicit Release workflow dispatch.
 Branch dispatches use snapshots stamped from `VERSION` and never create a draft.
 Tag runs build and validate the official archives before draft creation.
 
@@ -156,7 +162,8 @@ Tag runs build and validate the official archives before draft creation.
    installation and runtime checks. Save source/artifact hashes and reports
    outside the tree.
 3. Commit the reviewed release preparation and merge it into `main`. Wait for
-   that exact merge commit's CI to pass, then tag it with the version from
+   that exact merge commit's full CI to pass (dispatch CI manually if automatic
+   CI skipped documentation-only changes), then tag it with the version from
    `VERSION`: `git tag "v$(cat VERSION)"`.
 4. A short Linux preflight checks stable metadata and the latest CI run for that
    exact commit on `main`, including successful Linux, macOS ARM64/Intel, and

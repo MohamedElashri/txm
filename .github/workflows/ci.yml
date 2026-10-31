@@ -5,6 +5,11 @@ on:
     branches: [ "main" ]
   workflow_dispatch:
   workflow_call:
+    inputs:
+      force_full:
+        description: Run the full suite when invoked by another workflow
+        type: boolean
+        default: true
   pull_request:
     branches: [ "main" ]
 
@@ -13,14 +18,32 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  changes:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      full_ci: ${{ steps.scope.outputs.full_ci }}
+    steps:
+    - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # ref=v7.0.1
+      with:
+        fetch-depth: 0
+    - name: Select CI scope
+      id: scope
+      env:
+        FORCE_FULL_CI: ${{ inputs.force_full || false }}
+      run: python3 scripts/check-ci-changes.py
+    - name: Check release metadata
+      run: python3 scripts/check-release.py
+    - name: Test CI scope selection
+      run: python3 -m unittest discover -s tests -p 'test_ci_changes.py' -v
+
   build-and-test:
+    needs: changes
+    if: needs.changes.outputs.full_ci == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 25
     steps:
     - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # ref=v7.0.1
-
-    - name: Check release metadata
-      run: python3 scripts/check-release.py
 
     - uses: ./.github/actions/setup-build
 
@@ -46,6 +69,8 @@ jobs:
       run: make test-integration-race
 
   macos-integration:
+    needs: changes
+    if: needs.changes.outputs.full_ci == 'true'
     timeout-minutes: 25
     strategy:
       fail-fast: false
@@ -61,6 +86,8 @@ jobs:
       run: make test test-race test-integration test-ssh
 
   lint:
+    needs: changes
+    if: needs.changes.outputs.full_ci == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:

@@ -20,6 +20,9 @@ Changes follow [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) and
 
 ### Release engineering
 
+- Skip expensive automatic Linux/macOS build, runtime, and lint jobs when only
+  Markdown or the man page changes. Keep lightweight scope/metadata checks and
+  full manual CI for exact-commit release validation.
 - Reserve full package validation for tags and explicit dry runs. Reuse successful
   CI of the exact release commit, build Linux/Windows archives on Linux alongside
   a separate Darwin build, and cache verified native dependencies before tests.
