@@ -14,11 +14,11 @@ executable. Capabilities describe individual operations, not backend parity.
 
 | Platform | Runtime coverage and current scope |
 | --- | --- |
-| Linux amd64 | Fresh 2.0.0-stamped GNU/static-musl builds pass normal/race runtime suites, private installation/completions, native/tmux, supervision, profiles, dashboard, tasks/pruning, real SSH, and foreign-UID rejection. Exact-tag CI is still required. |
-| macOS ARM64 | Earlier local development builds covered native/tmux 3.8, profiles, supervision/events, dashboard, tasks/pruning, private archive installation, and real loopback SSH; normal and race binaries. Exact-tag CI is still required. |
-| macOS Intel | Build/CI configuration; runtime and archive/private-install gates remain open. |
-| Linux ARM64 | Build target; native hardware/runtime/archive/private-install gates remain open. |
-| Windows amd64/ARM64 | ZIP cross-builds; external-backend/runtime/install gates remain open. Native persistence, private Unix state, and dashboard are unsupported. |
+| Linux amd64 | GNU/static-musl archives pass private installation, native/tmux runtime suites, profiles, supervision/events, dashboard, tasks/pruning, and actual foreign-UID rejection. Normal/race/fuzz CI and additional local SSH/container checks also pass. |
+| macOS ARM64 | Archive installation and native/tmux runtime suites pass, including profiles, supervision/events, dashboard, tasks/pruning, real Screen/Zellij, loopback SSH, and actual foreign-UID rejection. Normal and race CI also pass. |
+| macOS Intel | The same archive installation, runtime, backend, SSH, and foreign-UID gates as macOS ARM64 pass on an Intel runner; normal and race CI also pass. |
+| Linux ARM64 | GNU/static-musl archives pass private installation, native/tmux runtime suites, profiles, supervision/events, dashboard, tasks/pruning, and actual foreign-UID rejection on ARM64 runners. |
+| Windows amd64/ARM64 | Both archives pass checksum/header validation and CLI version/help/completion/unsupported-refusal smoke checks on matching runners. External backends and Windows installers are unverified; native persistence, private Unix state, and dashboard are unsupported. |
 
 Basic Zellij 0.45.1 and GNU Screen lifecycle/attach have Linux/macOS runtime
 coverage; macOS Screen is 4.00.03. Their adapters remain degraded: exact panes,
@@ -26,8 +26,12 @@ layouts, output capture, and read-only attachment are unsupported. See the
 [user guide's capability table](user-guide.md#choose-a-backend) or inspect the
 installed backend with `txm backend capabilities --all-backends --json`.
 
-Configured CI runs are not a substitute for recorded results. Published archive
-names describe build targets; runtime support requires matching evidence.
+The matrix records the successful [PR CI](https://github.com/MohamedElashri/txm/actions/runs/41153986716)
+and [eight-target package validation](https://github.com/MohamedElashri/txm/actions/runs/41153986791)
+at commit `0bb3ef3`, plus the local coverage described below. These PR archives
+are snapshots stamped 2.0.0. Official release assets are rebuilt and must pass
+the exact-tag workflow before publication. Archive names alone do not establish
+runtime support.
 The release workflow builds unsigned, unnotarized archives. Checksums identify
 bytes, not publisher identity.
 
@@ -109,21 +113,25 @@ is test material, not a replacement for the exact tagged release artifacts.
 Builds are unsigned and unnotarized; checksums establish integrity, not publisher
 identity.
 
-## Remaining release gates
+## Validation record and publication gates
 
 - [x] Stable 2.0.0 metadata, dated upgrade notes, and prerelease refusal check.
 - [x] Complete-bundle validation and build-before-upload release workflow.
+- [x] PR CI on Linux and macOS ARM64/Intel, lint, and CodeQL.
+- [x] All eight PR package jobs: six Unix runtime/private-install jobs and two
+  Windows CLI smoke jobs, including Linux/macOS actual foreign-UID rejection.
 - [x] Fresh Linux amd64 GNU/static-musl runtime/install/container checks: 40
   runtime/install/performance checks and 36 container groups across normal/race
   and actual archived binaries; 25 harness tests, 13 Go/build checks, and four
   fuzz targets also pass. Reports remain outside the source tree.
-- [ ] Execute the tag workflow on the reviewed final commit, including all six
-  Unix package jobs, both Windows CLI jobs, and Linux/macOS foreign-UID checks.
-- [ ] Review the resulting stable draft and publish v2.0.0.
+
+For publication, the tag workflow must repeat CI and all eight package jobs on
+the reviewed release commit. Review its resulting stable draft, assets, checksums,
+reports, and canonical upgrade notes before publishing v2.0.0. The PR results
+above do not replace validation of those final release bytes.
 
 Local macOS ARM64 coverage includes OpenSSH 10.5p1. Previous Linux snapshots and
 macOS results remain useful development evidence; they do not replace checks of
-changed final release bytes. ARM64 Linux/macOS Intel gates are configured, not
-claimed to have run. Windows external backends/installers and full trusted
+changed final release bytes. Windows external backends/installers and full trusted
 provider conversations remain outside the verified release scope. Providers keep
 explicit version and trust guards; generic supervision does not require them.

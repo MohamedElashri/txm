@@ -47,7 +47,7 @@ for backend scope and platform validation.
   when GitHub still reports an older stable release; invalid/prerelease metadata
   cannot trigger an update download.
 
-- Development/prerelease builds refuse automatic stable updates, preventing an
+- Development/prerelease builds refuse automatic stable updates, preventing a
   development build from being replaced by an older stable release.
 - Native socket permissions/peer checks, duplicate startup, bounded IPC queues,
   slow peers, process-group shutdown, detach and TTY/file-flag restoration.
@@ -60,9 +60,11 @@ for backend scope and platform validation.
 
 ### Platform support
 
-- Linux amd64 GNU/static-musl and macOS ARM64 have local runtime/archive/install
-  coverage. Release archives require host-matching validation before draft upload;
-  configured CI gates are not claims of completed platform validation.
+- Linux amd64/ARM64 GNU/static-musl and macOS ARM64/Intel pass archive installation
+  and runtime checks on matching CI runners, including actual foreign-UID
+  rejection. Windows amd64/ARM64 pass CLI smoke checks on matching runners;
+  external backends and Windows installers remain unverified. The tag workflow
+  repeats validation of the final release archives before creating a draft.
 - Screen/Zellij retain degraded basic lifecycle/attach support for the recorded
   versions; exact panes/layouts/capture/read-only remain unsupported.
 - Windows native persistence/private Unix state/dashboard are unsupported.
