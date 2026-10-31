@@ -6,6 +6,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strings"
 	"testing"
 )
 
@@ -28,7 +29,15 @@ func repository(t *testing.T) (git, string) {
 	if e = os.Mkdir(root, 0700); e != nil {
 		t.Fatal(e)
 	}
-	g := git{exe: exe}
+	// Production strips GIT_* routing overrides. Isolate ambient system/global
+	// config in a test-only executable wrapper after that sanitization boundary.
+	wrapper := filepath.Join(home, "fixture-git")
+	quoted := "'" + strings.ReplaceAll(exe, "'", "'\\''") + "'"
+	script := "#!/bin/sh\nexport GIT_CONFIG_NOSYSTEM=1\nexport GIT_CONFIG_GLOBAL=/dev/null\nexec " + quoted + " \"$@\"\n"
+	if e = os.WriteFile(wrapper, []byte(script), 0700); e != nil {
+		t.Fatal(e)
+	}
+	g := git{exe: wrapper}
 	for _, args := range [][]string{{"init", "-b", "main"}, {"-c", "user.name=fixture", "-c", "user.email=fixture@example.invalid", "commit", "--allow-empty", "-m", "fixture"}} {
 		if _, _, e = g.run(context.Background(), root, args...); e != nil {
 			t.Fatal(e)
@@ -71,6 +80,10 @@ func TestGitRoutingFiltersAndFreshBranches(t *testing.T) {
 }
 func TestWorktreeIdentityAndHooks(t *testing.T) {
 	g, repo := repository(t)
+	// Simulate runner-level Git LFS/filter config without editing host config.
+	if e := os.WriteFile(filepath.Join(os.Getenv("HOME"), ".gitconfig"), []byte("[filter \"ambient-fixture\"]\nsmudge = /bin/false\n"), 0600); e != nil {
+		t.Fatal(e)
+	}
 	ctx := context.Background()
 	_, common, e := g.repo(ctx, repo)
 	if e != nil {

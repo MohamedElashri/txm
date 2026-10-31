@@ -34,14 +34,10 @@ args=sys.argv[1:];values={args[i+1]:args[i+2] for i in range(len(args)) if args[
 data=json.load(open(args[-1]))[values['v']][values['p']]
 print(data['tarball' if args[-2].endswith('.tarball') else 'shasum'])
 ''')
-        # This models the macOS checksum utility which accepts -c but rejects
-        # GNU's --check. It computes the real digest rather than always passing.
-        executable('sha256sum','''import hashlib,sys
-from pathlib import Path
-if sys.argv[1:]!=['-c']:raise SystemExit('usage: sha256sum [-bctwz] [files ...]')
-digest,path=sys.stdin.read().strip().split(None,1)
-raise SystemExit(0 if hashlib.sha256(Path(path).read_bytes()).hexdigest()==digest else 1)
-''')
+        (tools/'python3').symlink_to(sys.executable)
+        # Neither GNU nor hosted macOS checksum utility behavior is required.
+        for name in ['sha256sum','shasum']:
+            executable(name, "raise SystemExit('external checksum utility must not be invoked')\n")
         executable('tar',f'''import sys
 from pathlib import Path
 out=Path(sys.argv[sys.argv.index('-C')+1]);(out/{('zig-'+platform+'-0.16.0')!r}).mkdir()
@@ -50,7 +46,7 @@ out=Path(sys.argv[sys.argv.index('-C')+1]);(out/{('zig-'+platform+'-0.16.0')!r})
         env={'HOME':str(root/'home'),'PATH':str(tools)+os.pathsep+os.defpath,'LANG':'C','RUNNER_TEMP':str(root/'runner'),'GITHUB_PATH':str(root/'github-path')}
         return root,env,platform
 
-    def test_verified_download_supports_all_ci_hosts_and_short_checksum_flag(self):
+    def test_verified_download_supports_all_ci_hosts_without_checksum_utilities(self):
         for system,arch in [('Linux','x86_64'),('Darwin','arm64'),('Darwin','x86_64')]:
             with self.subTest(system=system,arch=arch):
                 root,env,platform=self.fixture(system,arch)

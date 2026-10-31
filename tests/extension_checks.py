@@ -31,10 +31,18 @@ def command(box, args, code=0, timeout=35):
     return json.loads(p.stdout)
 
 def git(box,*args,repo=None):
-    return box.run([GIT,'-C',str(repo or box.root/'repo'),*args]).stdout.strip()
+    return box.run([box.root/'bin/git','-C',str(repo or box.root/'repo'),*args]).stdout.strip()
 
 def repo(box):
-    (box.root/'bin/git').symlink_to(GIT)
+    # Keep test repositories independent of runner-installed system/global
+    # filters while the application's real config/permission guard stays intact.
+    box.executable('git',f'''#!{sys.executable}
+import os,sys
+env={{k:v for k,v in os.environ.items() if not k.startswith('GIT_')}}
+env.update(GIT_CONFIG_NOSYSTEM='1',GIT_CONFIG_GLOBAL='/dev/null')
+os.execve({GIT!r},[{GIT!r},*sys.argv[1:]],env)
+''')
+    (box.root/'home/.gitconfig').write_text('[filter "ambient-fixture"]\nsmudge = /bin/false\n')
     git(box,'init','-b','main')
     git(box,'config','user.name','fixture')
     git(box,'config','user.email','fixture@example.invalid')
