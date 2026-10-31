@@ -10,7 +10,7 @@
 </p>
 
 <p>
-  <a href="docs/getting-started.md">Get started</a> ·
+  <a href="docs/user-guide.md#installation">Get started</a> ·
   <a href="docs/README.md">Documentation</a> ·
   <a href="https://github.com/MohamedElashri/txm/releases">Downloads</a> ·
   <a href="docs/CHANGELOG.md">Changelog</a>
@@ -26,16 +26,16 @@ Screen setup.
 
 | Capability | What you get |
 | :--- | :--- |
-| **[Persistent sessions](docs/getting-started.md#your-first-session)** | Keep shells running with built-in Ghostty terminal emulation. Detach and reconnect. |
+| **[Persistent sessions](docs/user-guide.md#your-first-session)** | Keep shells running with built-in Ghostty terminal emulation. Detach and reconnect. |
 | **[Workspace profiles](docs/user-guide.md#profiles)** | Recreate commands, working directories, and tmux pane layouts from TOML. |
-| **[Jobs & coding agents](docs/automation.md#supervised-jobs)** | Supervise any command, record its exit result, and add opt-in attention hooks. |
+| **[Jobs & coding agents](docs/user-guide.md#supervised-jobs)** | Supervise any command, record its exit result, and add opt-in attention hooks. |
 | **[Keyboard dashboard](docs/user-guide.md#dashboard)** | Search sessions, preview output, and attach without leaving the terminal. |
-| **[Git worktree tasks](docs/automation.md#git-worktree-tasks)** | Run project tasks in dedicated worktrees with tracked jobs and explicit cleanup. |
-| **[SSH hosts](docs/automation.md#ssh-hosts)** | Discover and attach to remote sessions through configured OpenSSH hosts. |
-| **[Automation](docs/automation.md#json-for-scripts)** | Query versioned JSON, stream live events, and wait on job state. |
+| **[Git worktree tasks](docs/user-guide.md#git-worktree-tasks)** | Run project tasks in dedicated worktrees with tracked jobs and explicit cleanup. |
+| **[SSH hosts](docs/user-guide.md#ssh-hosts)** | Discover and attach to remote sessions through configured OpenSSH hosts. |
+| **[Automation](docs/user-guide.md#json-for-scripts)** | Query versioned JSON, stream live events, and wait on job state. |
 
 Linux and macOS are the primary platforms. See
-[backend capabilities and provider support](docs/releasing.md) for the full scope.
+[platform and backend support](docs/user-guide.md#platforms-and-backends) for the full scope.
 
 ## Get started
 
@@ -47,7 +47,7 @@ export PATH="$HOME/.local/bin:$PATH"
 ```
 
 [Release archives](https://github.com/MohamedElashri/txm/releases/latest) ·
-[Build from source](docs/getting-started.md#build-from-source)
+[Build from source](docs/user-guide.md#build-from-source)
 
 ```sh
 # Start a persistent shell. Detach with Ctrl+backslash.

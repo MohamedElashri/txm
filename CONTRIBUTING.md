@@ -8,10 +8,11 @@ discuss substantial changes before opening a pull request.
 
 1. Start from the branch targeted by your pull request. Keep changes focused on
    one problem and preserve unrelated local work.
-2. Follow [Building and testing](docs/testing.md) for dependencies and isolated
+2. Follow [Development and releases](docs/development.md) for dependencies and isolated
    fixtures. Run the checks appropriate to the change.
 3. Update the relevant [documentation](docs/README.md). Put user workflows in the
-   guides and machine-readable guarantees in [CLI contracts](docs/contracts.md).
+   [user guide](docs/user-guide.md) and machine-readable guarantees in
+   [contracts](docs/contracts.md).
 4. Explain the problem, resulting behavior, and validation in the pull request.
    State the OS, architecture, backend versions, and any checks you could not run.
 
@@ -30,6 +31,10 @@ observed terminal output and a validated child exit result.
 
 For documentation changes, check relative links, examples, and agreement with
 `txm COMMAND --help`. Keep the README focused on the project and first use;
-put detailed instructions in the guide that owns the topic.
+put detailed instructions in the guide that owns the topic. Keep routine examples
+independent of the release number: read `VERSION` for build/tag examples and link
+to dependency pins rather than copying them. Record version-specific migration
+notes and validation evidence in the changelog.
 
-Release metadata and publishing steps are in [Compatibility and releases](docs/releasing.md).
+Release metadata and publishing steps are in the
+[release process](docs/development.md#release-process).

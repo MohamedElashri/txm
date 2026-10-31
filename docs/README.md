@@ -3,31 +3,28 @@
 Use txm to keep interactive sessions running, reproduce a development workspace,
 supervise background jobs, or manage work across Git repositories and SSH hosts.
 
-## Start here
+## Guides and reference
 
 | You want to… | Read |
 | --- | --- |
-| Install txm and run your first session | [Getting started](getting-started.md) |
-| Choose a backend, apply a profile, or use the dashboard | [User guide](user-guide.md) |
-| Run jobs or coding agents, automate tasks, or connect hosts | [Automation](automation.md) |
-| Check platform support or upgrade an existing installation | [Compatibility and releases](releasing.md) |
+| Install, manage sessions, use profiles/dashboard, or automate jobs, tasks, and SSH hosts | [User guide](user-guide.md) |
+| Check platform support or upgrade an existing installation | [Platform scope](user-guide.md#platforms-and-backends) and [updates](user-guide.md#updates-and-migration) |
+| Integrate with JSON, exit codes, state, events, or native IPC | [Contracts reference](contracts.md) |
+| Build, test, validate packages, or prepare a release | [Development and releases](development.md) |
+| Review version-specific changes, migration notes, and validation evidence | [Changelog](CHANGELOG.md) |
 
-## Reference
+Use `txm COMMAND --help` and `man txm` for the command and flag reference.
+[Contributing](../CONTRIBUTING.md) explains the pull request workflow.
 
-- [CLI and state contracts](contracts.md): JSON fields, exit codes, identities,
-  lifecycle, event delivery, and cleanup semantics.
-- [Native protocol](native-protocol.md): framing, peer authentication, connection
-  roles, and server limits for native-backend contributors.
-- [Changelog](CHANGELOG.md): changes and migration instructions by version.
-- `txm COMMAND --help` and `man txm`: command and flag reference.
+## Versions and documentation
 
-## Development
+These pages describe the source in this checkout. Run `txm version` to identify
+your binary; for an older release, read the docs at its matching Git tag.
 
-[Contributing](../CONTRIBUTING.md) explains the development workflow.
-[Building and testing](testing.md) covers dependency overrides, isolated fixtures,
-race and fuzz tests, and archive validation. Maintainers use the
-[release process](releasing.md#release-process) to prepare and publish builds.
-
-These pages describe the version in this checkout. Match your binary with
-`txm version`; the current version and remaining validation gates are recorded
-in [release status](releasing.md).
+[VERSION](../VERSION) owns the build/release version. The changelog owns dated
+release notes, upgrade instructions, and historical validation evidence. Guides
+use version-independent examples or read `VERSION` when a version is required.
+Dependency pins live in [go.mod](../go.mod),
+[scripts/dependencies.env](../scripts/dependencies.env), and the build/workflow
+configuration. Protocol and schema numbers are compatibility contracts and stay
+explicit in the reference.
