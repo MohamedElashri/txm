@@ -1,16 +1,20 @@
 package cmd
 
 import (
+	"context"
 	"fmt"
 	"os"
+	"os/signal"
 	"regexp"
 	"strings"
+	"syscall"
 
 	"github.com/ktr0731/go-fuzzyfinder"
 	"github.com/spf13/cobra"
 
 	"github.com/MohamedElashri/txm/pkg/backend"
 	"github.com/MohamedElashri/txm/pkg/config"
+	"github.com/MohamedElashri/txm/pkg/core"
 	"github.com/MohamedElashri/txm/pkg/logger"
 )
 
@@ -27,8 +31,8 @@ func isValidName(name string) bool {
 }
 
 func validateName(name string) error {
-	if !isValidName(name) {
-		return fmt.Errorf("invalid name '%s': only alphanumeric characters, dashes, and underscores are allowed", name)
+	if !isValidName(name) || len(name) > 128 {
+		return core.Failure("invalid_target", "names require ASCII letters, digits, dash or underscore")
 	}
 	return nil
 }
@@ -41,21 +45,37 @@ func getSessionName(name string) string {
 	return name
 }
 
-func getManager() (*backend.Manager, error) {
+func getManager(ctx ...context.Context) (*backend.Manager, error) {
 	if manager != nil {
 		return manager, nil
 	}
 
 	cfg, err := config.LoadConfig()
-	if err != nil && verbosity > 0 {
-		fmt.Fprintf(os.Stderr, "Warning: Failed to load config: %v\n", err)
-		cfg = config.NewDefaultConfig()
+	if err != nil {
+		e := core.Failure("invalid_config", "could not load valid configuration")
+		e.Cause = err
+		return nil, e
 	}
 
 	logInstance = logger.NewLogger(verbosity)
-	manager = backend.NewManager(cfg, logInstance)
+	manager = backend.NewManager(cfg, logInstance, ctx...)
+	if selectedBackend != "" {
+		base := context.Background()
+		if len(ctx) > 0 {
+			base = ctx[0]
+		}
+		manager.Backend, err = backend.NewBackend(selectedBackend, base)
+		if err != nil {
+			manager = nil
+			return nil, err
+		}
+	}
 
 	if err := manager.CheckAvailability(); err != nil {
+		manager = nil
+		if selectedBackend != "" {
+			return nil, core.Scope(core.Failure("backend_unavailable", "selected backend is unavailable"), selectedBackend)
+		}
 		return nil, err
 	}
 
@@ -63,13 +83,27 @@ func getManager() (*backend.Manager, error) {
 }
 
 func getSessionCompletions(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-	mgr, err := getManager()
-	if err != nil {
+	qualifier := ""
+	if parts := strings.SplitN(toComplete, "/", 2); len(parts) == 2 {
+		if _, e := config.ParseBackend(parts[0]); e != nil {
+			return nil, cobra.ShellCompDirectiveError
+		}
+		if backendFlag != "" && strings.ToLower(backendFlag) != parts[0] {
+			return nil, cobra.ShellCompDirectiveError
+		}
+		selectedBackend = parts[0]
+		qualifier = parts[0] + "/"
+	}
+	mgr, e := getManager(cmd.Context())
+	if e != nil {
 		return nil, cobra.ShellCompDirectiveError
 	}
-	sessions, err := mgr.Backend.GetSessions()
-	if err != nil {
+	sessions, e := mgr.Backend.GetSessions()
+	if e != nil {
 		return nil, cobra.ShellCompDirectiveError
+	}
+	for i := range sessions {
+		sessions[i] = qualifier + sessions[i]
 	}
 	return sessions, cobra.ShellCompDirectiveNoFileComp
 }
@@ -82,39 +116,47 @@ func getSingleSessionCompletion(cmd *cobra.Command, args []string, toComplete st
 }
 
 var rootCmd = &cobra.Command{
-	Use:   "txm",
-	Short: "A Terminal Session Manager",
-	Long:  `txm is a powerful command-line utility designed to manage terminal multiplexer sessions efficiently. It supports tmux, zellij, and GNU Screen.`,
+	Use:           "txm",
+	SilenceErrors: true,
+	SilenceUsage:  true,
+	Args:          cobra.NoArgs,
+	Short:         "Terminal sessions, supervised jobs and workspace workflows",
+	Long: `txm manages persistent terminal sessions, supervised commands, Git worktree
+tasks and SSH hosts through one CLI. Use the built-in native backend or work
+with tmux, Zellij and GNU Screen, with capabilities reported per backend.
+
+Run txm without a command to pick a session. Use dashboard to find your work,
+profile for repeatable layouts, and agent to supervise jobs. Ordinary sessions
+do not require the optional agent coordinator or an AI provider.
+
+Native sessions and the dashboard require Linux or macOS.`,
 	PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
-		// Just validate that we can get a manager before running any subcommands (except help/completion)
-		if cmd.Name() == "help" || cmd.Name() == "completion" || cmd.Name() == "txm" {
-			return nil
-		}
-		_, err := getManager()
-		return err
+		return prepareCommand(cmd, args)
 	},
 	RunE: func(cmd *cobra.Command, args []string) error {
-		mgr, err := getManager()
+		mgr, err := getManager(cmd.Context())
 		if err != nil {
 			return err
 		}
 
 		sessions, err := mgr.Backend.GetSessions()
-		if err != nil || len(sessions) == 0 {
+		if err != nil {
+			return err
+		}
+		if len(sessions) == 0 {
 			return cmd.Help()
 		}
 
 		idx, err := fuzzyfinder.Find(
 			sessions,
 			func(i int) string {
-				return sessions[i]
+				return core.Plain([]byte(sessions[i]))
 			},
 			fuzzyfinder.WithPreviewWindow(func(i, w, h int) string {
 				if i == -1 {
 					return ""
 				}
-				out, _ := mgr.Backend.DumpSession(sessions[i])
-				return out
+				return preview(cmd.Context(), mgr.Backend, sessions[i], h)
 			}),
 		)
 		if err != nil {
@@ -130,9 +172,12 @@ var rootCmd = &cobra.Command{
 
 // Execute adds all child commands to the root command and sets flags appropriately.
 func Execute() {
-	if err := rootCmd.Execute(); err != nil {
-		fmt.Println(err)
-		os.Exit(1)
+	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	defer stop()
+	wrapArguments(rootCmd)
+	err := rootCmd.ExecuteContext(ctx)
+	if code := finish(err, jsonFlag || jsonRequested(os.Args[1:])); code != 0 {
+		os.Exit(code)
 	}
 }
 
@@ -147,10 +192,10 @@ var createCmd = &cobra.Command{
 }
 
 var listCmd = &cobra.Command{
-	Use:               "list",
-	Short:             "List all active sessions (alias for 'txm session list')",
-	Args:              sessionListCmd.Args,
-	RunE:              sessionListCmd.RunE,
+	Use:   "list",
+	Short: "List all active sessions (alias for 'txm session list')",
+	Args:  sessionListCmd.Args,
+	RunE:  sessionListCmd.RunE,
 }
 
 var attachCmd = &cobra.Command{
@@ -193,7 +238,7 @@ var nukeCmd = &cobra.Command{
 
 var execCmd = &cobra.Command{
 	Use:               "exec [session_name] [window_name] [pane_id] [command]",
-	Short:             "Execute a command in a pane (alias for 'txm pane exec')",
+	Short:             "Send terminal input to a pane (alias for 'txm pane exec')",
 	Args:              paneExecCmd.Args,
 	ValidArgsFunction: paneExecCmd.ValidArgsFunction,
 	RunE:              paneExecCmd.RunE,
@@ -264,7 +309,7 @@ func init() {
 	rootCmd.AddCommand(renameSessionCmd)
 	rootCmd.AddCommand(nukeCmd)
 	rootCmd.AddCommand(execCmd)
-	
+
 	// Hidden / Misc
 	rootCmd.AddCommand(dumpCmd)
 	rootCmd.AddCommand(generateSshConfigCmd)
@@ -280,4 +325,15 @@ func init() {
 	rootCmd.AddCommand(uninstallCmd)
 	rootCmd.AddCommand(versionCmd)
 	rootCmd.AddCommand(completionCmd)
+}
+
+// Backend-independent commands must also work when config or a mux is unavailable.
+func needsBackend(command *cobra.Command) bool {
+	for c := command; c != nil; c = c.Parent() {
+		switch c.Name() {
+		case "__complete", "__completeNoDesc", "help", "completion", "config", "version", "install", "update", "uninstall", "generate-ssh-config", "server", "internal", "agent", "events", "dashboard":
+			return false
+		}
+	}
+	return command.Name() != "txm"
 }

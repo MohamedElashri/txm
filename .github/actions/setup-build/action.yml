@@ -1,0 +1,79 @@
+name: Set up verified build dependencies
+description: Restore compiler caches, then revalidate and build the pinned Ghostty library.
+inputs:
+  mode:
+    description: host or release
+    default: host
+  platform:
+    description: linux or darwin for a partitioned release build
+    default: ''
+runs:
+  using: composite
+  steps:
+    - name: Identify dependency and SDK cache
+      id: cache-key
+      shell: bash
+      env:
+        DEPENDENCY_HASH: ${{ hashFiles('scripts/dependencies.env', 'scripts/build-deps.sh') }}
+        BUILD_MODE: ${{ inputs.mode }}
+        BUILD_PLATFORM: ${{ inputs.platform }}
+      run: |
+        set -euo pipefail
+        case "$BUILD_MODE:$BUILD_PLATFORM" in host:|release:linux|release:darwin) ;; *) exit 2 ;; esac
+        sdk=none
+        if [[ "$RUNNER_OS" == macOS ]]; then
+          sdk="$(xcrun --show-sdk-version)-$(xcrun --show-sdk-build-version)"
+        fi
+        echo "prefix=txm-deps-v1-$RUNNER_OS-$RUNNER_ARCH-$sdk-$DEPENDENCY_HASH" >> "$GITHUB_OUTPUT"
+        echo "scope=$BUILD_MODE-$BUILD_PLATFORM" >> "$GITHUB_OUTPUT"
+        echo "ZIG_GLOBAL_CACHE_DIR=$GITHUB_WORKSPACE/.zig-cache-global" >> "$GITHUB_ENV"
+    - name: Set up Zig
+      shell: bash
+      run: bash scripts/install-ci-zig.sh
+    - uses: actions/cache/restore@cdf6c1fa76f9f475f3d7449005a359c84ca0f306 # v5.0.3
+      id: dependencies
+      continue-on-error: true
+      with:
+        path: |
+          ghostty
+          .zig-cache-global
+        key: ${{ steps.cache-key.outputs.prefix }}-${{ steps.cache-key.outputs.scope }}
+        restore-keys: ${{ steps.cache-key.outputs.prefix }}-
+    - name: Revalidate and build native dependencies
+      shell: bash
+      env:
+        BUILD_MODE: ${{ inputs.mode }}
+        TXM_RELEASE_PLATFORM: ${{ inputs.platform }}
+        TXM_RELEASE_ROOT: ${{ github.workspace }}
+      run: bash scripts/build-deps.sh "$BUILD_MODE"
+    # Save before application compilation or tests: their failures should not
+    # discard a successful dependency build. A cache never bypasses Zig's check.
+    - uses: actions/cache/save@cdf6c1fa76f9f475f3d7449005a359c84ca0f306 # v5.0.3
+      if: steps.dependencies.outputs.cache-hit != 'true'
+      continue-on-error: true
+      with:
+        path: |
+          ghostty
+          .zig-cache-global
+        key: ${{ steps.cache-key.outputs.prefix }}-${{ steps.cache-key.outputs.scope }}
+    - name: Scope Go cache to the verified native libraries
+      shell: bash
+      env:
+        BUILD_MODE: ${{ inputs.mode }}
+        BUILD_PLATFORM: ${{ inputs.platform }}
+        CACHE_SEED: ${{ steps.cache-key.outputs.prefix }}
+      run: |
+        set -euo pipefail
+        args=(--mode "$BUILD_MODE" --seed "$CACHE_SEED")
+        if [[ -n "$BUILD_PLATFORM" ]]; then args+=(--platform "$BUILD_PLATFORM"); fi
+        fingerprint=$(python3 scripts/native-cache-key.py "${args[@]}")
+        # Go does not track external static-library changes. A fresh namespace
+        # is required even if a fallback cache restored different native bytes.
+        echo "GOCACHE=$GITHUB_WORKSPACE/.go-cache/$fingerprint" >> "$GITHUB_ENV"
+    - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+      with:
+        go-version: '1.26.10'
+        cache-dependency-path: |
+          go.sum
+          scripts/dependencies.env
+          scripts/build-deps.sh

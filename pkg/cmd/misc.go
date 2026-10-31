@@ -14,6 +14,7 @@ import (
 
 	"github.com/MohamedElashri/txm/docs"
 	"github.com/MohamedElashri/txm/pkg/config"
+	"github.com/MohamedElashri/txm/pkg/core"
 	"github.com/spf13/cobra"
 )
 
@@ -32,17 +33,19 @@ var configSetCmd = &cobra.Command{
 
 		cfg, err := config.LoadConfig()
 		if err != nil {
-			cfg = config.NewDefaultConfig()
+			e := core.Failure("invalid_config", "could not load valid configuration")
+			e.Cause = err
+			return e
 		}
 
 		if key == "backend" || key == "default_backend" {
 			backendType, err := config.ParseBackend(value)
 			if err != nil {
-				return fmt.Errorf("invalid backend: %s. Must be tmux, zellij, or screen", value)
+				return core.Failure("invalid_usage", "backend must be native, tmux, zellij or screen")
 			}
 			cfg.DefaultBackend = backendType
 		} else {
-			return fmt.Errorf("unknown configuration key: %s", key)
+			return core.Failure("invalid_usage", "unknown configuration key")
 		}
 
 		if err := config.SaveConfig(cfg); err != nil {
@@ -62,13 +65,15 @@ var configGetCmd = &cobra.Command{
 		key := args[0]
 		cfg, err := config.LoadConfig()
 		if err != nil {
-			cfg = config.NewDefaultConfig()
+			e := core.Failure("invalid_config", "could not load valid configuration")
+			e.Cause = err
+			return e
 		}
 
 		if key == "backend" || key == "default_backend" {
 			fmt.Println(cfg.DefaultBackend)
 		} else {
-			return fmt.Errorf("unknown configuration key: %s", key)
+			return core.Failure("invalid_usage", "unknown configuration key")
 		}
 		return nil
 	},
@@ -81,7 +86,9 @@ var configShowCmd = &cobra.Command{
 	RunE: func(cmd *cobra.Command, args []string) error {
 		cfg, err := config.LoadConfig()
 		if err != nil {
-			cfg = config.NewDefaultConfig()
+			e := core.Failure("invalid_config", "could not load valid configuration")
+			e.Cause = err
+			return e
 		}
 
 		fmt.Println("txm Configuration:")
@@ -294,9 +301,12 @@ type GitHubRelease struct {
 
 var updateCmd = &cobra.Command{
 	Use:   "update",
-	Short: "Update txm to the latest version",
+	Short: "Update txm to the latest stable version",
 	Args:  cobra.NoArgs,
 	RunE: func(cmd *cobra.Command, args []string) error {
+		if stableVersionParts(Version) == nil {
+			return core.Failure("unsupported", "automatic updates are disabled for development and prerelease builds; install an explicit release instead")
+		}
 		fmt.Println("Checking for updates...")
 
 		resp, err := http.Get("https://api.github.com/repos/MohamedElashri/txm/releases/latest")
@@ -317,7 +327,15 @@ var updateCmd = &cobra.Command{
 		latestVersion := strings.TrimPrefix(release.TagName, "v")
 		currentVersion := strings.TrimPrefix(Version, "v")
 
-		if latestVersion == currentVersion {
+		comparison, err := compareStableVersions(latestVersion, currentVersion)
+		if err != nil {
+			return err
+		}
+		if comparison < 0 {
+			fmt.Printf("Keeping txm %s; latest published stable %s is older.\n", Version, release.TagName)
+			return nil
+		}
+		if comparison == 0 {
 			fmt.Printf("txm is already up to date (version %s)\n", Version)
 			return nil
 		}
@@ -466,7 +484,7 @@ var updateCmd = &cobra.Command{
 		if strings.HasPrefix(execPath, "/usr/") {
 			installArgs = append(installArgs, "--system")
 		}
-		
+
 		postInstallCmd := exec.Command(execPath, installArgs...)
 		postInstallCmd.Stdout = os.Stdout
 		postInstallCmd.Stderr = os.Stderr
@@ -579,70 +597,70 @@ func init() {
 	completionCmd.AddCommand(&cobra.Command{
 		Use:   "bash",
 		Short: "Generate bash completion script",
-		Run: func(cmd *cobra.Command, args []string) {
+		RunE: func(cmd *cobra.Command, args []string) error {
 			if completionInstall {
 				installCompletions(false, "bash")
-				return
+				return nil
 			}
-			// Check if stdout is a terminal
-			if stat, _ := os.Stdout.Stat(); (stat.Mode() & os.ModeCharDevice) != 0 {
-				fmt.Fprintln(os.Stderr, "Error: You are running this in a terminal. To install completion, use:")
-				fmt.Fprintln(os.Stderr, "  txm completion bash --install")
-				fmt.Fprintln(os.Stderr, "\nOr to test in current session:")
-				fmt.Fprintln(os.Stderr, "  source <(txm completion bash)")
-				return
+			stat, err := os.Stdout.Stat()
+			if err != nil {
+				return err
 			}
-			_ = rootCmd.GenBashCompletion(os.Stdout)
+			if stat.Mode()&os.ModeCharDevice != 0 {
+				return fmt.Errorf("completion output requires redirection; use --install for installation")
+			}
+
+			return rootCmd.GenBashCompletion(os.Stdout)
 		},
 	})
 
 	completionCmd.AddCommand(&cobra.Command{
 		Use:   "zsh",
 		Short: "Generate zsh completion script",
-		Run: func(cmd *cobra.Command, args []string) {
+		RunE: func(cmd *cobra.Command, args []string) error {
 			if completionInstall {
 				installCompletions(false, "zsh")
-				return
+				return nil
 			}
-			// Check if stdout is a terminal
-			if stat, _ := os.Stdout.Stat(); (stat.Mode() & os.ModeCharDevice) != 0 {
-				fmt.Fprintln(os.Stderr, "Error: You are running this in a terminal. To install completion, use:")
-				fmt.Fprintln(os.Stderr, "  txm completion zsh --install")
-				fmt.Fprintln(os.Stderr, "\nOr to test in current session:")
-				fmt.Fprintln(os.Stderr, "  source <(txm completion zsh)")
-				return
+			stat, err := os.Stdout.Stat()
+			if err != nil {
+				return err
 			}
-			_ = rootCmd.GenZshCompletion(os.Stdout)
+			if stat.Mode()&os.ModeCharDevice != 0 {
+				return fmt.Errorf("completion output requires redirection; use --install for installation")
+			}
+
+			return rootCmd.GenZshCompletion(os.Stdout)
 		},
 	})
 
 	completionCmd.AddCommand(&cobra.Command{
 		Use:   "fish",
 		Short: "Generate fish completion script",
-		Run: func(cmd *cobra.Command, args []string) {
+		RunE: func(cmd *cobra.Command, args []string) error {
 			if completionInstall {
 				installCompletions(false, "fish")
-				return
+				return nil
 			}
-			// Check if stdout is a terminal
-			if stat, _ := os.Stdout.Stat(); (stat.Mode() & os.ModeCharDevice) != 0 {
-				fmt.Fprintln(os.Stderr, "Error: You are running this in a terminal. To install completion, use:")
-				fmt.Fprintln(os.Stderr, "  txm completion fish --install")
-				fmt.Fprintln(os.Stderr, "\nOr to test in current session:")
-				fmt.Fprintln(os.Stderr, "  txm completion fish | source")
-				return
+			stat, err := os.Stdout.Stat()
+			if err != nil {
+				return err
 			}
-			_ = rootCmd.GenFishCompletion(os.Stdout, true)
+			if stat.Mode()&os.ModeCharDevice != 0 {
+				return fmt.Errorf("completion output requires redirection; use --install for installation")
+			}
+
+			return rootCmd.GenFishCompletion(os.Stdout, true)
 		},
 	})
 }
 
 // Version is set at build time via ldflags: -X github.com/MohamedElashri/txm/pkg/cmd.Version=<tag>
-var Version = "1.2.0"
+var Version = "dev"
 
 var versionCmd = &cobra.Command{
 	Use:   "version",
-	Short: "Show version and check for updates",
+	Short: "Show version",
 	Args:  cobra.NoArgs,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		fmt.Printf("txm version %s\n", Version)

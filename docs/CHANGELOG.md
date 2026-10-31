@@ -1,9 +1,100 @@
 # Changelog
 
-All notable changes to this project will be documented in this file.
+Changes follow [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) and
+[Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
-and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+## [Unreleased]
+
+### Fixed
+
+- Publish native fixture identity receipts atomically and tolerate temporary
+  connection-pool refusals only in the bounded recovery probe. Rejected test
+  handshakes close their sockets.
+
+### Release engineering
+
+- Reserve full package validation for tags and explicit dry runs. Reuse successful
+  CI of the exact release commit, build Linux/Windows archives on Linux alongside
+  a separate Darwin build, and cache verified native dependencies before tests.
+- Retain independently retryable build partitions and the complete package bundle,
+  bound job runtime, and distinguish package reports by run attempt. All eight
+  target runtime/CLI gates remain required before draft creation.
+- Run Linux foreign-UID checks in a pinned minimal Python image without building
+  a full SSH/backend test image for each archive.
+
+## [2.0.0] - 2026-10-31
+
+txm 2.0 brings persistent terminal workspaces, supervised commands, a dashboard,
+Git worktree tasks, and SSH hosts into one CLI. See the [compatibility matrix](releasing.md#platforms-and-backends)
+for backend scope and platform validation.
+
+### Upgrade notes
+
+- Native sessions use private framed protocol v1. Keep the old binary and its
+  original user/TMPDIR/config to finish existing legacy sessions. New clients
+  leave their sockets and processes untouched; native nuke refuses while
+  incompatible legacy candidates are present.
+- Command failures now return nonzero and write human diagnostics to stderr.
+  Scripts should use the versioned JSON envelopes and documented exit codes.
+- Explicit `--backend` is strict. Exact target operations reject ambiguity and
+  unsupported pane/layout behavior before mutation. Invalid profiles fail preflight.
+- Native provides one terminal, bounded visible snapshots and literal input to
+  terminal 0/0. Input acceptance is not command completion. Logging is opt-in.
+- Ordinary sessions and the picker remain independent of the optional coordinator.
+  Provider hooks require explicit opt-in; existing provider trust is unchanged.
+
+### Added
+
+- Typed session inspection, capability data, versioned JSON and bounded plain/raw
+  output, including tmux history and exact session/window/pane identities.
+- Declarative profile preflight/dry-run, cwd/layout handling and cleanup limited
+  to resources whose creation and ownership are proven.
+- Supervised native/tmux agents with immutable exit receipts, authenticated
+  signals, bounded JSONL events, deterministic waits and explicit notifications.
+- A separate keyboard dashboard with search/filtering, freshness/capability
+  details, bounded previews, read-only attach and explicit agent subscriptions.
+- Opt-in owned Git worktrees and tasks with conservative recovery and cleanup;
+  explicit task/agent metadata pruning retains receipts and Git branches.
+- Allowlisted, host-pinned OpenSSH discovery and exact native/tmux attach with
+  protocol checks, partial results, cancellation and ControlMaster reuse.
+
+### Fixed
+
+- Stable updates compare semantic versions and retain a newer installed binary
+  when GitHub still reports an older stable release; invalid/prerelease metadata
+  cannot trigger an update download.
+
+- Development/prerelease builds refuse automatic stable updates, preventing a
+  development build from being replaced by an older stable release.
+- Native socket permissions/peer checks, duplicate startup, bounded IPC queues,
+  slow peers, process-group shutdown, detach and TTY/file-flag restoration.
+- Exact tmux input/profile targeting and literal keys, synchronized-pane refusal,
+  private host identity publication and corrupt-state handling.
+- Darwin concurrent locks, exclusive publication, zombie-only group shutdown,
+  dashboard feedback guards and Apple Screen listing/version exit statuses.
+- Zellij background readiness without repeated creation or name-based rollback.
+- Missing remote completeness fields and uncertain task recovery now fail closed.
+
+### Platform support
+
+- Linux amd64/ARM64 GNU/static-musl and macOS ARM64/Intel pass archive installation
+  and runtime checks on matching CI runners, including actual foreign-UID
+  rejection. Windows amd64/ARM64 pass CLI smoke checks on matching runners;
+  external backends and Windows installers remain unverified. The tag workflow
+  repeats validation of the final release archives before creating a draft.
+- Screen/Zellij retain degraded basic lifecycle/attach support for the recorded
+  versions; exact panes/layouts/capture/read-only remain unsupported.
+- Windows native persistence/private Unix state/dashboard are unsupported.
+- Generic supervision needs no AI provider. Claude has isolated initialization
+  coverage; full provider lifecycle needs reviewed setup. Codex hooks require
+  manual trust review; unsupported provider versions are refused.
+
+### Documentation and release engineering
+
+- A concise README, shared documentation index, getting-started and automation
+  guides, and contributor instructions organized around user workflows.
+- Stable 2.0.0 identity and release notes, checksum/archive validation, and native
+  package checks before draft creation. Publishing remains a separate step.
 
 ## [1.3.1] - 2026-09-17
 

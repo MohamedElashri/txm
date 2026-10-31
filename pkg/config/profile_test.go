@@ -76,3 +76,26 @@ command = "npm run tail"
 		t.Errorf("Expected pane 2 split 'h', got '%s'", prof.Windows[1].Panes[1].Split)
 	}
 }
+
+func TestProfileStrictFieldsAndSize(t *testing.T) {
+	for _, text := range []string{`name="s"` + "\nunknown=\"secret\"", `name="s"` + "\n[[window]]\nunknown=true", `name="s"` + "\n[[window.pane]]\nargv=[\"secret\"]"} {
+		p := filepath.Join(t.TempDir(), "profile.toml")
+		if e := os.WriteFile(p, []byte(text), 0600); e != nil {
+			t.Fatal(e)
+		}
+		if _, e := LoadProfile(p); e == nil {
+			t.Fatal("unknown field accepted")
+		}
+	}
+	p := filepath.Join(t.TempDir(), "large.toml")
+	data := make([]byte, (1<<20)+1)
+	if e := os.WriteFile(p, data, 0600); e != nil {
+		t.Fatal(e)
+	}
+	if _, e := LoadProfile(p); e == nil {
+		t.Fatal("unbounded profile accepted")
+	}
+	if _, e := LoadProfile(t.TempDir()); e == nil {
+		t.Fatal("directory accepted as profile")
+	}
+}

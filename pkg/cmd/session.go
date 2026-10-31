@@ -2,6 +2,8 @@ package cmd
 
 import (
 	"fmt"
+	"github.com/MohamedElashri/txm/pkg/backend"
+	"github.com/MohamedElashri/txm/pkg/core"
 	"os"
 
 	"github.com/spf13/cobra"
@@ -30,13 +32,22 @@ var sessionCreateCmd = &cobra.Command{
 			return err
 		}
 
+		if err := validateName(name); err != nil {
+			return err
+		}
 		if createLogFile != "" {
-			_ = os.Setenv("TXM_LOG_FILE", createLogFile)
+			if manager.Backend.Name() != "native" {
+				return core.Failure("unsupported", "output logging is only supported by native")
+			}
+			restore, err := scopedEnvironment("TXM_LOG_FILE", createLogFile)
+			if err != nil {
+				return err
+			}
+			defer restore()
 		}
 
 		if err := manager.Backend.CreateSession(name, args[1:]...); err != nil {
-			logInstance.Error(fmt.Sprintf("Failed to create %s session '%s': %v", manager.Backend.Name(), name, err))
-			return nil
+			return fmt.Errorf("failed to create %s session '%s': %w", manager.Backend.Name(), name, err)
 		}
 		logInstance.Info(fmt.Sprintf("Session '%s' created with %s", name, manager.Backend.Name()))
 		return nil
@@ -48,12 +59,7 @@ var sessionListCmd = &cobra.Command{
 	Aliases: []string{"ls"},
 	Short:   "List all active sessions",
 	Args:    cobra.NoArgs,
-	RunE: func(cmd *cobra.Command, args []string) error {
-		if err := manager.Backend.ListSessions(); err != nil {
-			logInstance.Warning(fmt.Sprintf("No %s sessions found", manager.Backend.Name()))
-		}
-		return nil
-	},
+	RunE:    listSessions,
 }
 
 var sessionAttachCmd = &cobra.Command{
@@ -63,24 +69,39 @@ var sessionAttachCmd = &cobra.Command{
 	Args:              cobra.ArbitraryArgs,
 	ValidArgsFunction: getSingleSessionCompletion,
 	RunE: func(cmd *cobra.Command, args []string) error {
+		readOnly := attachReadOnly || os.Getenv("TXM_READ_ONLY") == "1"
+		var observer interface{ AttachReadOnly(string) error }
+		if readOnly {
+			var ok bool
+			observer, ok = manager.Backend.(interface{ AttachReadOnly(string) error })
+			if !ok {
+				return core.Failure("unsupported", "read-only attach is unsupported by this backend")
+			}
+		}
 		var name string
 
 		if len(args) == 0 {
 			sessions, err := manager.Backend.GetSessions()
 			if err != nil {
-				return fmt.Errorf("failed to get sessions: %v", err)
+				return fmt.Errorf("failed to get sessions: %w", err)
 			}
 
 			if len(sessions) == 1 {
 				name = sessions[0]
 			} else if len(sessions) == 0 {
-				name = "default"
+				if readOnly {
+					return core.Failure("not_found", "no sessions to observe")
+				}
+				name = getSessionName("default")
+				if err := validateName(name); err != nil {
+					return err
+				}
 				logInstance.Info(fmt.Sprintf("No sessions found. Creating default session '%s'...", name))
 				if err := manager.Backend.CreateSession(name); err != nil {
-					return fmt.Errorf("failed to create default session: %v", err)
+					return fmt.Errorf("failed to create default session: %w", err)
 				}
 			} else {
-				return fmt.Errorf("multiple sessions exist, please specify one to attach to")
+				return core.Failure("ambiguous_target", "multiple sessions exist; specify a target")
 			}
 		} else {
 			var err error
@@ -89,22 +110,29 @@ var sessionAttachCmd = &cobra.Command{
 				return err
 			}
 
-			if !manager.Backend.SessionExists(name) {
+			exists, err := backend.FindSession(manager.Backend, name, cmd.Context())
+			if err != nil {
+				return err
+			}
+			if !exists {
+				if readOnly {
+					return core.Failure("not_found", "session does not exist")
+				}
 				logInstance.Info(fmt.Sprintf("Session '%s' does not exist. Creating it...", name))
 				if err := manager.Backend.CreateSession(name, args[1:]...); err != nil {
-					return fmt.Errorf("failed to create session: %v", err)
+					return fmt.Errorf("failed to create session: %w", err)
 				}
 			} else if len(args) > 1 {
-				return fmt.Errorf("session '%s' already exists, cannot run a new command", name)
+				return core.Failure("conflict", "session already exists; cannot run a new command")
 			}
 		}
 
-		if attachReadOnly {
-			_ = os.Setenv("TXM_READ_ONLY", "1")
+		if readOnly {
+			return observer.AttachReadOnly(name)
 		}
 
 		if err := manager.Backend.AttachSession(name); err != nil {
-			logInstance.Error(fmt.Sprintf("Failed to attach to %s session '%s': %v", manager.Backend.Name(), name, err))
+			return fmt.Errorf("failed to attach to %s session '%s': %w", manager.Backend.Name(), name, err)
 		}
 		return nil
 	},
@@ -117,8 +145,7 @@ var sessionDetachCmd = &cobra.Command{
 	Args:    cobra.NoArgs,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		if err := manager.Backend.DetachSession(); err != nil {
-			logInstance.Error(fmt.Sprintf("Failed to detach from %s session: %v", manager.Backend.Name(), err))
-			return nil
+			return fmt.Errorf("failed to detach from %s session: %w", manager.Backend.Name(), err)
 		}
 		logInstance.Info(fmt.Sprintf("Detached from %s session", manager.Backend.Name()))
 		return nil
@@ -138,8 +165,7 @@ var sessionDeleteCmd = &cobra.Command{
 		}
 
 		if err := manager.Backend.KillSession(name); err != nil {
-			logInstance.Error(fmt.Sprintf("Failed to kill %s session '%s': %v", manager.Backend.Name(), name, err))
-			return nil
+			return fmt.Errorf("failed to kill %s session '%s': %w", manager.Backend.Name(), name, err)
 		}
 		logInstance.Info(fmt.Sprintf("Killed %s session '%s'", manager.Backend.Name(), name))
 		return nil
@@ -162,14 +188,19 @@ var sessionRenameCmd = &cobra.Command{
 			return err
 		}
 
-		if !manager.Backend.SessionExists(oldName) {
-			logInstance.Error(fmt.Sprintf("Session '%s' does not exist", oldName))
-			return nil
+		exists, err := backend.FindSession(manager.Backend, oldName, cmd.Context())
+		if err != nil {
+			return err
+		}
+		if !exists {
+			return core.Failure("not_found", "session does not exist")
 		}
 
+		if err := validateName(newName); err != nil {
+			return err
+		}
 		if err := manager.Backend.RenameSession(oldName, newName); err != nil {
-			logInstance.Error(fmt.Sprintf("Failed to rename %s session from '%s' to '%s': %v", manager.Backend.Name(), oldName, newName, err))
-			return nil
+			return fmt.Errorf("failed to rename %s session from '%s' to '%s': %w", manager.Backend.Name(), oldName, newName, err)
 		}
 		logInstance.Info(fmt.Sprintf("Renamed %s session from '%s' to '%s'", manager.Backend.Name(), oldName, newName))
 		return nil
@@ -182,8 +213,7 @@ var sessionNukeCmd = &cobra.Command{
 	Args:  cobra.NoArgs,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		if err := manager.Backend.NukeAllSessions(); err != nil {
-			logInstance.Error(fmt.Sprintf("Failed to nuke all %s sessions: %v", manager.Backend.Name(), err))
-			return nil
+			return fmt.Errorf("failed to nuke all %s sessions: %w", manager.Backend.Name(), err)
 		}
 		logInstance.Info(fmt.Sprintf("Nuked all %s sessions", manager.Backend.Name()))
 		return nil
@@ -195,19 +225,7 @@ var sessionDumpCmd = &cobra.Command{
 	Hidden:            true,
 	Args:              cobra.ExactArgs(1),
 	ValidArgsFunction: getSingleSessionCompletion,
-	RunE: func(cmd *cobra.Command, args []string) error {
-		name, err := parseSessionArgs(args)
-		if err != nil {
-			return err
-		}
-
-		out, err := manager.Backend.DumpSession(name)
-		if err != nil {
-			return err
-		}
-		fmt.Print(out)
-		return nil
-	},
+	RunE:              captureOutput,
 }
 
 func init() {

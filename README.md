@@ -1,106 +1,71 @@
-# txm: Terminal Session Manager
+<div align="center">
 
-**txm** is a unified command-line interface for managing terminal multiplexer sessions. It supports a built-in **native** backend for lightweight session persistence, as well as **tmux**, **zellij**, and **GNU Screen** through a single consistent set of commands.
+<h1>txm</h1>
+<p><strong>Persistent terminals. Supervised jobs. One CLI.</strong></p>
 
----
+<p>
+  <a href="https://github.com/MohamedElashri/txm/releases"><img src="https://img.shields.io/github/v/release/MohamedElashri/txm?style=flat-square&amp;color=22c55e" alt="Latest release"></a>
+  <a href="https://github.com/MohamedElashri/txm/actions/workflows/ci.yml"><img src="https://img.shields.io/github/actions/workflow/status/MohamedElashri/txm/ci.yml?branch=main&amp;style=flat-square&amp;label=CI" alt="CI status"></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/license-GPL--3.0-2563eb?style=flat-square" alt="GPL-3.0 license"></a>
+</p>
 
-## Installation
+<p>
+  <a href="docs/getting-started.md">Get started</a> ·
+  <a href="docs/README.md">Documentation</a> ·
+  <a href="https://github.com/MohamedElashri/txm/releases">Downloads</a> ·
+  <a href="docs/CHANGELOG.md">Changelog</a>
+</p>
 
-### Quick Install (recommended)
+</div>
 
-Downloads and installs the latest release automatically.
+txm manages interactive terminals and background work across projects and SSH
+hosts. Use its built-in native backend or your existing tmux, Zellij, or GNU
+Screen setup.
 
-**User-local** (installs to `~/.local/bin`):
-```bash
-curl -s https://raw.githubusercontent.com/MohamedElashri/txm/main/utils/install.sh | bash
+## What you can do
+
+| Capability | What you get |
+| :--- | :--- |
+| **[Persistent sessions](docs/getting-started.md#your-first-session)** | Keep shells running with built-in Ghostty terminal emulation. Detach and reconnect. |
+| **[Workspace profiles](docs/user-guide.md#profiles)** | Recreate commands, working directories, and tmux pane layouts from TOML. |
+| **[Jobs & coding agents](docs/automation.md#supervised-jobs)** | Supervise any command, record its exit result, and add opt-in attention hooks. |
+| **[Keyboard dashboard](docs/user-guide.md#dashboard)** | Search sessions, preview output, and attach without leaving the terminal. |
+| **[Git worktree tasks](docs/automation.md#git-worktree-tasks)** | Run project tasks in dedicated worktrees with tracked jobs and explicit cleanup. |
+| **[SSH hosts](docs/automation.md#ssh-hosts)** | Discover and attach to remote sessions through configured OpenSSH hosts. |
+| **[Automation](docs/automation.md#json-for-scripts)** | Query versioned JSON, stream live events, and wait on job state. |
+
+Linux and macOS are the primary platforms. See
+[backend capabilities and provider support](docs/releasing.md) for the full scope.
+
+## Get started
+
+Install the latest stable release on Linux or macOS (`curl` and `unzip` required):
+
+```sh
+curl -fsSL https://raw.githubusercontent.com/MohamedElashri/txm/main/utils/install.sh | bash
+export PATH="$HOME/.local/bin:$PATH"
 ```
 
-**System-wide** (installs to `/usr/local/bin`, requires root):
-```bash
-curl -s https://raw.githubusercontent.com/MohamedElashri/txm/main/utils/install.sh | sudo bash -s -- --system
+[Release archives](https://github.com/MohamedElashri/txm/releases/latest) ·
+[Build from source](docs/getting-started.md#build-from-source)
+
+```sh
+# Start a persistent shell. Detach with Ctrl+backslash.
+txm --backend native create work
+txm attach native/work
+
+# Find sessions and preview their output.
+txm dashboard --backend native
+
+# Supervise a test run from a Go project.
+txm --backend native agent start tests -- go test ./...
+txm agent wait AGENT_ID --until exited --timeout 5m --fail-on-nonzero
 ```
 
-### Pre-built Binaries
-
-Download the appropriate archive for your platform from the [releases page](https://github.com/MohamedElashri/txm/releases) and extract. For maximum portability on Alpine Linux or minimal Docker containers, use the `-musl` binaries which are 100% statically linked.
-
-| Platform | Architecture | Download Link (Latest) |
-|----------|--------------|------------------------|
-| Linux    | x86_64       | [txm_Linux_x86_64.zip](https://github.com/MohamedElashri/txm/releases/latest/download/txm_Linux_x86_64.zip) |
-| Linux    | ARM64        | [txm_Linux_arm64.zip](https://github.com/MohamedElashri/txm/releases/latest/download/txm_Linux_arm64.zip) |
-| Linux (Static) | x86_64 | [txm_Linux_x86_64-musl.zip](https://github.com/MohamedElashri/txm/releases/latest/download/txm_Linux_x86_64-musl.zip) |
-| Linux (Static) | ARM64  | [txm_Linux_arm64-musl.zip](https://github.com/MohamedElashri/txm/releases/latest/download/txm_Linux_arm64-musl.zip) |
-| macOS    | x86_64       | [txm_Darwin_x86_64.zip](https://github.com/MohamedElashri/txm/releases/latest/download/txm_Darwin_x86_64.zip) |
-| macOS    | Apple Silicon| [txm_Darwin_arm64.zip](https://github.com/MohamedElashri/txm/releases/latest/download/txm_Darwin_arm64.zip) |
-| Windows  | x86_64       | [txm_Windows_x86_64.zip](https://github.com/MohamedElashri/txm/releases/latest/download/txm_Windows_x86_64.zip) |
-| Windows  | ARM64        | [txm_Windows_arm64.zip](https://github.com/MohamedElashri/txm/releases/latest/download/txm_Windows_arm64.zip) |
-
-```bash
-unzip txm_Linux_x86_64.zip
-# or unzip txm_Linux_x86_64-musl.zip for fully static binary
-./txm install          # user-local (~/.local/bin)
-# or
-./txm install --system # system-wide (/usr/local/bin) — requires sudo
-```
-
-### Build from Source
-
-Requirements: Go 1.26+
-```bash
-git clone https://github.com/MohamedElashri/txm
-cd txm
-make build
-./bin/txm install
-```
-
----
-
-## Quick Start
-
-```bash
-# Launch interactive session picker (fuzzy finder with previews)
-txm
-
-# Create and attach to a session (using short aliases)
-txm create my-project
-txm attach my-project
-
-# Or create a session running a specific command
-txm session create my-server npm run dev
-
-# List sessions
-txm list
-
-# Start a session from a declarative TOML profile
-txm profile dev.toml
-
-# Create a window inside the session
-txm window create my-project editor
-
-# Split the window vertically
-txm window split my-project editor v
-
-# Delete the session when done
-txm session delete my-project
-```
-
-For a comprehensive guide covering configuration, window/pane management, backends, environment variables, and SSH workflows, see the **[User Guide](docs/user-guide.md)**.
-
----
-
-## Documentation
-
-- Full command reference & guide: **[User Guide](docs/user-guide.md)**
-- Changelog: [`docs/CHANGELOG.md`](docs/CHANGELOG.md)
-- Future Plans : **[Roadmap](docs/ROADMAP.md)**
-- Man page: `man txm` (installed alongside the binary)
-
----
+Use the ID returned by `agent start` in place of `AGENT_ID`.
 
 ## Contributing
 
-Contributions are welcome! Please open an issue or submit a pull request on [GitHub](https://github.com/MohamedElashri/txm).
-
-## License
-
-GNU General Public License v3.0 - see [LICENSE](LICENSE)
+[Contributing guide](CONTRIBUTING.md) ·
+[Report an issue](https://github.com/MohamedElashri/txm/issues) ·
+[GPL-3.0 license](LICENSE)

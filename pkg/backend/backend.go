@@ -1,16 +1,18 @@
 package backend
 
 import (
-	"fmt"
+	"context"
 	"os"
 	"os/exec"
 
 	"github.com/MohamedElashri/txm/pkg/config"
+	"github.com/MohamedElashri/txm/pkg/core"
 	"github.com/MohamedElashri/txm/pkg/logger"
 )
 
 // TerminalMultiplexer defines the interface for all backend implementations
 type TerminalMultiplexer interface {
+	core.Reader
 	IsAvailable() bool
 	Name() string
 
@@ -78,12 +80,15 @@ type Manager struct {
 }
 
 // NewManager creates a new backend manager
-func NewManager(cfg *config.Config, log *logger.Logger) *Manager {
+func NewManager(cfg *config.Config, log *logger.Logger, ctx ...context.Context) *Manager {
+	if cfg == nil {
+		cfg = config.NewDefaultConfig()
+	}
 	backends := map[config.BackendType]TerminalMultiplexer{
-		config.BackendTmux:   NewTmuxBackend(),
-		config.BackendZellij: NewZellijBackend(),
-		config.BackendScreen: NewScreenBackend(),
-		config.BackendNative: NewNativeBackend(),
+		config.BackendTmux:   NewTmuxBackend(ctx...),
+		config.BackendZellij: NewZellijBackend(ctx...),
+		config.BackendScreen: NewScreenBackend(ctx...),
+		config.BackendNative: NewNativeBackend(ctx...),
 	}
 
 	var selectedBackend TerminalMultiplexer
@@ -123,7 +128,36 @@ func NewManager(cfg *config.Config, log *logger.Logger) *Manager {
 
 func (m *Manager) CheckAvailability() error {
 	if m.Backend == nil || !m.Backend.IsAvailable() {
-		return fmt.Errorf("none of tmux, zellij, or screen is installed. Please install at least one and try again")
+		return core.Failure("backend_unavailable", "no available backend (native, tmux, zellij, screen)")
 	}
 	return nil
 }
+
+// FindSession is a compatibility wrapper over typed, exact, error-aware lookup.
+func FindSession(b TerminalMultiplexer, name string, contexts ...context.Context) (bool, error) {
+	ctx := context.Background()
+	if len(contexts) > 0 && contexts[0] != nil {
+		ctx = contexts[0]
+	}
+	_, err := b.Lookup(ctx, name)
+	if err != nil && core.Normalize(err).Code == "not_found" {
+		return false, nil
+	}
+	return err == nil, err
+}
+
+// NewBackend is strict: it never selects a fallback adapter.
+func NewBackend(name string, ctx context.Context) (TerminalMultiplexer, error) {
+	switch name {
+	case "native":
+		return NewNativeBackend(ctx), nil
+	case "tmux":
+		return NewTmuxBackend(ctx), nil
+	case "zellij":
+		return NewZellijBackend(ctx), nil
+	case "screen":
+		return NewScreenBackend(ctx), nil
+	}
+	return nil, core.Failure("invalid_usage", "backend must be native, tmux, zellij or screen")
+}
+func BackendNames() []string { return []string{"native", "screen", "tmux", "zellij"} }

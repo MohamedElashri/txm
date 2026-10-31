@@ -1,0 +1,1 @@
+{"schema_version":1,"data":{"session":{"locator":{"host_id":"0123456789abcdef0123456789abcdef","backend":"tmux","name":"sample"},"backend_id":"$1","managed_id":null,"instance_id":null,"process_state":"unknown","client_state":"detached","attached_clients":0,"observed_at":"2026-10-29T00:00:00Z","source":"tmux session listing","capabilities":{}}},"errors":[],"partial":false}

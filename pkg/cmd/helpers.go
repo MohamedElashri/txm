@@ -2,18 +2,29 @@ package cmd
 
 import (
 	"fmt"
+	"os"
 )
+
+func scopedEnvironment(key, value string) (func(), error) {
+	old, present := os.LookupEnv(key)
+	if err := os.Setenv(key, value); err != nil {
+		return nil, err
+	}
+	return func() {
+		if present {
+			_ = os.Setenv(key, old)
+		} else {
+			_ = os.Unsetenv(key)
+		}
+	}, nil
+}
 
 // parseSessionArgs extracts and validates the session name from arguments
 func parseSessionArgs(args []string) (string, error) {
 	if len(args) < 1 {
 		return "", fmt.Errorf("missing session name")
 	}
-	session := getSessionName(args[0])
-	if err := validateName(session); err != nil {
-		return "", err
-	}
-	return session, nil
+	return sessionTarget(args[0])
 }
 
 // parseWindowArgs extracts and validates the session and window name from arguments

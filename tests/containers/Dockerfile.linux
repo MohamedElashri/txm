@@ -1,0 +1,13 @@
+# Test-only accounts/packages; never installs a host service or uses host HOME.
+FROM ubuntu@sha256:786a8b558f7be160c6c8c4a54f9a57274f3b4fb1491cf65146521ae77ff1dc54
+RUN printf '#!/bin/sh\nexit 101\n' > /usr/sbin/policy-rc.d && chmod 755 /usr/sbin/policy-rc.d \
+ && apt-get update \
+ && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends python3 openssh-server openssh-client tmux screen git ca-certificates curl util-linux \
+ && rm -f /etc/ssh/ssh_host_* \
+ && usermod --password '' root \
+ && rm -rf /var/lib/apt/lists/*
+# Root exists only in the disposable container. Tests disable password login and
+# accept one fresh fixture key on loopback, with the container network disabled.
+ENV PYTHONDONTWRITEBYTECODE=1
+ENV TXM_LINUX_FIXTURE=1
+WORKDIR /work
