@@ -1,0 +1,229 @@
+# Development and releases
+
+[Documentation](README.md) / Development and releases
+
+Start with [Contributing](../CONTRIBUTING.md) for pull request expectations.
+[Installation](user-guide.md#build-from-source) lists the build prerequisites.
+This guide covers dependency configuration and validation without touching active
+sessions or personal configuration.
+
+- [Dependency configuration](#dependency-configuration)
+- [Checks by change type](#checks-by-change-type) and [fixture isolation](#fixture-isolation)
+- [Validate packaged builds](#validate-packaged-builds)
+- [Release process](#release-process)
+
+## Dependency configuration
+
+[scripts/dependencies.env](../scripts/dependencies.env) pins Zig and the Ghostty
+revision compatible with the Go binding. `make build` builds the native library
+before compiling txm and stamps the version from `VERSION`. A direct Go build
+defaults to `dev`. Run the examples below from the repository root.
+
+The helper accepts these overrides:
+
+| Variable | Purpose |
+| --- | --- |
+| `GHOSTTY_SOURCE_DIR` | Dedicated source checkout at the pinned revision |
+| `GHOSTTY_HOST_DIR` | Native library installation prefix |
+| `ZIG` | Path to the pinned Zig executable |
+| `TXM_RELEASE_PLATFORM` | `linux` or `darwin` to build only that release partition; unset builds all targets |
+
+Existing dependency checkouts must be clean and at the pinned revision. The
+helper fails rather than resetting a different or dirty checkout. Build in a
+separate checkout or use private paths when preserving existing build artifacts.
+Inspect custom paths before running `make clean`, which removes build outputs
+and the configured host prefix.
+
+Direct Go tests need the native library's pkg-config metadata:
+
+```sh
+PKG_CONFIG_PATH="$PWD/.ghostty-host/share/pkgconfig" CGO_ENABLED=1 go test ./...
+```
+
+Use the actual verified prefix if you override `GHOSTTY_HOST_DIR`. Building the
+native library needs CGO, a C compiler, and pkg-config. Go installation alone is
+not sufficient. Python 3 and tmux are required for the integration harness;
+`make lint` additionally requires golangci-lint.
+
+## Checks by change type
+
+| Change | Run |
+| --- | --- |
+| Go behavior | `make test test-race lint` |
+| CLI, backend, or lifecycle behavior | `make test-integration test-integration-race` |
+| Fixture/build/validation harness | `make test-harness` |
+| Protocol or decoder | `make test-fuzz` plus relevant unit/integration checks |
+| Performance | `make test-performance` |
+| Release metadata or packaging | `make release-check` and actual archive checks |
+
+For a complete local pass:
+
+```sh
+make build
+make test test-race lint
+make test-harness
+make test-integration test-integration-race
+make test-fuzz test-performance
+make release-check
+```
+
+To focus an existing regression, pass its unittest selector:
+
+```sh
+python3 tests/native_checks.py --binary "$PWD/bin/txm" \
+  NativeChecks.test_concurrent_attach_resize_and_output
+```
+
+For documentation, check local links and anchors, compare commands with help,
+and run the release metadata checker. Update the man page when command semantics
+change; it is embedded in the binary.
+
+## Fixture isolation
+
+`tests/sandbox.py` builds private HOME, XDG, runtime, temp, and environment
+namespaces. tmux uses an owned foreground server with an explicit socket and
+configuration. Native fixtures retain process handles and use framed IPC.
+Cleanup checks ownership, namespace entries, and process identity before acting.
+It never discovers personal sessions, worktrees, SSH configuration, or credentials.
+
+PTY tests drain output and check terminal and descriptor restoration. Darwin
+comparisons exclude only kernel bookkeeping bits. Fixtures protect against
+accidental cross-test access; same-UID malicious code and escaping descendants
+are outside their isolation guarantee.
+
+Fixture readiness receipts are published by atomic replacement, so file presence
+means complete JSON. After deliberately saturating native connection slots, only
+the recovery probe retries temporary EOF/reset/broken-pipe refusals within a fixed
+budget. A dead server, invalid protocol response, or pool that never recovers
+still fails. Failed protocol handshakes close their client sockets.
+
+Keep regression tests for shipped behavior. Save logs, recordings, manifests, and
+archive outputs outside the repository or as CI/release artifacts. Include exact
+commands, source/artifact hashes, OS, architecture, backend versions, and skip
+reasons. A configured CI job or cross-build is not evidence of an executed runtime
+gate.
+
+## Validate packaged builds
+
+The runtime runner takes existing binaries and archives. It verifies race
+instrumentation, refuses an existing output directory, and binds results to the
+source and artifact hashes. It tests at most two flavors concurrently and
+measures performance after the workers finish.
+
+```sh
+python3 scripts/validate-runtime.py \
+  --binary /absolute/check/txm --race-binary /absolute/check/txm-race \
+  --archive /absolute/check/txm_Darwin_arm64.zip \
+  --expected-version "$(cat VERSION)" --macos-backends --loopback-ssh \
+  --output /absolute/new-runtime-report
+```
+
+The example is for macOS. `--macos-backends` requires installed Screen and
+Zellij 0.45.1 or newer (the fixture launches an explicit child command);
+`--loopback-ssh` uses an unprivileged local sshd with fresh keys, strict known
+hosts, a forced fixture endpoint, and private HOME/ZDOTDIR. It does not change
+Remote Login or user accounts. `make test-ssh` runs the SSH suite alone on macOS.
+
+For Linux amd64 foreign-UID, backend, and loopback SSH coverage, use
+`python3 scripts/validate-linux.py --help`. That matrix runs root/foreign-UID
+probes only inside disposable containers, with no external runtime network and
+read-only fixture/artifact mounts. Never run those probes as host root.
+
+`tests/archive_checks.py` validates ZIP inventory, version identity, private
+installation, the man page, and completions. Match the archive to the runtime
+host; cross-compilation does not replace a native runtime check.
+
+Use `scripts/audit-artifacts.py` on explicit outputs for known credential forms;
+it reports redacted findings. Pair the scan with a review of fixture provenance.
+
+The [release process](#release-process) defines the complete package gate sequence.
+Both macOS package jobs install checksum-pinned Zellij using
+`scripts/install-ci-zellij.sh`. `tests/peer_checks.py` shares actual foreign-UID
+regressions between Linux containers and disposable macOS CI and refuses ordinary
+host-root execution. Windows checks cover version/help/completions and explicit
+unsupported refusals; they do not certify external backends or installers.
+
+## Release process
+
+Pull requests into `main` run normal CI. Full archive builds and the eight-target
+package matrix run only for version tags or an explicit Release workflow dispatch.
+Branch dispatches use snapshots stamped from `VERSION` and never create a draft.
+Tag runs build and validate the official archives before draft creation.
+
+1. Update `VERSION` and its dated changelog section, including upgrade notes.
+   `make release-check` requires a stable version and matching metadata.
+2. Run the applicable [tests](#checks-by-change-type), including actual archive
+   installation and runtime checks. Save source/artifact hashes and reports
+   outside the tree.
+3. Commit the reviewed release preparation and merge it into `main`. Wait for
+   that exact merge commit's CI to pass, then tag it with the version from
+   `VERSION`: `git tag "v$(cat VERSION)"`.
+4. A short Linux preflight checks stable metadata and the latest CI run for that
+   exact commit on `main`, including successful Linux, macOS ARM64/Intel, and
+   lint jobs. Missing, pending, failed, cancelled, or skipped validation stops
+   the release before compilation. Existing CI is reused rather than repeated.
+5. Two parallel GoReleaser jobs build without publishing: Linux builds the
+   four Linux and two Windows archives; macOS builds the two Darwin archives
+   using its SDK. Each job builds only its required Ghostty libraries and retains
+   its partition. An inexpensive Linux job assembles the complete bundle using
+   the original build checksums.
+6. `scripts/check-release-artifacts.py` checks the complete archive inventory,
+   checksums, packaged documentation, binary OS/CPU headers, and static-musl
+   linkage. The same bundle is checked after each artifact download.
+7. Each Unix archive runs on its matching Linux/macOS architecture through private
+   installation and the runtime suites. Mac jobs additionally test real backends
+   and loopback SSH. Both platforms test actual different-UID rejection using
+   private fixtures: Linux in a disposable container, macOS as root only on the
+   disposable CI runner. The Linux peer probe uses a pinned multi-architecture
+   Python image directly, avoiding an unrelated SSH/tmux/Screen/Git image build.
+   No accounts or host services are changed.
+8. Windows x86_64/ARM64 runners check their executable's version, help,
+   completions, and explicit unsupported refusals. These are CLI smoke checks,
+   not external-backend or Windows installer certification.
+9. Only after every package job passes does a write-enabled job create a
+   **stable draft**, with eight ZIPs, checksums, and the canonical release notes.
+   Review the tag/commit, jobs, reports, upgrade notes, and compatibility scope
+   before manually publishing. Existing releases are not overwritten on rerun.
+
+The bundle and package reports are retained as Actions artifacts.
+Reports include the run attempt in their artifact names, so a successful retry
+is distinct from an earlier incomplete report. On failure, use GitHub's **Re-run
+failed jobs** or `gh run rerun RUN_ID --failed`. A package failure reuses the
+existing bundle and other successful jobs; it does not repeat compilation.
+If one build partition fails, its successful sibling is retained. Job timeouts
+bound stalled work; unrelated package jobs finish so retries need not repeat them.
+
+CI and release builds cache pinned Ghostty sources, native outputs, and Zig's
+incremental cache by OS, CPU, SDK version/build, and dependency lock. Every restore
+still runs the source/version guards and `zig build`; directory presence never
+proves validity. Validated dependencies are saved before application compilation
+and tests, so those failures do not discard the expensive dependency work. Go's
+cache is scoped to the verified library bytes as well as the dependency lock and
+SDK, preventing stale external-library links after a restore. Cache misses
+remain valid cold builds; GitHub's branch/tag cache scope can limit reuse.
+
+For an explicit pre-release package check on `main`, first wait for normal CI,
+then run `gh workflow run release.yml --ref main`. For a development branch,
+run `gh workflow run ci.yml --ref dev`, wait for that exact commit's manual CI
+to pass, then run `gh workflow run release.yml --ref dev`. Pushes or new commits
+require matching fresh CI. A dry run on `main` also seeds default-branch release
+caches that later tags can restore. Neither branch dispatch publishes a release.
+
+No release or draft is uploaded when a required build/package job fails. Drafts
+remain unpublished until reviewed; `release.prerelease` is explicitly false.
+The workflow uses native [GitHub-hosted runners](https://docs.github.com/en/actions/how-tos/write-workflows/choose-where-workflows-run/choose-the-runner-for-a-job)
+for each architecture. Older macOS versions and untested external backends are
+not certified by these jobs.
+
+`make build` stamps `VERSION`; GoReleaser snapshot builds can set
+`TXM_SNAPSHOT_VERSION="$(cat VERSION)"`. Direct Go builds default to `dev`.
+Snapshot output is test material, not a replacement for the exact tagged release
+artifacts.
+Use the pinned tools and runner configuration in the
+[release workflow](../.github/workflows/release.yml). The build/dependency pins,
+archive inventory, and job definitions live there and in
+[GoReleaser configuration](../.goreleaser.yaml).
+
+For each release, keep validation reports with the CI run and record relevant
+compatibility evidence in that version's [changelog entry](CHANGELOG.md). A prior
+snapshot's passing checks do not validate changed source or final release bytes.

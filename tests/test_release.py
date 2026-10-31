@@ -27,7 +27,7 @@ Future work must stay out of these release notes.
 
 ### Upgrade notes
 
-Keep the old binary. See [validation](releasing.md#remaining-release-gates).
+Keep the old binary. See [validation](development.md#release-process).
 
 ## [1.3.1] - 2026-09-17
 
@@ -39,7 +39,7 @@ Old changes must stay out of these release notes.
         version, notes = release.release_notes(self.fixture(), 'v2.0.0')
         self.assertEqual(version, '2.0.0')
         self.assertIn('Keep the old binary', notes)
-        self.assertIn('https://github.com/MohamedElashri/txm/blob/v2.0.0/docs/releasing.md#remaining-release-gates', notes)
+        self.assertIn('https://github.com/MohamedElashri/txm/blob/v2.0.0/docs/development.md#release-process', notes)
         self.assertNotIn('Future work', notes)
         self.assertNotIn('Old changes', notes)
 

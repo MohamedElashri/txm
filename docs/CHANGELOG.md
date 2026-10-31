@@ -5,6 +5,13 @@ Changes follow [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) and
 
 ## [Unreleased]
 
+### Documentation
+
+- Consolidate installation, interactive, and automation workflows in the user
+  guide, development and release instructions in one maintainer guide, and
+  native wire details in the contracts reference. Routine documentation uses
+  repository version metadata; release-specific evidence stays in the changelog.
+
 ### Fixed
 
 - Publish native fixture identity receipts atomically and tolerate temporary
@@ -25,7 +32,7 @@ Changes follow [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) and
 ## [2.0.0] - 2026-10-31
 
 txm 2.0 brings persistent terminal workspaces, supervised commands, a dashboard,
-Git worktree tasks, and SSH hosts into one CLI. See the [compatibility matrix](releasing.md#platforms-and-backends)
+Git worktree tasks, and SSH hosts into one CLI. See the [compatibility matrix](user-guide.md#platforms-and-backends)
 for backend scope and platform validation.
 
 ### Upgrade notes
@@ -95,6 +102,45 @@ for backend scope and platform validation.
   guides, and contributor instructions organized around user workflows.
 - Stable 2.0.0 identity and release notes, checksum/archive validation, and native
   package checks before draft creation. Publishing remains a separate step.
+
+### Validation evidence
+
+These are pre-publication snapshot results for this version, not proof of the
+final tagged release bytes. The tag workflow must validate its own archives
+before draft creation and publication review.
+
+| Platform | Recorded runtime coverage |
+| --- | --- |
+| Linux amd64 | GNU/static-musl archives pass private installation, native/tmux runtime suites, profiles, supervision/events, dashboard, tasks/pruning, and actual foreign-UID rejection. Normal/race/fuzz CI and additional local SSH/container checks also pass. |
+| macOS ARM64 | Archive installation and native/tmux runtime suites pass, including profiles, supervision/events, dashboard, tasks/pruning, real Screen/Zellij, loopback SSH, and actual foreign-UID rejection. Normal and race CI also pass. |
+| macOS Intel | The same archive installation, runtime, backend, SSH, and foreign-UID gates as macOS ARM64 pass on an Intel runner; normal and race CI also pass. |
+| Linux ARM64 | GNU/static-musl archives pass private installation, native/tmux runtime suites, profiles, supervision/events, dashboard, tasks/pruning, and actual foreign-UID rejection on ARM64 runners. |
+| Windows amd64/ARM64 | Both archives pass checksum/header validation and CLI version/help/completion/unsupported-refusal smoke checks on matching runners. External backends and Windows installers are unverified; native persistence, private Unix state, and dashboard are unsupported. |
+
+Basic Zellij 0.45.1 and GNU Screen lifecycle/attach have Linux/macOS runtime
+coverage; macOS Screen is 4.00.03. Their adapters remain degraded: exact panes,
+layouts, output capture, and read-only attachment are unsupported.
+
+The matrix records the successful [PR CI](https://github.com/MohamedElashri/txm/actions/runs/41153986716)
+and [eight-target package validation](https://github.com/MohamedElashri/txm/actions/runs/41153986791)
+at commit `0bb3ef3`, plus local coverage recorded here. These PR archives
+are snapshots stamped 2.0.0. Official release assets are rebuilt and must pass
+the exact-tag workflow before publication. Archive names alone do not establish
+runtime support.
+
+| Adapter | Recorded validation |
+| --- | --- |
+| Generic | Authenticated worker signals; no AI provider required |
+| Claude | Exact 2.1.308 adapter with offline SessionStart coverage; full conversations remain unverified |
+| Codex | 0.165.0 schema and manual configuration only; runtime/trusted lifecycle remains unverified. Installed 0.166.0 is refused. |
+| OpenCode | Installed v2.2.2 is unsupported; no v1 examples are applied to v2 |
+
+Local Linux amd64 GNU/static-musl checks passed 40 runtime/install/performance
+checks and 36 container groups across normal/race and actual archived binaries;
+25 harness tests, 13 Go/build checks, and four fuzz targets also passed. Reports
+remain outside the source tree. Local macOS ARM64 coverage included OpenSSH
+10.5p1. Windows external backends/installers and full trusted provider
+conversations remained outside the verified scope.
 
 ## [1.3.1] - 2026-09-17
 

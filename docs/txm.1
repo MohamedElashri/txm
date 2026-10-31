@@ -1,4 +1,4 @@
-.TH TXM 1 "October 2026" "txm 2.0.0" "User Commands"
+.TH TXM 1 "" "txm" "User Commands"
 .SH NAME
 txm \- terminal sessions, supervised jobs and workspace workflows
 .SH SYNOPSIS
@@ -16,13 +16,13 @@ do not require the optional agent coordinator or an AI provider.
 \fBtxm\fR supports four terminal multiplexer backends:
 .TP
 \fBnative\fR
-Built-in native persistence using libghostty, implemented by Linux/macOS CGO builds (Linux amd64 and macOS arm64 runtime validated); Windows native persistence is unsupported. Framed v1 IPC uses a private per-user runtime directory. Legacy native sockets remain untouched and require the old binary.
+Built-in native persistence using libghostty, implemented by Linux/macOS CGO builds; Windows native persistence is unsupported. Framed v1 IPC uses a private per-user runtime directory. Legacy native sockets remain untouched and require the old binary.
 .TP
 \fBtmux\fR
-Exact session/window/pane IDs and names, bounded screen/history capture and read-only attach. Requires a compatible 3.x CLI; runtime evidence covers Linux 3.4 and macOS 3.8.
+Exact session/window/pane IDs and names, bounded screen/history capture and read-only attach. Requires a compatible 3.x CLI; profiles require tmux 3.4 or newer.
 .TP
 \fBzellij\fR
-Degraded session/tab adapter; Linux/macOS Zellij 0.45.1 basic runtime tested. Exact pane, window close/rename/split and output capture are unsupported. Listings may include resurrectable sessions, with unknown process state.
+Degraded session/tab adapter; custom-command creation requires Zellij 0.45.1 or newer. Exact pane, window close/rename/split and output capture are unsupported. Listings may include resurrectable sessions, with unknown process state.
 .TP
 \fBGNU Screen\fR
 Degraded session adapter retaining full PID.name identity. Duplicate short names are ambiguous. Exact pane/window mutations and output capture are unsupported until verified.
@@ -218,9 +218,8 @@ throttle, bounded local queue; snapshot/resync never replays actions. Default of
 Stop only the matching local agent service, leaving managed sessions/children
 running. Only agent workflows/events start/contact the optional service; ordinary session
 commands remain independent. Private versioned registry/manifest/receipt files
-are under the state directory. Sessions, supervision, hooks/events/waits and
-TTY restoration have Linux amd64 and macOS ARM64 runtime coverage. Other
-platform/provider gates remain separate; see docs/releasing.md.
+are under the state directory. See docs/user-guide.md for platform/provider scope
+and docs/CHANGELOG.md for version-specific validation evidence.
 .TP
 \fBwindow\fR [\fInew|list|kill|next|prev|rename|split\fR]
 Manage windows within a session.
@@ -307,9 +306,8 @@ List allowed pinned hosts using native (default) or explicit tmux. Per-host boun
 .B remote attach ALIAS --host-id ID --backend BACKEND --name NAME --session-id ID [--instance ID] [--read-only]
 TTY-only attachment to an exact observed native/tmux session. Native requires its exact instance. Requests use encoded JSON tokens; local TTY settings/flags are restored. JSON attachment is unsupported.
 .PP
-Extensions have Linux amd64 and macOS ARM64 fixture coverage, including actual
-private loopback OpenSSH servers and native/tmux PTYs. Other platform/provider
-gates remain separate. See docs/automation.md and docs/releasing.md.
+See docs/user-guide.md for task and SSH workflows and docs/development.md for
+isolated runtime and package validation.
 .SH FILES
 .TP
 .I $XDG_STATE_HOME/txm/v1/host.json
@@ -329,8 +327,9 @@ System-wide installation location.
 130 cancelled. Partial aggregate data exits 7 unless interrupted (130). JSON
 errors include code, message, backend/locator when applicable, and retryable.
 .PP
-Linux amd64 and macOS arm64 are locally validated. Other OS/architecture runtime and archive
-verification remain required gates; Windows native persistence is unsupported.
+Runtime and archive validation is required on matching OS/architecture runners;
+Windows native persistence is unsupported. See docs/CHANGELOG.md for historical
+validation evidence and docs/development.md for release gates.
 .SH AUTHOR
 Written by Mohamed Elashri.
 .SH BUGS
