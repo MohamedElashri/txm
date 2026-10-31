@@ -1,69 +1,71 @@
-# txm
+<div align="center">
 
-**Terminal workspaces for people, scripts, and coding agents.**
+<h1>txm</h1>
+<p><strong>Persistent terminals. Supervised jobs. One CLI.</strong></p>
 
-txm brings persistent terminal sessions, supervised commands, Git worktrees, and
-SSH hosts into one CLI. Use its built-in native backend or manage existing tmux,
-Zellij, and GNU Screen sessions. Work interactively, watch jobs in a dashboard,
-or build automation with structured output and events.
+<p>
+  <a href="https://github.com/MohamedElashri/txm/releases"><img src="https://img.shields.io/github/v/release/MohamedElashri/txm?style=flat-square&amp;color=22c55e" alt="Latest release"></a>
+  <a href="https://github.com/MohamedElashri/txm/actions/workflows/ci.yml"><img src="https://img.shields.io/github/actions/workflow/status/MohamedElashri/txm/ci.yml?branch=main&amp;style=flat-square&amp;label=CI" alt="CI status"></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/license-GPL--3.0-2563eb?style=flat-square" alt="GPL-3.0 license"></a>
+</p>
 
-[Get started](docs/getting-started.md) · [Documentation](docs/README.md) ·
-[Releases](https://github.com/MohamedElashri/txm/releases) · [Changelog](docs/CHANGELOG.md)
+<p>
+  <a href="docs/getting-started.md">Get started</a> ·
+  <a href="docs/README.md">Documentation</a> ·
+  <a href="https://github.com/MohamedElashri/txm/releases">Downloads</a> ·
+  <a href="docs/CHANGELOG.md">Changelog</a>
+</p>
+
+</div>
+
+txm manages interactive terminals and background work across projects and SSH
+hosts. Use its built-in native backend or your existing tmux, Zellij, or GNU
+Screen setup.
 
 ## What you can do
 
-- **Keep work running.** Create persistent sessions, detach, reconnect, and
-  inspect terminal output. Native sessions need no external multiplexer.
-- **Describe your workspace.** Apply TOML profiles with commands, working
-  directories, and tmux window and pane layouts.
-- **Supervise jobs and agents.** Launch commands with recorded exit results,
-  wait for completion, and follow explicit attention signals through events.
-- **See your sessions in one place.** Search and filter the keyboard-driven
-  dashboard, preview output, and attach to the session you need.
-- **Work across projects and hosts.** Run tasks in fresh Git worktrees and
-  discover or attach to sessions on explicitly configured SSH hosts.
+| Capability | What you get |
+| :--- | :--- |
+| **[Persistent sessions](docs/getting-started.md#your-first-session)** | Keep shells running with built-in Ghostty terminal emulation. Detach and reconnect. |
+| **[Workspace profiles](docs/user-guide.md#profiles)** | Recreate commands, working directories, and tmux pane layouts from TOML. |
+| **[Jobs & coding agents](docs/automation.md#supervised-jobs)** | Supervise any command, record its exit result, and add opt-in attention hooks. |
+| **[Keyboard dashboard](docs/user-guide.md#dashboard)** | Search sessions, preview output, and attach without leaving the terminal. |
+| **[Git worktree tasks](docs/automation.md#git-worktree-tasks)** | Run project tasks in dedicated worktrees with tracked jobs and explicit cleanup. |
+| **[SSH hosts](docs/automation.md#ssh-hosts)** | Discover and attach to remote sessions through configured OpenSSH hosts. |
+| **[Automation](docs/automation.md#json-for-scripts)** | Query versioned JSON, stream live events, and wait on job state. |
 
-Sessions work independently of the optional agent coordinator. You can supervise
-ordinary commands without an AI provider; coding-agent attention hooks are opt-in.
+Linux and macOS are the primary platforms. See
+[backend capabilities and provider support](docs/releasing.md) for the full scope.
 
 ## Get started
 
-Download a published archive from [Releases](https://github.com/MohamedElashri/txm/releases),
-then extract it and run `./txm install` on Linux or macOS. The
-[installation guide](docs/getting-started.md#installation) covers platform
-selection, the stable installer, and source builds.
-
-These docs describe **v2.0.0**. Use the matching release archive or
-[build this checkout](docs/getting-started.md#build-from-source).
+Install the latest stable release on Linux or macOS (`curl` and `unzip` required):
 
 ```sh
-# Start a persistent terminal using the built-in backend.
+curl -fsSL https://raw.githubusercontent.com/MohamedElashri/txm/main/utils/install.sh | bash
+export PATH="$HOME/.local/bin:$PATH"
+```
+
+[Release archives](https://github.com/MohamedElashri/txm/releases/latest) ·
+[Build from source](docs/getting-started.md#build-from-source)
+
+```sh
+# Start a persistent shell. Detach with Ctrl+backslash.
 txm --backend native create work
 txm attach native/work
 
-# Detach with Ctrl+backslash, then find your session again.
-txm --backend native list
+# Find sessions and preview their output.
 txm dashboard --backend native
-```
 
-To supervise a command in a Go project:
-
-```sh
-txm --backend native agent start build -- go test ./...
+# Supervise a test run from a Go project.
+txm --backend native agent start tests -- go test ./...
 txm agent wait AGENT_ID --until exited --timeout 5m --fail-on-nonzero
 ```
 
-Replace `AGENT_ID` with the ID returned by `agent start`.
-[Automation](docs/automation.md) covers receipts, coding-agent hooks, worktree
-tasks, and remote sessions.
-
-Linux and macOS are the primary runtime platforms. Backend capabilities vary;
-see the [user guide](docs/user-guide.md) and
-[compatibility matrix](docs/releasing.md#platforms-and-backends).
+Use the ID returned by `agent start` in place of `AGENT_ID`.
 
 ## Contributing
 
-See [CONTRIBUTING.md](CONTRIBUTING.md) for builds, tests, and pull requests.
-Report bugs or propose features through [GitHub Issues](https://github.com/MohamedElashri/txm/issues).
-
-Licensed under [GPL-3.0](LICENSE).
+[Contributing guide](CONTRIBUTING.md) ·
+[Report an issue](https://github.com/MohamedElashri/txm/issues) ·
+[GPL-3.0 license](LICENSE)

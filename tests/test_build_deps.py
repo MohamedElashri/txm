@@ -98,6 +98,21 @@ else:
             'linux-musl-arm64', 'darwin-amd64', 'darwin-arm64'})
         for prefix in prefixes:self.assertTrue((prefix/".txm-build-info").exists())
 
+    def test_release_partitions_build_only_their_native_libraries(self):
+        self.env['TXM_RELEASE_ROOT'] = str(self.root)
+        self.env['TXM_RELEASE_PLATFORM'] = 'darwin'
+        command = ['bash', str(self.root/'scripts/build-deps.sh'), 'release']
+        result = subprocess.run(command, env=self.env, capture_output=True, text=True, timeout=10)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual({p.name for p in (self.root/'.ghostty-release').iterdir()}, {'darwin-amd64', 'darwin-arm64'})
+        self.env['TXM_RELEASE_PLATFORM'] = 'linux'
+        result = subprocess.run(command, env=self.env, capture_output=True, text=True, timeout=10)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(len((self.root/'builds').read_text().splitlines()), 6)
+        self.env['TXM_RELEASE_PLATFORM'] = 'unsupported'
+        self.assertNotEqual(subprocess.run(command, env=self.env, capture_output=True, timeout=10).returncode, 0)
+        self.assertEqual(len((self.root/'builds').read_text().splitlines()), 6)
+
 
 class BuildGuardEnvironmentTests(unittest.TestCase):
     def test_inherited_git_routing_and_credentials_cannot_escape_fixture(self):

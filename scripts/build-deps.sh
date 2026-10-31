@@ -5,6 +5,8 @@ root=$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)
 source "$root/scripts/dependencies.env"
 mode=${1:-host}
 case "$mode" in host|release) ;; *) echo "usage: $0 [host|release]" >&2; exit 2 ;; esac
+platform=${TXM_RELEASE_PLATFORM:-all}
+case "$platform" in all|linux|darwin) ;; *) echo "Unsupported release platform: $platform" >&2; exit 2 ;; esac
 zig=${ZIG:-zig}
 actual=$("$zig" version)
 if [[ "$actual" != "$ZIG_VERSION" ]]; then
@@ -58,6 +60,7 @@ else
     for tuple in x86_64-linux-gnu:linux-amd64 aarch64-linux-gnu:linux-arm64 \
         x86_64-linux-musl:linux-musl-amd64 aarch64-linux-musl:linux-musl-arm64 \
         x86_64-macos:darwin-amd64 aarch64-macos:darwin-arm64; do
+        case "$platform:${tuple#*:}" in linux:darwin-*|darwin:linux-*) continue ;; esac
         build "$root/.ghostty-release/${tuple#*:}" "${tuple%%:*}"
     done
 fi

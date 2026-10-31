@@ -33,15 +33,15 @@ class Peer:
         self.socket.settimeout(6)
         try:
             self.socket.connect(str(path))
+            self.next_id = 1
+            self.socket.sendall(packet(HELLO, 1, {'role': role}))
+            kind, ident, data = read(self.socket)
+            if kind != HELLO_OK or ident != 1:
+                raise AssertionError(data.decode())
+            self.identity = json.loads(data)
         except BaseException:
             self.socket.close()
             raise
-        self.next_id = 1
-        self.socket.sendall(packet(HELLO, 1, {'role': role}))
-        kind, ident, data = read(self.socket)
-        if kind != HELLO_OK or ident != 1:
-            raise AssertionError(data.decode())
-        self.identity = json.loads(data)
 
     def request(self, op, **fields):
         self.next_id += 1

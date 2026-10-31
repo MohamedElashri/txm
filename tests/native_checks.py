@@ -264,7 +264,7 @@ time.sleep(120)
             descendant = box.root / 'descendant.py'
             descendant.write_text(f"import signal,time\nfrom pathlib import Path\nsignal.signal(signal.SIGTERM,signal.SIG_IGN)\nsignal.signal(signal.SIGHUP,signal.SIG_IGN)\nPath({str(ready)!r}).touch()\nend=time.monotonic()+120\nwhile time.monotonic()<end and not Path({str(stopped)!r}).exists(): time.sleep(0.02)\n")
             parent = box.root / 'parent.py'
-            parent.write_text(f"import os,subprocess,sys,time,json\nfrom pathlib import Path\np=subprocess.Popen([sys.executable,{str(descendant)!r}])\nwhile not Path({str(ready)!r}).exists(): time.sleep(0.01)\nPath({str(identity)!r}).write_text(json.dumps([p.pid,os.getpgid(p.pid)]))\np.wait()\n")
+            parent.write_text(f"import os,subprocess,sys,time\nfrom pathlib import Path\nsys.path.insert(0,{str(Path(__file__).resolve().parent)!r})\nfrom sandbox import publish_json\np=subprocess.Popen([sys.executable,{str(descendant)!r}])\nwhile not Path({str(ready)!r}).exists(): time.sleep(0.01)\npublish_json(Path({str(identity)!r}),[p.pid,os.getpgid(p.pid)])\np.wait()\n")
             try:
                 with native_server(box, BINARY, argv=[sys.executable, parent]) as (_, _, leader):
                     wait_for(identity.exists)
@@ -300,7 +300,7 @@ time.sleep(120)
             finally:
                 for peer in peers:
                     peer.close()
-            wait_for(lambda: PeerStatus(sock)==0)
+            wait_for_native_slots(sock)
         with Sandbox() as box:
             runtime=box.root/'runtime/txm/v1'
             runtime.mkdir(parents=True,mode=0o700)
@@ -346,6 +346,18 @@ time.sleep(120)
 def PeerStatus(sock):
     with Peer(sock) as c:
         return c.request('status')['attached_clients']
+
+
+def wait_for_native_slots(sock, timeout=5):
+    # Closing all peers does not synchronously release the server's worker
+    # slots. Only this post-saturation probe tolerates an overload refusal;
+    # dead servers, protocol errors and a pool that never recovers still fail.
+    def available():
+        try:
+            return PeerStatus(sock) == 0
+        except (ConnectionResetError, BrokenPipeError, EOFError):
+            return False
+    wait_for(available, timeout=timeout)
 
 
 if __name__ == '__main__':

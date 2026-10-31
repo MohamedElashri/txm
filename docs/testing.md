@@ -20,6 +20,7 @@ The helper accepts these overrides:
 | `GHOSTTY_SOURCE_DIR` | Dedicated source checkout at the pinned revision |
 | `GHOSTTY_HOST_DIR` | Native library installation prefix |
 | `ZIG` | Path to the pinned Zig executable |
+| `TXM_RELEASE_PLATFORM` | `linux` or `darwin` to build only that release partition; unset builds all targets |
 
 Existing dependency checkouts must be clean and at the pinned revision. The
 helper fails rather than resetting a different or dirty checkout. Build in a
@@ -84,6 +85,12 @@ comparisons exclude only kernel bookkeeping bits. Fixtures protect against
 accidental cross-test access; same-UID malicious code and escaping descendants
 are outside their isolation guarantee.
 
+Fixture readiness receipts are published by atomic replacement, so file presence
+means complete JSON. After deliberately saturating native connection slots, only
+the recovery probe retries temporary EOF/reset/broken-pipe refusals within a fixed
+budget. A dead server, invalid protocol response, or pool that never recovers
+still fails. Failed protocol handshakes close their client sockets.
+
 Keep regression tests for shipped behavior. Save logs, recordings, manifests, and
 archive outputs outside the repository or as CI/release artifacts. Include exact
 commands, source/artifact hashes, OS, architecture, backend versions, and skip
@@ -125,12 +132,18 @@ it reports redacted findings. Pair the scan with a review of fixture provenance.
 [Compatibility and releases](releasing.md) tracks the platform matrix and gates.
 
 
-Pull requests run the full package matrix using non-publishing snapshot builds.
+Pull requests run normal CI; full packaging is reserved for version tags and
+explicit Release workflow dispatches. A cheap preflight requires successful CI
+for the exact source commit before any release build. Linux/Windows archives
+build on Linux and Darwin archives on macOS, in parallel, with dependency caches
+revalidated by the pinned build helper.
 Both macOS package jobs install checksum-pinned Zellij 0.45.1 with
 `scripts/install-ci-zellij.sh` to avoid differing Homebrew package snapshots.
-The tag workflow rebuilds the exact release artifacts. Both verify the complete eight-ZIP
-bundle with `scripts/check-release-artifacts.py`, and tests archives on matching
-runners before the tag workflow can create a stable draft. PR runs never create releases. `tests/peer_checks.py` shares the actual
+Both tag and manual runs verify the complete eight-ZIP bundle with
+`scripts/check-release-artifacts.py`, including assembly of the original Linux
+and Darwin checksum manifests, and test archives on matching runners. Only a tag
+run can create a stable draft. Failed package jobs can be rerun without rebuilding
+the bundle; report artifacts include the attempt number. `tests/peer_checks.py` shares the actual
 foreign-UID regressions between Linux containers and disposable macOS CI; it
 refuses ordinary host-root execution. Windows checks intentionally cover only
 version/help/completions and unsupported refusals. See the

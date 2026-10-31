@@ -4,6 +4,7 @@ This is an isolation guard for trusted project tests, not a sandbox against
 malicious same-UID code. All subprocesses receive a constructed environment.
 """
 import contextlib
+import json
 import os
 from pathlib import Path
 import secrets
@@ -180,6 +181,14 @@ def wait_for(predicate, timeout=5):
             return
         time.sleep(0.02)
     raise TimeoutError("fixture condition not reached")
+
+
+def publish_json(path, value):
+    """Publish a complete fixture receipt before exposing its readiness path."""
+    temporary = path.with_name(path.name + '.tmp')
+    with temporary.open('x') as output:
+        json.dump(value, output)
+    temporary.replace(path)
 
 
 @contextlib.contextmanager

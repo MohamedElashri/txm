@@ -1,73 +1,135 @@
 name: Release
 
 on:
-  pull_request:
-    branches: [main]
+  workflow_dispatch:
   push:
     tags:
       - 'v*'
 
 permissions:
   contents: read
+  actions: read
 
 concurrency:
   group: release-${{ github.ref }}
-  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+  cancel-in-progress: ${{ github.event_name == 'workflow_dispatch' }}
 
 jobs:
-  validate:
-    if: github.event_name == 'push'
-    uses: ./.github/workflows/ci.yml
+  preflight:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 3
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Validate release identity and reuse exact-commit CI
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          mkdir "$RUNNER_TEMP/readiness"
+          if [[ "$GITHUB_REF_TYPE" == tag ]]; then
+            python3 scripts/check-release.py --stable --tag "$GITHUB_REF_NAME"
+            python3 scripts/check-release-ci.py --repository "$GITHUB_REPOSITORY" --sha "$GITHUB_SHA" \
+              --report "$RUNNER_TEMP/readiness/ci.json"
+          else
+            python3 scripts/check-release.py --stable
+            python3 scripts/check-release-ci.py --repository "$GITHUB_REPOSITORY" --sha "$GITHUB_SHA" \
+              --branch "$GITHUB_REF_NAME" --manual --report "$RUNNER_TEMP/readiness/ci.json"
+          fi
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: release-readiness-attempt-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/readiness/
+          if-no-files-found: error
+          retention-days: 14
 
   build:
-    needs: validate
-    if: ${{ !cancelled() && (needs.validate.result == 'success' || github.event_name == 'pull_request') }}
-    runs-on: macos-15
+    needs: preflight
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-24.04
+            platform: linux
+          - os: macos-15
+            platform: darwin
+    runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0
-      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+      - uses: ./.github/actions/setup-build
         with:
-          go-version: '1.26.10'
-      - name: Set up Zig
-        run: bash scripts/install-ci-zig.sh
-      - name: Validate stable tag and prepare notes and SDK
+          mode: release
+          platform: ${{ matrix.platform }}
+      - name: Prepare completions, notes and SDK
         run: |
+          set -euo pipefail
+          bash scripts/generate-completions.sh
           if [[ "$GITHUB_REF_TYPE" == tag ]]; then
             python3 scripts/check-release.py --stable --tag "$GITHUB_REF_NAME" --notes "$RUNNER_TEMP/release-notes.md"
           else
             python3 scripts/check-release.py --stable --notes "$RUNNER_TEMP/release-notes.md"
           fi
           echo "TXM_SNAPSHOT_VERSION=$(cat VERSION)" >> "$GITHUB_ENV"
-          echo "MACOS_SDK_PATH=$(xcrun --show-sdk-path)" >> "$GITHUB_ENV"
+          if [[ "$RUNNER_OS" == macOS ]]; then
+            echo "MACOS_SDK_PATH=$(xcrun --show-sdk-path)" >> "$GITHUB_ENV"
+          else
+            echo "MACOS_SDK_PATH=" >> "$GITHUB_ENV"
+          fi
       - name: Build archives without uploading a release
         uses: goreleaser/goreleaser-action@f06c13b6b1a9625abc9e6e439d9c05a8f2190e94 # v7.2.3
         with:
           distribution: goreleaser
           version: v2.19.0
-          args: release --clean --skip=publish ${{ github.event_name == 'pull_request' && '--snapshot' || '' }} --release-notes "${{ runner.temp }}/release-notes.md"
+          args: release --clean --skip=before,publish --parallelism=2 ${{ github.ref_type != 'tag' && '--snapshot' || '' }} --release-notes "${{ runner.temp }}/release-notes.md"
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           TXM_RELEASE_ROOT: ${{ github.workspace }}
-      - name: Verify complete bundle and checksums
+          TXM_RELEASE_PLATFORM: ${{ matrix.platform }}
+      - name: Collect build partition
+        env:
+          PLATFORM: ${{ matrix.platform }}
         run: |
-          mkdir "$RUNNER_TEMP/bundle"
-          cp dist/*.zip dist/checksums.txt "$RUNNER_TEMP/bundle/"
-          python3 scripts/check-release-artifacts.py --directory "$RUNNER_TEMP/bundle" --report "$RUNNER_TEMP/bundle-check.json"
+          mkdir "$RUNNER_TEMP/part"
+          cp dist/*.zip "$RUNNER_TEMP/part/"
+          cp dist/checksums.txt "$RUNNER_TEMP/part/checksums-$PLATFORM.txt"
+          python3 scripts/check-release-artifacts.py --directory "$RUNNER_TEMP/part" --partition "$PLATFORM"
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: release-build-${{ matrix.platform }}
+          path: ${{ runner.temp }}/part/*
+          overwrite: true
+          if-no-files-found: error
+          retention-days: 14
+
+  bundle:
+    needs: build
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          pattern: release-build-*
+          merge-multiple: true
+          path: ${{ runner.temp }}/parts
+      - name: Assemble and verify complete bundle
+        run: |
+          python3 scripts/check-release-artifacts.py --assemble-from "$RUNNER_TEMP/parts" \
+            --directory "$RUNNER_TEMP/bundle" --report "$RUNNER_TEMP/bundle-check.json"
       - name: Retain the immutable build bundle
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: release-bundle
           path: ${{ runner.temp }}/bundle/*
+          overwrite: true
           if-no-files-found: error
           retention-days: 14
 
   packages:
-    needs: build
-    # Override the default success() gate: validate is intentionally skipped on
-    # PRs, but a successful snapshot build must still run every package job.
-    if: ${{ !cancelled() && needs.build.result == 'success' }}
+    needs: bundle
+    timeout-minutes: 15
     strategy:
       fail-fast: false
       matrix:
@@ -138,13 +200,13 @@ jobs:
       - name: Verify actual foreign-UID rejection in a Linux container
         if: runner.os == 'Linux'
         run: |
-          docker build --tag txm-peer-fixture --file tests/containers/Dockerfile.linux tests/containers
           docker run --rm --init --network none --read-only --tmpfs /tmp:rw,exec,size=512m \
             --env TXM_LINUX_FIXTURE=1 --env PYTHONDONTWRITEBYTECODE=1 \
             --mount "type=bind,src=$GITHUB_WORKSPACE/tests,dst=/work/tests,readonly" \
             --mount "type=bind,src=$RUNNER_TEMP/package/txm,dst=/opt/txm,readonly" \
             --mount "type=bind,src=$RUNNER_TEMP/reports,dst=/reports" \
-            txm-peer-fixture python3 /work/tests/peer_checks.py --binary /opt/txm --report /reports/peer-credentials.json -v
+            python:3.13.17-slim@sha256:d98cc29d3266e535dd9da1099688d9cb3ca4753813571e071763d17725460962 \
+            python3 /work/tests/peer_checks.py --binary /opt/txm --report /reports/peer-credentials.json -v
       - name: Smoke Windows CLI and unsupported refusals
         if: runner.os == 'Windows'
         env:
@@ -156,15 +218,16 @@ jobs:
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
-          name: package-${{ matrix.archive }}
+          name: package-${{ matrix.archive }}-attempt-${{ github.run_attempt }}
           path: ${{ runner.temp }}/reports/
           if-no-files-found: warn
           retention-days: 14
 
   draft:
     if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')
-    needs: [build, packages]
+    needs: [bundle, packages]
     runs-on: ubuntu-24.04
+    timeout-minutes: 5
     permissions:
       contents: write
     steps:

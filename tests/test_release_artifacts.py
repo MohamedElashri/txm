@@ -3,6 +3,7 @@ import hashlib
 import importlib.util
 from pathlib import Path
 import struct
+import shutil
 import tempfile
 import unittest
 import zipfile
@@ -69,6 +70,44 @@ class ReleaseArtifactTests(unittest.TestCase):
                         for n,data in members.items():z.writestr(n,data)
                     self.checksums(bundle)
                 with self.assertRaises(ValueError):artifacts.verify(bundle,repo)
+
+    def partitions(self):
+        parts, repo = self.fixture()
+        lines = (parts/'checksums.txt').read_text().splitlines()
+        (parts/'checksums.txt').unlink()
+        for platform in ('linux', 'darwin'):
+            selected = [line for line in lines if ('Darwin' in line) == (platform == 'darwin')]
+            (parts/f'checksums-{platform}.txt').write_text('\n'.join(selected)+'\n')
+        return parts, repo
+
+    def test_build_partitions_reassemble_without_changing_checksums(self):
+        parts, repo = self.partitions();out = parts.parent/'bundle'
+        self.assertEqual(len(artifacts.assemble(parts, out, repo)['archives']), 8)
+        self.assertEqual((out/'checksums.txt').read_text().splitlines(), sorted(
+            (parts/'checksums-linux.txt').read_text().splitlines()+(parts/'checksums-darwin.txt').read_text().splitlines()))
+        with self.assertRaises(FileExistsError):artifacts.assemble(parts, out, repo)
+
+    def test_each_partition_is_complete_but_cannot_substitute_for_full_bundle(self):
+        for platform, count in [('linux', 6), ('darwin', 2)]:
+            with self.subTest(platform=platform):
+                parts, repo = self.partitions();part = parts.parent/'part';part.mkdir()
+                shutil.copyfile(parts/f'checksums-{platform}.txt',part/f'checksums-{platform}.txt')
+                for name in artifacts.TARGETS:
+                    if ('Darwin' in name) == (platform == 'darwin'):shutil.copyfile(parts/name,part/name)
+                self.assertEqual(len(artifacts.verify(part,repo,platform=platform)['archives']),count)
+                with self.assertRaises(ValueError):artifacts.verify(part,repo)
+                next(part.glob('*.zip')).unlink()
+                with self.assertRaises(ValueError):artifacts.verify(part,repo,platform=platform)
+
+    def test_missing_duplicate_wrong_partition_and_tampered_builds_are_rejected(self):
+        for kind in ('missing', 'duplicate', 'wrong-partition', 'tampered'):
+            with self.subTest(kind=kind):
+                parts, repo = self.partitions();manifest = parts/'checksums-linux.txt'
+                if kind == 'missing':next(parts.glob('*.zip')).unlink()
+                elif kind == 'duplicate':manifest.write_text(manifest.read_text()+manifest.read_text().splitlines()[0]+'\n')
+                elif kind == 'wrong-partition':manifest.write_text((parts/'checksums-darwin.txt').read_text())
+                else:next(parts.glob('*.zip')).write_bytes(b'tampered')
+                with self.assertRaises(ValueError):artifacts.assemble(parts, parts.parent/'bundle', repo)
 
 
 if __name__=='__main__':unittest.main()

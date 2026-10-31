@@ -70,37 +70,69 @@ installer and GitHub's latest-release endpoint select stable releases.
 
 ## Release process
 
-Pull requests into `main` run normal CI and the complete package matrix below.
-The package workflow uses `--snapshot` with the version from `VERSION`, checks
-all eight archives, and never creates a draft or release for a PR. A version tag
-rebuilds and revalidates the exact release artifacts before draft creation.
+Pull requests into `main` run normal CI. Full archive builds and the eight-target
+package matrix run only for version tags or an explicit Release workflow dispatch.
+Branch dispatches use snapshots stamped from `VERSION` and never create a draft.
+Tag runs build and validate the official archives before draft creation.
 
 1. Update `VERSION` and its dated changelog section, including upgrade notes.
    `make release-check` requires a stable version and matching metadata.
 2. Run the applicable [tests](testing.md), including actual archive installation
    and runtime checks. Save source/artifact hashes and reports outside the tree.
-3. Commit the reviewed release preparation and merge it into the intended release
-   branch. Tag that exact commit `v2.0.0`; the tag must match `VERSION`.
-4. The tag workflow runs shared CI, then GoReleaser 2.19.0 on macOS 15 with its
-   installed SDK. It builds all eight archives with `--skip=publish`; no GitHub
-   release exists at this stage.
-5. `scripts/check-release-artifacts.py` checks the complete archive inventory,
+3. Commit the reviewed release preparation and merge it into `main`. Wait for
+   that exact merge commit's CI to pass, then tag it with the version from
+   `VERSION` (for example `v2.0.0`).
+4. A short Linux preflight checks stable metadata and the latest CI run for that
+   exact commit on `main`, including successful Linux, macOS ARM64/Intel, and
+   lint jobs. Missing, pending, failed, cancelled, or skipped validation stops
+   the release before compilation. Existing CI is reused rather than repeated.
+5. Two parallel GoReleaser 2.19.0 jobs build without publishing: Linux builds the
+   four Linux and two Windows archives; macOS 15 builds the two Darwin archives
+   using its SDK. Each job builds only its required Ghostty libraries and retains
+   its partition. An inexpensive Linux job assembles the complete bundle using
+   the original build checksums.
+6. `scripts/check-release-artifacts.py` checks the complete archive inventory,
    checksums, packaged documentation, binary OS/CPU headers, and static-musl
    linkage. The same bundle is checked after each artifact download.
-6. Each Unix archive runs on its matching Linux/macOS architecture through private
+7. Each Unix archive runs on its matching Linux/macOS architecture through private
    installation and the runtime suites. Mac jobs additionally test real backends
    and loopback SSH. Both platforms test actual different-UID rejection using
    private fixtures: Linux in a disposable container, macOS as root only on the
-   disposable CI runner. No accounts or host services are changed.
-7. Windows x86_64/ARM64 runners check their executable's version, help,
+   disposable CI runner. The Linux peer probe uses a pinned multi-architecture
+   Python image directly, avoiding an unrelated SSH/tmux/Screen/Git image build.
+   No accounts or host services are changed.
+8. Windows x86_64/ARM64 runners check their executable's version, help,
    completions, and explicit unsupported refusals. These are CLI smoke checks,
    not external-backend or Windows installer certification.
-8. Only after every package job passes does a write-enabled job create a
+9. Only after every package job passes does a write-enabled job create a
    **stable draft**, with eight ZIPs, checksums, and the canonical release notes.
    Review the tag/commit, jobs, reports, upgrade notes, and compatibility scope
    before manually publishing. Existing releases are not overwritten on rerun.
 
 The bundle and package reports are retained as Actions artifacts for 14 days.
+Reports include the run attempt in their artifact names, so a successful retry
+is distinct from an earlier incomplete report. On failure, use GitHub's **Re-run
+failed jobs** or `gh run rerun RUN_ID --failed`. A package failure reuses the
+existing bundle and other successful jobs; it does not repeat compilation.
+If one build partition fails, its successful sibling is retained. Job timeouts
+bound stalled work; unrelated package jobs finish so retries need not repeat them.
+
+CI and release builds cache pinned Ghostty sources, native outputs, and Zig's
+incremental cache by OS, CPU, SDK version/build, and dependency lock. Every restore
+still runs the source/version guards and `zig build`; directory presence never
+proves validity. Validated dependencies are saved before application compilation
+and tests, so those failures do not discard the expensive dependency work. Go's
+cache is scoped to the verified library bytes as well as the dependency lock and
+SDK, preventing stale external-library links after a restore. Cache misses
+remain valid cold builds; GitHub's branch/tag cache scope can limit reuse.
+
+For an explicit pre-release package check on `main`, first wait for normal CI,
+then run `gh workflow run release.yml --ref main`. For a development branch,
+run `gh workflow run ci.yml --ref dev`, wait for that exact commit's manual CI
+to pass, then run `gh workflow run release.yml --ref dev`. Pushes or new commits
+require matching fresh CI. A dry run on `main` also seeds default-branch release
+caches that later tags can restore. Neither branch dispatch publishes a release.
+
 No release or draft is uploaded when a required build/package job fails. Drafts
 remain unpublished until reviewed; `release.prerelease` is explicitly false.
 The workflow uses native [GitHub-hosted runners](https://docs.github.com/en/actions/how-tos/write-workflows/choose-where-workflows-run/choose-the-runner-for-a-job)
