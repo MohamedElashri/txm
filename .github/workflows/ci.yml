@@ -105,6 +105,7 @@ jobs:
       uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
       with:
         name: source-macos-reports
+        overwrite: true
         path: |
           ${{ runner.temp }}/backends.json
           ${{ runner.temp }}/ssh.json
@@ -141,6 +142,7 @@ jobs:
       uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
       with:
         name: ci-macos-universal
+        overwrite: true
         path: ${{ runner.temp }}/universal/*
         if-no-files-found: error
         retention-days: 14
