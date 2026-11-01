@@ -32,9 +32,12 @@ and download the archive for your operating system and processor:
 | --- | --- | --- |
 | Linux | `txm_Linux_x86_64.zip` | `txm_Linux_arm64.zip` |
 | Linux, static musl | `txm_Linux_x86_64-musl.zip` | `txm_Linux_arm64-musl.zip` |
-| macOS | `txm_Darwin_x86_64.zip` | `txm_Darwin_arm64.zip` |
+| macOS | `txm_Darwin_universal.zip` | `txm_Darwin_universal.zip` |
 | Windows | `txm_Windows_x86_64.zip` | `txm_Windows_arm64.zip` |
 
+The macOS archive contains one universal binary with Intel and Apple Silicon
+slices. Older releases provide separate Mac archives; the stable installer
+falls back to those when a universal download is absent.
 Static musl builds are available for systems such as Alpine Linux. Windows
 archives have a limited external-backend scope; native sessions, private Unix
 state, and the dashboard are unsupported. For platform scope, see

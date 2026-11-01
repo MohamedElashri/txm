@@ -20,6 +20,9 @@ The final signed-source and matching-platform archive gates remain required.
   `agent stop-coordinator` leaves sessions and children running. Old coordinators
   refuse unsupported metrics creation before launching work. Keep the original
   state directory and previous binary for existing work.
+- macOS now uses `txm_Darwin_universal.zip`, containing Intel and Apple Silicon
+  slices in one executable. The installer prefers it and retains an
+  architecture-specific fallback for older stable releases.
 - Provider compatibility, validation and trust are separate. Unknown versions
   refuse hook activation. No provider account, trust setting or permission is
   enabled by upgrading. Claude automatic setup refuses an existing `--settings`
@@ -97,16 +100,18 @@ OpenCode's final release disposition remains a maintainer gate.
   2.1.0 snapshot also passes private installation and the complete functional
   runtime matrix. Intel runtime, final signed-source archive validation,
   macOS foreign-UID CI, native Linux
-  ARM64, Windows CLI smoke and the complete final eight-archive gate remain open.
+  ARM64, Windows CLI smoke and the complete final seven-archive gate remain open.
 - Three alternating full-scale macOS/v2.0 comparisons pass every fixed and 20%
   relative budget: median startup +15.7%, list10 +19.9%, list100 -3.6%, and peak
   server RSS +1.9%. The final arm64 snapshot runtime check passes the 100-session
   fixed budgets. Earlier attempts below the unchanged 4 GiB available-memory
   guard remain recorded as refusals. These fixture measurements are not a
   performance SLA; historical Linux evidence retains its original scope.
-- A separate authorized live-provider demonstration and a final signed candidate
-  source/CI run remain pending. No new macOS provider inference or trust approval
-  is claimed by generic runtime tests.
+- A separate authorized macOS Codex 0.166.0 subscription demonstration passes
+  two fixed-response turns, same-session resume, neutral callbacks and clean
+  provider/controller exits with sanitized recording and fixture cleanup.
+  This does not extend the full Linux lifecycle reference to macOS. Final signed
+  universal-candidate source/CI validation remains pending.
 
 ### Documentation and release engineering
 

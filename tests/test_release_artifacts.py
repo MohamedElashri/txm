@@ -14,7 +14,21 @@ artifacts = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(artifacts)
 
 
+def universal(wide=False):
+    first, second = executable('Darwin', 'x86_64'), executable('Darwin', 'arm64')
+    data = bytearray(512)
+    struct.pack_into('>II', data, 0, 0xcafebabf if wide else 0xcafebabe, 2)
+    for index, (cpu, offset, payload) in enumerate([(0x1000007, 128, first), (0x100000c, 256, second)]):
+        values = (cpu, 0, offset, len(payload), 7)
+        struct.pack_into('>IIQQII' if wide else '>IIIII', data, 8 + index * (32 if wide else 20),
+                         *(values + (0,) if wide else values))
+        data[offset:offset + len(payload)] = payload
+    return data
+
+
 def executable(system, arch, dynamic=False):
+    if system == 'Darwin' and arch == 'universal':
+        return universal()
     data = bytearray(128)
     if system == 'Linux':
         data[:6] = b'\x7fELF\x02\x01';struct.pack_into('<H', data, 18, 62 if arch == 'x86_64' else 183)
@@ -43,7 +57,29 @@ class ReleaseArtifactTests(unittest.TestCase):
         (bundle/'checksums.txt').write_text(''.join(hashlib.sha256(p.read_bytes()).hexdigest()+'  '+p.name+'\n' for p in sorted(bundle.glob('*.zip'))))
 
     def test_complete_bundle_and_binary_targets(self):
-        bundle,repo=self.fixture();self.assertEqual(len(artifacts.verify(bundle,repo)['archives']),8)
+        bundle,repo=self.fixture();self.assertEqual(len(artifacts.verify(bundle,repo)['archives']),7)
+
+    def test_universal_requires_two_distinct_intact_bounded_slices(self):
+        for wide in (False, True):
+            data = universal(wide)
+            artifacts.binary_target(data, 'Darwin', 'universal')
+            entry = 40 if wide else 28
+            offset_format = '>Q' if wide else '>I'
+            for kind in ['thin', 'count', 'duplicate', 'wrong-slice', 'subtype', 'overlap',
+                         'header-overlap', 'alignment', 'out-of-bounds', 'truncated']:
+                with self.subTest(wide=wide, kind=kind):
+                    broken = bytearray(data)
+                    if kind == 'thin':broken = executable('Darwin', 'arm64')
+                    elif kind == 'count':struct.pack_into('>I', broken, 4, 1)
+                    elif kind == 'duplicate':struct.pack_into('>I', broken, entry, 0x1000007)
+                    elif kind == 'wrong-slice':struct.pack_into('<I', broken, 260, 0x1000007)
+                    elif kind == 'subtype':struct.pack_into('>I', broken, entry + 4, 1)
+                    elif kind == 'overlap':struct.pack_into(offset_format, broken, entry + 8, 128)
+                    elif kind == 'header-overlap':struct.pack_into(offset_format, broken, entry + 8, 0)
+                    elif kind == 'alignment':struct.pack_into(offset_format, broken, entry + 8, 257)
+                    elif kind == 'out-of-bounds':struct.pack_into(offset_format, broken, entry + 8, 512)
+                    else:broken = broken[:30]
+                    with self.assertRaises(ValueError):artifacts.binary_target(broken, 'Darwin', 'universal')
 
     def test_missing_extra_duplicate_and_tampered_artifacts(self):
         for kind in ['missing','extra','duplicate','tampered']:
@@ -82,13 +118,13 @@ class ReleaseArtifactTests(unittest.TestCase):
 
     def test_build_partitions_reassemble_without_changing_checksums(self):
         parts, repo = self.partitions();out = parts.parent/'bundle'
-        self.assertEqual(len(artifacts.assemble(parts, out, repo)['archives']), 8)
+        self.assertEqual(len(artifacts.assemble(parts, out, repo)['archives']), 7)
         self.assertEqual((out/'checksums.txt').read_text().splitlines(), sorted(
             (parts/'checksums-linux.txt').read_text().splitlines()+(parts/'checksums-darwin.txt').read_text().splitlines()))
         with self.assertRaises(FileExistsError):artifacts.assemble(parts, out, repo)
 
     def test_each_partition_is_complete_but_cannot_substitute_for_full_bundle(self):
-        for platform, count in [('linux', 6), ('darwin', 2)]:
+        for platform, count in [('linux', 6), ('darwin', 1)]:
             with self.subTest(platform=platform):
                 parts, repo = self.partitions();part = parts.parent/'part';part.mkdir()
                 shutil.copyfile(parts/f'checksums-{platform}.txt',part/f'checksums-{platform}.txt')

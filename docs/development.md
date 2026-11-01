@@ -131,7 +131,7 @@ measures performance after the workers finish.
 ```sh
 python3 scripts/validate-runtime.py \
   --binary /absolute/check/txm --race-binary /absolute/check/txm-race \
-  --archive /absolute/check/txm_Darwin_arm64.zip \
+  --archive /absolute/check/txm_Darwin_universal.zip \
   --expected-version "$(cat VERSION)" --macos-backends --loopback-ssh \
   --output /absolute/new-runtime-report
 ```
@@ -177,7 +177,7 @@ expensive Linux, macOS, and lint jobs. Code under `docs/`, mixed code/docs chang
 and changes whose scope cannot be determined still run the full suite. Manual
 CI dispatches and reusable calls run the full suite by default.
 
-Full archive builds and the eight-target package matrix run only for version
+Full archive builds and the eight-runner package matrix run only for version
 tags or an explicit Release workflow dispatch.
 Branch dispatches use snapshots stamped from `VERSION` and never create a draft.
 Tag runs build and validate the official archives before draft creation.
@@ -196,15 +196,18 @@ Tag runs build and validate the official archives before draft creation.
    lint jobs. Missing, pending, failed, cancelled, or skipped validation stops
    the release before compilation. Existing CI is reused rather than repeated.
 5. Two parallel GoReleaser jobs build without publishing: Linux builds the
-   four Linux and two Windows archives; macOS builds the two Darwin archives
-   using its SDK. Each job builds only its required Ghostty libraries and retains
+   four Linux and two Windows archives; macOS builds both Darwin slices using
+   its SDK and combines them into one universal archive. Each job builds only
+   its required Ghostty libraries and retains
    its partition. An inexpensive Linux job assembles the complete bundle using
    the original build checksums.
 6. `scripts/check-release-artifacts.py` checks the complete archive inventory,
-   checksums, packaged documentation, binary OS/CPU headers, and static-musl
+   checksums, packaged documentation, binary OS/CPU headers, both bounded
+   nonoverlapping universal Mac slices, and static-musl
    linkage. The same bundle is checked after each artifact download.
 7. Each Unix archive runs on its matching Linux/macOS architecture through private
-   installation and the runtime suites. Mac jobs additionally test real backends
+   installation and the runtime suites. The same universal Mac archive runs on
+   both Intel and Apple Silicon runners. Mac jobs additionally test real backends
    and loopback SSH. Both platforms test actual different-UID rejection using
    private fixtures: Linux in a disposable container, macOS as root only on the
    disposable CI runner. The Linux peer probe uses a pinned multi-architecture
@@ -214,7 +217,7 @@ Tag runs build and validate the official archives before draft creation.
    completions, and explicit unsupported refusals. These are CLI smoke checks,
    not external-backend or Windows installer certification.
 9. Only after every package job passes does a write-enabled job create a
-   **stable draft**, with eight ZIPs, checksums, and the canonical release notes.
+   **stable draft**, with seven ZIPs, checksums, and the canonical release notes.
    Review the tag/commit, jobs, reports, upgrade notes, and compatibility scope
    before manually publishing. Existing releases are not overwritten on rerun.
 

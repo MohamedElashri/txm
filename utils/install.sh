@@ -46,6 +46,9 @@ esac
 
 # The archive name as produced by GoReleaser, e.g. txm_Linux_x86_64.zip
 ARCHIVE_NAME="txm_${OS}_${ARCH}.zip"
+if [ "$OS" = "Darwin" ]; then
+    ARCHIVE_NAME="txm_Darwin_universal.zip"
+fi
 
 # Set up installation directories
 USER_BIN_DIR="$HOME/.local/bin"
@@ -138,7 +141,16 @@ if command -v txm &> /dev/null; then
 fi
 
 # Find the download URL for the platform archive
-DOWNLOAD_URL=$(echo "$RELEASE_INFO" | grep '"browser_download_url"' | grep "$ARCHIVE_NAME" | sed 's/.*"browser_download_url": *"\([^"]*\)".*/\1/')
+release_asset_url() {
+    echo "$RELEASE_INFO" | grep '"browser_download_url"' | grep -F "/${1}\"" | sed 's/.*"browser_download_url": *"\([^"]*\)".*/\1/'
+}
+DOWNLOAD_URL=$(release_asset_url "$ARCHIVE_NAME")
+
+# Older stable releases predate universal macOS packaging.
+if [ -z "$DOWNLOAD_URL" ] && [ "$OS" = "Darwin" ]; then
+    ARCHIVE_NAME="txm_Darwin_${ARCH}.zip"
+    DOWNLOAD_URL=$(release_asset_url "$ARCHIVE_NAME")
+fi
 
 if [ -z "$DOWNLOAD_URL" ]; then
     error_exit "No compatible binary found for ${OS} ${ARCH} (looking for ${ARCHIVE_NAME}) in release ${LATEST_VERSION}."

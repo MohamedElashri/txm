@@ -13,8 +13,36 @@ REPO = Path(__file__).resolve().parents[1]
 COMMON = {'LICENSE', 'README.md', 'docs/txm.1', 'completions/txm.bash',
           'completions/_txm', 'completions/txm.fish', 'completions/txm.ps1'}
 TARGETS = {f'txm_{system}_{arch}{suffix}.zip': (system, arch, suffix == '-musl')
-           for system, suffixes in [('Linux', ['', '-musl']), ('Darwin', ['']), ('Windows', [''])]
+           for system, suffixes in [('Linux', ['', '-musl']), ('Windows', [''])]
            for arch in ['x86_64', 'arm64'] for suffix in suffixes}
+TARGETS['txm_Darwin_universal.zip'] = ('Darwin', 'universal', False)
+
+
+def universal_darwin(data):
+    """Check both bounded, nonoverlapping Mach-O slices, not just the fat header."""
+    magic, count = struct.unpack_from('>II', data)
+    if magic not in (0xcafebabe, 0xcafebabf) or count != 2:
+        raise ValueError('Darwin universal binary must contain exactly two slices')
+    wide = magic == 0xcafebabf
+    entry_size = 32 if wide else 20
+    header_end = 8 + count * entry_size
+    targets = {0x1000007: 'x86_64', 0x100000c: 'arm64'}
+    seen, ranges = set(), []
+    for index in range(count):
+        entry = struct.unpack_from('>IIQQII' if wide else '>IIIII', data, 8 + index * entry_size)
+        cpu, subtype, offset, size, alignment = entry[:5]
+        if (cpu not in targets or cpu in seen or alignment > 30 or offset < header_end
+                or offset % (1 << alignment) or size < 32 or offset + size > len(data)
+                or wide and entry[5] != 0):
+            raise ValueError('invalid Darwin universal slice')
+        if any(offset < end and start < offset + size for start, end in ranges):
+            raise ValueError('overlapping Darwin universal slices')
+        slice_data = data[offset:offset + size]
+        binary_target(slice_data, 'Darwin', targets[cpu])
+        if struct.unpack_from('<I', slice_data, 8)[0] != subtype:
+            raise ValueError('Darwin universal CPU subtype mismatch')
+        seen.add(cpu)
+        ranges.append((offset, offset + size))
 
 
 def binary_target(data, system, arch, static=False):
@@ -30,7 +58,9 @@ def binary_target(data, system, arch, static=False):
                 if any(struct.unpack_from('<I', data, offset+i*size)[0] in (2, 3) for i in range(count)):
                     raise ValueError('musl executable must be static, without interpreter/dynamic headers')
         elif system == 'Darwin':
-            if data[:4] != b'\xcf\xfa\xed\xfe' or struct.unpack_from('<I', data, 4)[0] != {'x86_64': 0x1000007, 'arm64': 0x100000c}[arch]:
+            if arch == 'universal':
+                universal_darwin(data)
+            elif data[:4] != b'\xcf\xfa\xed\xfe' or struct.unpack_from('<I', data, 4)[0] != {'x86_64': 0x1000007, 'arm64': 0x100000c}[arch]:
                 raise ValueError('wrong Mach-O target')
         elif system == 'Windows':
             if data[:2] != b'MZ':
@@ -89,7 +119,7 @@ def assemble(parts, directory, repo=REPO):
     entries = list(parts.iterdir())
     if ({p.name for p in entries} != set(TARGETS) | manifests
             or any(p.is_symlink() or not p.is_file() for p in entries)):
-        raise ValueError('build partitions must contain exactly eight ZIPs and two checksum manifests')
+        raise ValueError(f'build partitions must contain exactly {len(TARGETS)} ZIPs and two checksum manifests')
     checksums = []
     for platform in ('linux', 'darwin'):
         lines = (parts/f'checksums-{platform}.txt').read_text().splitlines()

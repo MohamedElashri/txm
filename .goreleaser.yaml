@@ -60,11 +60,17 @@ builds:
     ldflags:
       - -s -w -extldflags "-static" -X github.com/MohamedElashri/txm/pkg/cmd.Version={{.Version}}
 
+universal_binaries:
+  - id: darwin-universal
+    ids: [darwin]
+    replace: true
+    name_template: txm
+
 archives:
   - id: default
     ids:
       - linux
-      - darwin
+      - darwin-universal
       - windows
     formats: [zip]
     files:
@@ -72,7 +78,7 @@ archives:
       - README.md
       - docs/txm.1
       - completions/*
-    name_template: '{{ .ProjectName }}_{{ title .Os }}_{{ if eq .Arch "amd64" }}x86_64{{ else if eq .Arch "386" }}i386{{ else }}{{ .Arch }}{{ end }}'
+    name_template: '{{ .ProjectName }}_{{ title .Os }}_{{ if eq .Arch "amd64" }}x86_64{{ else if eq .Arch "all" }}universal{{ else if eq .Arch "386" }}i386{{ else }}{{ .Arch }}{{ end }}'
   - id: musl
     ids:
       - musl
@@ -91,6 +97,7 @@ snapshot:
   version_template: '{{ if .Env.TXM_SNAPSHOT_VERSION }}{{ .Env.TXM_SNAPSHOT_VERSION }}{{ else }}{{ incpatch .Version }}-next{{ end }}'
 
 changelog:
+  disable: '{{ .IsSnapshot }}'
   sort: asc
   filters:
     exclude:

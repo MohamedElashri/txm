@@ -83,7 +83,26 @@ jobs:
     - name: Install tmux
       run: brew install tmux
     - name: Test and integrate on macOS
-      run: make test test-race test-integration test-ssh
+      run: |
+        set -o pipefail
+        make test test-race test-integration test-ssh 2>&1 | tee "$RUNNER_TEMP/macos-validation.log"
+    - name: Surface bounded macOS failure details
+      if: failure()
+      shell: bash
+      run: |
+        python3 - <<'PY'
+        import os
+        from pathlib import Path
+        import re
+
+        log = Path(os.environ['RUNNER_TEMP']) / 'macos-validation.log'
+        if log.is_file():
+            text = log.read_bytes()[-24000:].decode('utf-8', errors='replace')
+            text = re.sub(r'\x1b\[[0-?]*[ -/]*[@-~]', '', text)
+            text = ''.join(c for c in text if c in '\n\t' or ord(c) >= 32)
+            text = text.replace('%', '%25').replace('\r', '%0D').replace('\n', '%0A')
+            print('::error title=macOS validation failure::' + text)
+        PY
 
   lint:
     needs: changes
