@@ -1,7 +1,10 @@
 """Release builds may reuse only successful CI of their exact trusted commit."""
 import importlib.util
+import json
 from pathlib import Path
+import tempfile
 import unittest
+from unittest.mock import patch
 
 spec = importlib.util.spec_from_file_location('release_ci', Path(__file__).resolve().parents[1]/'scripts/check-release-ci.py')
 ci = importlib.util.module_from_spec(spec);spec.loader.exec_module(ci)
@@ -52,6 +55,28 @@ class ReleaseCITests(unittest.TestCase):
                       [dict(good, workflow_run={'head_sha': 'c'*40})], [dict(good, size_in_bytes=0)]]:
             with self.subTest(artifacts=items), self.assertRaises(ValueError):
                 ci.select_macos_artifact(items, SHA)
+
+    def test_readiness_requests_repository_scoped_jobs_and_artifacts(self):
+        artifact = {'id': 7, 'name': ci.MACOS_ARTIFACT, 'expired': False,
+                    'workflow_run': {'head_sha': SHA}, 'digest': 'sha256:'+'b'*64, 'size_in_bytes': 42}
+        calls = []
+        def request(endpoint):
+            self.assertTrue(endpoint.startswith('repos/'+REPO+'/'), endpoint)
+            calls.append(endpoint)
+            if '/workflows/' in endpoint:
+                return {'workflow_runs': [run(run_attempt=1, html_url='https://example.invalid/run')]}
+            if '/jobs?' in endpoint:
+                return {'jobs': [{'name': name, 'status': 'completed', 'conclusion': 'success'} for name in ci.REQUIRED_JOBS]}
+            if '/artifacts?' in endpoint: return {'artifacts': [artifact]}
+            self.fail('unexpected API route: '+endpoint)
+        with tempfile.TemporaryDirectory(prefix='txm-readiness-') as temp:
+            report = Path(temp)/'readiness.json'
+            argv = ['check-release-ci', '--repository', REPO, '--sha', SHA, '--report', str(report)]
+            with patch('sys.argv', argv), patch.object(ci, 'api', side_effect=request), patch('builtins.print'):
+                ci.main()
+            value = json.loads(report.read_text())
+            self.assertTrue(value['passed']); self.assertEqual(value['macos_artifact']['id'], 7)
+            self.assertEqual(len(calls), 3)
 
 
 if __name__ == '__main__':unittest.main()

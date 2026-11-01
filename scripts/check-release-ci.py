@@ -65,7 +65,7 @@ def main():
         # The API returns the latest attempt, including rerun failed jobs.
         jobs = api(f'repos/{args.repository}/actions/runs/{run["id"]}/jobs?filter=latest&per_page=100')['jobs']
         verify_jobs(jobs)
-        artifact = select_macos_artifact(api(f'actions/runs/{run["id"]}/artifacts?per_page=100')['artifacts'], args.sha)
+        artifact = select_macos_artifact(api(f'repos/{args.repository}/actions/runs/{run["id"]}/artifacts?per_page=100')['artifacts'], args.sha)
         report = {'passed': True, 'commit': args.sha, 'ci_run_id': run['id'],
                   'ci_run_attempt': run['run_attempt'], 'url': run['html_url'],
                   'macos_artifact': {key: artifact[key] for key in ['id', 'name', 'digest', 'size_in_bytes']}}
