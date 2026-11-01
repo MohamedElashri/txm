@@ -8,7 +8,7 @@ import unittest
 
 import agent_checks as a
 import extension_checks as x
-from mcp_checks import snapshot
+from mcp_checks import await_runtime_cleanup, snapshot
 
 BINARY = None
 
@@ -124,13 +124,16 @@ os.execve({x.GIT!r},[{x.GIT!r},*sys.argv[1:]],env)
             with a.coordinator(box):
                 job = x.start(box, 'review', ['/usr/bin/true'])
                 ident = job['task']['id']; a.await_exit(box, ident)
+            # Exit receipts precede the native server's final socket unlink.
+            # Finish fixture teardown before measuring read-only side effects.
+            await_runtime_cleanup(box)
             before = snapshot(box)
             review = x.command(box, ['task', 'review', ident, '--target', 'refs/heads/main'])['data']
             self.assertEqual(review['compare_from'], job['task']['base_commit'])
             self.assertEqual(review['compare_to'], review['task_commit'])
             self.assertNotIn('diff', review)
             self.assertTrue(review['fast_forward']); self.assertFalse(review['task_dirty'])
-            self.assertEqual({k: v for k, v in snapshot(box).items() if before.get(k) != v}, {})
+            self.assertEqual(snapshot(box), before)
             self.assertEqual(Path(review['target_worktree']), source)
             self.assertFalse((a.runtime(box) / 'coordinator.json').exists())
 
