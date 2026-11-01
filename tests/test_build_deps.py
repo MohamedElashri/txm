@@ -37,6 +37,7 @@ if sys.argv[1] == 'version':
     print(os.environ.get('FAKE_ZIG_VERSION', '0.16.0'))
 else:
     assert '-Demit-xcframework=false' in sys.argv, 'txm must not require Xcode packaging'
+    assert '-Dcpu=baseline' in sys.argv, 'cached native code must run across host CPUs'
     with open({str(self.root / 'builds')!r}, 'a') as f: f.write('build\\n')
     if os.environ.get('FAKE_ZIG_FAIL'): sys.exit(1)
     prefix=Path(sys.argv[sys.argv.index('--prefix')+1])

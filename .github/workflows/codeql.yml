@@ -1,0 +1,110 @@
+name: Security scan
+
+on:
+  push:
+    branches: [ "main" ]
+    paths:
+      - '**/*.go'
+      - '**/*.py'
+      - '**/*.sh'
+      - '**/*.zig'
+      - '**/*.c'
+      - '**/*.h'
+      - '**/*.s'
+      - '**/*.S'
+      - '**/*.js'
+      - '**/*.ts'
+      - '**/*.ps1'
+      - '**/testdata/**'
+      - 'tests/fixtures/**'
+      - 'tests/containers/Dockerfile*'
+      - 'go.mod'
+      - 'go.sum'
+      - 'Makefile'
+      - '.goreleaser.yaml'
+      - '.golangci.yml'
+      - 'scripts/dependencies.env'
+      - '.github/workflows/*.yml'
+      - '.github/workflows/*.yaml'
+      - '.github/actions/**/action.yml'
+      - '.github/actions/**/action.yaml'
+  pull_request:
+    branches: [ "main" ]
+    paths:
+      - '**/*.go'
+      - '**/*.py'
+      - '**/*.sh'
+      - '**/*.zig'
+      - '**/*.c'
+      - '**/*.h'
+      - '**/*.s'
+      - '**/*.S'
+      - '**/*.js'
+      - '**/*.ts'
+      - '**/*.ps1'
+      - '**/testdata/**'
+      - 'tests/fixtures/**'
+      - 'tests/containers/Dockerfile*'
+      - 'go.mod'
+      - 'go.sum'
+      - 'Makefile'
+      - '.goreleaser.yaml'
+      - '.golangci.yml'
+      - 'scripts/dependencies.env'
+      - '.github/workflows/*.yml'
+      - '.github/workflows/*.yaml'
+      - '.github/actions/**/action.yml'
+      - '.github/actions/**/action.yaml'
+  workflow_dispatch:
+  schedule:
+    - cron: '37 4 * * 1'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: security-${{ github.head_ref || github.ref_name }}
+  cancel-in-progress: true
+
+jobs:
+  analyze:
+    name: CodeQL / ${{ matrix.label }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      security-events: write
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - language: go
+            label: Go
+            build_mode: autobuild
+          - language: python
+            label: Python
+            build_mode: none
+          - language: actions
+            label: Actions
+            build_mode: none
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Set up Go
+        if: matrix.language == 'go'
+        uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version: '1.26.10'
+          cache: false
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@9b3254085494b55a0f7c4c2b3d2d52cc712ce370 # v4.39.1
+        with:
+          languages: ${{ matrix.language }}
+          build-mode: ${{ matrix.build_mode }}
+          dependency-caching: true
+      - name: Extract Go sources
+        if: matrix.language == 'go'
+        uses: github/codeql-action/autobuild@9b3254085494b55a0f7c4c2b3d2d52cc712ce370 # v4.39.1
+      - name: Analyze
+        uses: github/codeql-action/analyze@9b3254085494b55a0f7c4c2b3d2d52cc712ce370 # v4.39.1
+        with:
+          category: /language:${{ matrix.language }}

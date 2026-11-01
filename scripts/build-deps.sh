@@ -35,7 +35,9 @@ build() {
     local prefix=$1 target=$2
     # txm links the static library, never an Apple XCFramework. Explicitly
     # disable packaging so Command Line Tools suffice without full Xcode.
-    local args=(build -Demit-lib-vt -Demit-xcframework=false --prefix "$prefix")
+    # Host libraries and their Go binaries can move between different CPUs.
+    # Never specialize cached native code for the build runner.
+    local args=(build -Demit-lib-vt -Demit-xcframework=false -Dcpu=baseline --prefix "$prefix")
     [[ "$target" == native ]] || args+=("-Dtarget=$target")
     [[ -z "${GHOSTTY_BUILD_JOBS:-}" ]] || args+=("-j$GHOSTTY_BUILD_JOBS")
     # Ask Zig to validate its content-based incremental cache every time.
@@ -43,7 +45,7 @@ build() {
     (cd "$src" && "$zig" "${args[@]}")
     test -s "$prefix/share/pkgconfig/libghostty-vt-static.pc"
     test -s "$prefix/lib/libghostty-vt.a"
-    printf 'ghostty=%s\nzig=%s\ntarget=%s\n' "$GHOSTTY_REVISION" "$actual" "$target" > "$prefix/.txm-build-info"
+    printf 'ghostty=%s\nzig=%s\ntarget=%s\ncpu=baseline\n' "$GHOSTTY_REVISION" "$actual" "$target" > "$prefix/.txm-build-info"
 }
 
 if [[ "$mode" == host ]]; then

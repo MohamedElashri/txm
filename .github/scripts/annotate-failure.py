@@ -11,7 +11,7 @@ def messages(text):
     lines = text.splitlines()
     selected = set()
     for index, line in enumerate(lines):
-        if re.search(r'--- FAIL:|^FAIL\b|^ERROR:|^FAIL:|Traceback|panic:|fatal error:|AssertionError|make: \*', line):
+        if re.search(r'--- FAIL:|^FAIL(?:ED)?\b|^ERROR:|^FAIL:|Traceback|panic:|fatal error:|AssertionError|make: \*', line):
             selected.update(range(max(0, index - 12), min(len(lines), index + 18)))
     excerpt = '\n'.join(lines[index] for index in sorted(selected)) if selected else '\n'.join(lines[-50:])
     # GitHub's annotation API truncates messages at 4096 bytes. Keep each one

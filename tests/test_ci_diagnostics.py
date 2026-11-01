@@ -26,6 +26,18 @@ class CIDiagnosticTests(unittest.TestCase):
         self.assertIn('Test0', parts[0])
         self.assertTrue(all(len(part.encode()) < 4096 for part in parts))
 
+    def test_long_python_trace_retains_exception_and_diagnostic_notes(self):
+        log = ('ERROR: test_owned_runtime\nTraceback (most recent call last):\n'
+               + '  File "fixture.py", line 42, in nested_call\n' * 50
+               + 'EOFError: native peer disconnected\n'
+               + 'Owned server returncode=2; stderr=SIGILL: illegal instruction\n'
+               + '\nRan 1 test in 0.5s\n\nFAILED (errors=1)\n')
+        parts = diagnostics.messages(log)
+        text = '\n'.join(parts)
+        self.assertIn('EOFError: native peer disconnected', text)
+        self.assertIn('SIGILL: illegal instruction', text)
+        self.assertTrue(all(len(part.encode()) < 4096 for part in parts))
+
     def test_unrecognized_failure_keeps_a_bounded_tail(self):
         parts = diagnostics.messages('noise\n'*10000+'unexpected process exit\n')
         self.assertIn('unexpected process exit', '\n'.join(parts))

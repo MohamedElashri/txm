@@ -56,15 +56,16 @@ To test an existing race binary without rebuilding, use
 
 | Profile | Work |
 | --- | --- |
-| Docs-only push/PR | Scope and release metadata; expensive stages skip |
-| Code PR | Harness, race tests, short fuzzing, native Linux/macOS builds and runtime checks, archive configuration |
-| Main or full manual run | Full fuzzing, seven release archives and native package checks in addition to source checks |
+| Docs/non-code push/PR | No build or security workflow is triggered |
+| Code push/PR | Harness, race tests, short fuzzing, native Linux/macOS builds and runtime checks, archive configuration |
+| Manual release readiness | Full fuzzing, seven release archives and native package checks in addition to source checks |
 
-Only Markdown and `docs/txm.1` qualify for docs-only scope; code under `docs/`
-does not. Manual CI defaults to full readiness; `release_readiness=false`
-selects the lighter profile. Linux/macOS runtime suites run once per OS, and
-macOS backend/SSH checks run once. Pinned dependency caches are revalidated;
-Go objects are scoped to native library bytes, SDK and source.
+Automatic triggers cover source, tests, dependencies and build/workflow inputs;
+code under `docs/` still runs CI. Manual CI defaults to full release readiness;
+`release_readiness=false` selects routine checks. Linux/macOS runtime suites run
+once per OS. Security scans cover Go, Python and Actions on code changes and
+weekly. Dependency caches are revalidated; Go objects bind native bytes, SDK and source.
+Native dependencies use baseline CPU targets so cached binaries work across runners.
 
 ## Fixture isolation
 
@@ -123,9 +124,9 @@ a version-tag push creates a draft.
 
 1. Update `VERSION` and its dated changelog entry, including upgrade notes.
    Run `make release-check` and the checks relevant to the change.
-2. Merge the reviewed preparation into `main`. Wait for full CI on that exact
-   commit. If docs-only scope skipped it, run `gh workflow run ci.yml --ref main`
-   and wait for full readiness.
+2. Merge the reviewed preparation into `main`. Run full readiness for that exact
+   commit with `gh workflow run ci.yml --ref main -f release_readiness=true`
+   and wait for every stage to pass.
 3. Optionally rehearse with `gh workflow run release.yml --ref main`.
 4. Create a signed tag matching `VERSION` at the verified commit, then push it.
    For example, from the verified checkout: `git tag -s "v$(cat VERSION)"`.

@@ -3,6 +3,31 @@ name: Verify & Build
 on:
   push:
     branches: [ "main" ]
+    paths:
+      - '**/*.go'
+      - '**/*.py'
+      - '**/*.sh'
+      - '**/*.zig'
+      - '**/*.c'
+      - '**/*.h'
+      - '**/*.s'
+      - '**/*.S'
+      - '**/*.js'
+      - '**/*.ts'
+      - '**/*.ps1'
+      - '**/testdata/**'
+      - 'tests/fixtures/**'
+      - 'tests/containers/Dockerfile*'
+      - 'go.mod'
+      - 'go.sum'
+      - 'Makefile'
+      - '.goreleaser.yaml'
+      - '.golangci.yml'
+      - 'scripts/dependencies.env'
+      - '.github/workflows/*.yml'
+      - '.github/workflows/*.yaml'
+      - '.github/actions/**/action.yml'
+      - '.github/actions/**/action.yaml'
   workflow_dispatch:
     inputs:
       release_readiness:
@@ -21,6 +46,31 @@ on:
         default: true
   pull_request:
     branches: [ "main" ]
+    paths:
+      - '**/*.go'
+      - '**/*.py'
+      - '**/*.sh'
+      - '**/*.zig'
+      - '**/*.c'
+      - '**/*.h'
+      - '**/*.s'
+      - '**/*.S'
+      - '**/*.js'
+      - '**/*.ts'
+      - '**/*.ps1'
+      - '**/testdata/**'
+      - 'tests/fixtures/**'
+      - 'tests/containers/Dockerfile*'
+      - 'go.mod'
+      - 'go.sum'
+      - 'Makefile'
+      - '.goreleaser.yaml'
+      - '.golangci.yml'
+      - 'scripts/dependencies.env'
+      - '.github/workflows/*.yml'
+      - '.github/workflows/*.yaml'
+      - '.github/actions/**/action.yml'
+      - '.github/actions/**/action.yaml'
 
 permissions:
   contents: read

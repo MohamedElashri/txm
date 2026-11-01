@@ -1,7 +1,9 @@
 """Documentation-only CI skips must not hide code changes or release validation."""
+import fnmatch
 import importlib.util
 import json
 import os
+import re
 from pathlib import Path
 import subprocess
 import sys
@@ -31,9 +33,10 @@ class CIChangesTests(unittest.TestCase):
             diff.assert_not_called()
 
     def test_package_validation_is_light_for_prs_and_full_for_release_readiness(self):
-        cases = [('pull_request', 'true', True, False), ('push', '', True, True),
+        cases = [('pull_request', 'true', True, False), ('push', '', True, False),
                  ('workflow_dispatch', 'true', True, True),
-                 ('workflow_dispatch', 'false', True, False), ('push', 'true', False, False)]
+                 ('workflow_dispatch', 'false', True, False), ('push', 'true', False, False),
+                 ('push', 'true', True, True)]
         for event, requested, full, expected in cases:
             with self.subTest(event=event, requested=requested, full=full), tempfile.TemporaryDirectory() as tmp:
                 output = Path(tmp)/'outputs'
@@ -41,6 +44,30 @@ class CIChangesTests(unittest.TestCase):
                 with patch.dict(ci.os.environ, env, clear=True), patch.object(ci, 'select_scope', return_value=full):
                     ci.main()
                 self.assertEqual(output.read_text(), 'full_ci='+str(full).lower()+'\nrelease_ready='+str(expected).lower()+'\n')
+
+    def test_workflow_triggers_include_code_and_build_inputs_but_exclude_non_code(self):
+        root = Path(__file__).resolve().parents[1]
+        filters = []
+        for workflow in ['ci.yml', 'codeql.yml']:
+            text = (root/'.github/workflows'/workflow).read_text()
+            groups = re.findall(r"    paths:\n((?:      - '[^']+'\n)+)", text)
+            self.assertEqual(len(groups), 2, workflow)
+            filters.extend(re.findall(r"      - '([^']+)'", group) for group in groups)
+        self.assertTrue(all(patterns == filters[0] for patterns in filters))
+        def included(path):
+            return any(fnmatch.fnmatchcase(path, pattern) or
+                       pattern.startswith('**/') and fnmatch.fnmatchcase(path, pattern[3:])
+                       for pattern in filters[0])
+        for path in ['main.go', 'pkg/cmd/root.go', 'docs/embeds.go', 'tests/native_checks.py',
+                     'scripts/build-deps.sh', 'scripts/dependencies.env', 'go.mod', 'go.sum',
+                     'Makefile', '.goreleaser.yaml', '.golangci.yml', 'pkg/core/testdata/raw.json',
+                     'tests/containers/Dockerfile.linux', '.github/workflows/ci.yml',
+                     '.github/actions/setup-build/action.yml']:
+            with self.subTest(code=path):self.assertTrue(included(path))
+        for path in ['README.md', 'docs/contracts.md', 'docs/txm.1', 'LICENSE', 'VERSION',
+                     '.gitignore', '.editorconfig', '.github/dependabot.yml',
+                     '.github/ISSUE_TEMPLATE/bug.yml', 'assets/demo.gif']:
+            with self.subTest(non_code=path):self.assertFalse(included(path))
 
     def test_missing_invalid_or_unavailable_history_runs_full_ci(self):
         for event in [{}, {'before': '0'*40, 'after': 'a'*40},
