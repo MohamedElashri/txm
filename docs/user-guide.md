@@ -2,9 +2,8 @@
 
 [Documentation](README.md) / User guide
 
-txm keeps terminal sessions running after you detach and supervises commands with
-recorded exit results. This guide covers installation, interactive work, and
-automation. Use `txm COMMAND --help` or `man txm` for command and flag reference.
+Install txm, keep sessions running and supervise jobs with recorded exit results.
+Use `txm COMMAND --help` or `man txm` for the complete command reference.
 
 - [Installation](#installation) and [your first session](#your-first-session)
 - [Platforms and backends](#platforms-and-backends) and [backend selection](#choose-a-backend)
@@ -19,9 +18,8 @@ automation. Use `txm COMMAND --help` or `man txm` for command and flag reference
 
 ## Installation
 
-The quick installer follows the latest published stable release. To install a
-particular version, choose its release archive or check out its source tag.
-Use `txm version` to identify the installed build.
+The installer selects the latest stable release. For a specific version, use
+its archive or source tag. Check your build with `txm version`.
 
 ### Release archives
 
@@ -35,13 +33,9 @@ and download the archive for your operating system and processor:
 | macOS | `txm_Darwin_universal.zip` | `txm_Darwin_universal.zip` |
 | Windows | `txm_Windows_x86_64.zip` | `txm_Windows_arm64.zip` |
 
-The macOS archive contains one universal binary with Intel and Apple Silicon
-slices. Older releases provide separate Mac archives; the stable installer
-falls back to those when a universal download is absent.
-Static musl builds are available for systems such as Alpine Linux. Windows
-archives have a limited external-backend scope; native sessions, private Unix
-state, and the dashboard are unsupported. For platform scope, see
-[Platforms and backends](#platforms-and-backends).
+macOS uses one universal binary for Intel and Apple Silicon. The installer also
+handles older releases with separate Mac archives. Use static musl for Alpine
+and similar systems. See [platform limits](#platforms-and-backends) for Windows.
 
 Compare the archive with the release's checksums, then extract it into a new
 directory. On Linux or macOS, run from that directory:
@@ -52,9 +46,9 @@ export PATH="$HOME/.local/bin:$PATH"
 txm version
 ```
 
-The user installer copies the binary to `~/.local/bin`, installs `man txm`, and
-sets up completions for the detected shell. It may update your shell startup
-file. Use `sudo ./txm install --system` for an intentional system installation.
+Installation adds the binary to `~/.local/bin`, the man page and shell
+completions; it may edit shell startup files. For system-wide installation,
+use `sudo ./txm install --system`.
 
 ### Stable installer
 
@@ -64,9 +58,8 @@ For the latest stable release on Linux or macOS, use the repository's installer:
 curl -fsSL https://raw.githubusercontent.com/MohamedElashri/txm/main/utils/install.sh | bash
 ```
 
-It requires `curl` and `unzip`, installs under `~/.local/bin`, and can update
-shell startup files to put that directory on PATH. It does not select release
-candidates. To install a particular version, use its archive instead.
+Requires `curl` and `unzip`. Installs under `~/.local/bin` and may update your
+shell PATH. Release candidates are excluded.
 
 ### Build from source
 
@@ -81,11 +74,9 @@ make build
 txm version
 ```
 
-The build helper obtains the pinned Ghostty source and builds the native terminal
-library. It rejects an existing dirty or mismatched dependency checkout rather
-than resetting it. [Development](development.md#dependency-configuration)
-explains private checkout, prefix, and compiler overrides. `go install` alone
-does not build the required native library.
+The helper builds the pinned Ghostty library and refuses dirty/mismatched
+dependencies. `go install` alone is insufficient. See
+[dependency overrides](development.md#dependency-configuration) for custom paths.
 
 ## Your first session
 
@@ -127,11 +118,9 @@ its terminal library; tmux, Zellij, and Screen require the corresponding executa
 | macOS Intel / Apple Silicon | Native and external backends |
 | Windows amd64 / ARM64 | Limited external-backend CLI scope; native persistence, private Unix state, and dashboard unsupported; external backends and installer unverified |
 
-An archive target is not a runtime validation claim. For evidence tied to a
-particular version, read its CI and release workflow reports. Official archives
-must pass the [package gates](development.md#release-process)
-on matching runners before draft creation. Archives are unsigned and unnotarized;
-checksums identify bytes, not publisher identity.
+Runtime evidence stays with each release's CI reports. Universal Mac slices are
+checked structurally; current CI executes on Apple Silicon. Archives are unsigned
+and unnotarized; checksums identify bytes, not publisher identity.
 
 ## Choose a backend
 
@@ -150,46 +139,34 @@ Creating Zellij sessions with a custom command requires Zellij 0.45.1 or newer.
 | Profiles | One terminal | Full layouts, tmux 3.4+ | Unsupported |
 | Supervised jobs and Git tasks | Yes | Yes | Unsupported |
 
-Available capabilities depend on the installed backend. Inspect them directly:
+Inspect the installed backend's capabilities:
 
 ```sh
 txm --backend tmux backend capabilities --json
 txm backend capabilities --all-backends --json
 ```
 
-Aggregate queries attempt every backend and report missing or failed adapters
-explicitly. They can return useful data with a nonzero partial-failure exit.
-See [Platforms and backends](#platforms-and-backends) for platform scope.
+Aggregate queries report missing/failed backends and may return useful data
+with a nonzero partial-failure exit.
 
 ## Sessions and targets
 
-```sh
-txm --backend native create work
-txm attach native/work
-txm attach --read-only native/work
-txm session inspect native/work --json
-txm delete native/work
-```
+Inspect an exact session with `txm session inspect native/work --json`.
 
-`--backend` is strict: an unavailable backend is an error. A qualified target such
-as `native/work` selects that backend and avoids ambiguity. An unqualified name
-uses the selected backend; it does not search all backends. Names use ASCII
-letters, digits, underscores, and dashes, up to 128 characters.
+`--backend` is strict: unavailable means error. `native/work` selects an exact
+backend; an unqualified name uses the selected backend without searching others.
+Names allow ASCII letters, digits, underscores and dashes, up to 128 characters.
 
-Without explicit selection, txm uses `TXM_DEFAULT_BACKEND`, then the configured
-preference, then its default preference of tmux. Preferences can fall back to an
-available adapter, in the order tmux, Screen, Zellij, native. Set a preference with
-`txm config set backend tmux`; use explicit selectors in scripts.
+Preference order is `TXM_DEFAULT_BACKEND`, configuration, then tmux. Fallback
+tries tmux, Screen, Zellij, native. Set a preference with
+`txm config set backend tmux`; use explicit selection in scripts.
 
-Native detaches with Ctrl+backslash. Other backends retain their own bindings;
-tmux defaults to Ctrl-b, then d. `txm detach` delegates to the current backend.
-Ordinary attach can create a missing session after discovery proves it absent.
-Read-only attach requires an existing session and never creates one.
+Native detaches with Ctrl+backslash; tmux defaults to Ctrl-b, then d.
+`txm detach` delegates to the current backend. Ordinary attach can create a
+missing session; read-only attach requires an existing one.
 
-Root commands such as `create`, `attach`, `delete`, and `list` are shortcuts for
-`session create`, `session attach`, `session delete`, and `session list`.
-`rename-session` aliases `session rename`; renaming is backend-dependent.
-`nuke` removes sessions only from the selected backend.
+`create`, `attach`, `delete` and `list` alias their `session` subcommands.
+`rename-session` aliases `session rename`. `nuke` affects only the selected backend.
 
 Put options **before positional arguments** on `create`, `attach`, and `exec`.
 Subsequent arguments are interpreted as the command or literal terminal input.
@@ -203,9 +180,9 @@ txm session output native/work --plain --lines 100
 txm session output tmux/work --history --lines 1000 --json
 ```
 
-Plain output strips terminal controls. `--raw` explicitly preserves them and uses
-base64 when combined with JSON. Truncation is disclosed. Native capture is a
-screen snapshot; it has no history API. `--lines` and `--bytes` bound collection.
+Plain output strips terminal controls; explicit `--raw` preserves them and uses
+base64 in JSON. `--lines`/`--bytes` bound capture and disclose truncation.
+Native output is a screen snapshot, without history.
 
 For multiple windows and panes, use tmux:
 
@@ -254,16 +231,14 @@ txm profile --detach dev.toml
 txm profile --attach-existing dev.toml
 ```
 
-Dry-run checks names, directories, topology, and capabilities without creating
-sessions or runtime state. Relative directories resolve against the profile
-file; `~` and environment variables are not expanded. The profile backend is
-strict and must agree with `--backend` if both are given.
+Dry-run checks the plan without creating sessions/state. Directories are relative
+to the profile; `~` and environment variables are not expanded. Its backend must
+agree with `--backend`.
 
-Applying attaches by default; `--detach` leaves the workspace running. An
-existing session requires `--attach-existing` and is attached unchanged. Combine
-it with `--read-only` to observe. Native profiles allow one unnamed window and one
-pane. Profile commands are terminal input, with the same completion limits as
-`exec`. Rollback removes only resources whose ownership can be proven.
+Apply attaches unless `--detach` is given. Existing sessions require
+`--attach-existing` and stay unchanged; add `--read-only` to observe. Native
+profiles allow one unnamed window/pane. Commands are terminal input, not
+supervised jobs. Rollback removes only proven owned resources.
 
 ## Dashboard
 
@@ -291,15 +266,11 @@ opts into the local coordinator; a session-only dashboard does not start it.
 | g / c / C | Toggle repository/task grouping / collapse / expand |
 | q / Ctrl-C | Quit / cancel |
 
-Preview captures bounded plain output for the selected session and is off by
-default. Stale and unsupported actions are disabled. Session and agent rows remain
-separate, with lifecycle and attention shown independently. Screen/Zellij actions
-are disabled in the dashboard even though their sessions can be listed.
-Fresh, sourced needs-input agents come first; expired observations become
-unknown rather than remaining attention requests. Repository/task groups retain
-selection by exact identity across refreshes. A permission request observation
-alone does not prove that an interactive permission dialog is open.
-The dashboard requires a real terminal on Linux or macOS.
+Requires a real Linux/macOS terminal. Preview is bounded and off by default.
+Fresh needs-input agents come first; stale/unsupported actions are disabled.
+Lifecycle and attention stay separate. Screen/Zellij sessions can be listed,
+but dashboard actions are disabled. A permission event alone does not prove
+an interactive dialog is open.
 
 ## Configuration
 
@@ -322,10 +293,8 @@ Config lookup uses the first existing file: `~/.txm/config`,
 | `XDG_RUNTIME_DIR` | Private runtime directory for sockets |
 | `TERM` | Describe the actual terminal's capabilities |
 
-Unsafe ownership, permissions, or explicit state paths cause errors rather than
-silently switching to another namespace. Keep the original state directory for
-managed work; [CLI contracts](contracts.md#identity-supervision-and-events)
-explain identity and recovery.
+Unsafe ownership, permissions or explicit paths fail. Keep the original state
+directory; see [identity and recovery](contracts.md#identity-supervision-and-events).
 
 ## Supervised jobs
 
@@ -335,9 +304,8 @@ Run a command from your project directory:
 txm --backend native agent start build -- go test ./...
 ```
 
-The command starts in a new detached session. `agent start` returns an opaque
-agent ID; use that full ID in subsequent calls. The launch uses structured argv
-rather than a shell command string. Native and tmux support supervision.
+Native and tmux launch structured argv in a new detached session. Keep the
+full opaque agent ID returned by `agent start`:
 
 ```sh
 txm agent list --json
@@ -345,36 +313,31 @@ txm agent status AGENT_ID --json
 txm agent wait AGENT_ID --until exited --timeout 5m --fail-on-nonzero --json
 ```
 
-Inspect `receipt.outcome` and `receipt.exit_code` for the child's result.
-Successful `agent start` means the launch or a recorded exit was observed; it
-does not mean the child succeeded. Likewise, a default `wait --until exited`
-succeeds when exit is observed, even if the child failed. `--fail-on-nonzero`
-makes an unsuccessful child receipt fail the wait command.
+Read `receipt.outcome` and `receipt.exit_code` for the result. Start success
+only confirms launch or an observed exit. Waiting for exit alone accepts a failed
+child; `--fail-on-nonzero` propagates its failure.
 
-Use `--cwd /absolute/project` to select a working directory. Repeated `--env NAME`
-options allow additional variable names from the launch environment; HOME, PATH,
-and TERM are allowed by default. This is not a mechanism to forward values from
-the invoking client into an already running backend wrapper.
+Set cwd with `--cwd /absolute/project`. Repeat `--env NAME` to allow variables
+from the launch environment; HOME, PATH and TERM are allowed by default. Values
+are not forwarded into an already running backend wrapper.
 
-The optional coordinator maintains registrations and observations. It starts for
-agent workflows; ordinary sessions and the picker do not contact it. Stopping
-it with `txm agent stop-coordinator` leaves sessions and children running.
-Restart does not replay commands. Missing exit proof remains unknown.
+Agent workflows start an optional coordinator; ordinary sessions do not.
+`txm agent stop-coordinator` leaves children/sessions running, and restart never
+replays commands. Missing exit proof remains unknown.
 
 `txm agent register tmux/existing-session` tracks an existing session without
-supervising it; registration cannot provide a retroactive child exit result.
+supervising it or supplying a retroactive exit result.
 
-For automation that must read existing metadata without initializing state or
-starting a coordinator, select the backend and exact managed IDs explicitly:
+For metadata reads that neither initialize state nor start a coordinator,
+select the backend and exact managed IDs:
 
 ```sh
 txm --backend native agent list --existing --read-id AGENT_ID --json
 txm --backend native agent status AGENT_ID --existing --json
 ```
 
-These reads report existing registrations and receipts. They do not discover
-unmanaged sessions or prove backend attachment. Ordinary agent queries retain
-their reconciliation behavior; `--existing` is the stricter read path.
+These read registrations/receipts, not unmanaged sessions or backend liveness.
+Ordinary queries may reconcile state; `--existing` does not.
 
 ## Optional process metrics
 
@@ -385,22 +348,14 @@ txm --backend native agent start --metrics --metrics-interval 2 build -- go test
 txm agent metrics AGENT_ID --json
 ```
 
-CPU percent is normalized to one logical CPU: 100% means one fully busy core,
-and a multithreaded child may exceed 100%. RSS is in bytes. Scope is explicitly
-`child_pid`, covering only the exact supervised direct child, not descendants.
-The first CPU value is unknown; missing samples are unavailable rather than zero.
-Kernel start identity is checked while the supervisor retains the child PID.
-Sampling survives coordinator restart; a crashed supervisor is not replaced by
-a sampler that guesses ownership from a PID.
+CPU uses 100% per logical CPU and may exceed 100%; RSS is bytes. Scope is only
+the exact direct child (`child_pid`), excluding descendants. First CPU is unknown;
+missing samples are unavailable, not zero. Process identity is checked.
 
-Intervals range from 2 to 60 seconds, with at most 32 active samplers. Storage
-is bounded by 1 MiB per instance and 32 MiB overall, including publication
-headroom; retained histories use stricter limits of 512 KiB/2048 samples per
-instance and 30 MiB overall. Samples expire after at most 24 hours, subject to
-the tighter quotas. Oldest inactive histories are evicted first. A full sampler
-quota or observer failure does not stop the job. Reading metrics does not start
-a coordinator or sampler; jobs without metrics allocate no sampling artifacts.
-See [platforms and backends](#platforms-and-backends) for platform support.
+Intervals are 2–60 seconds, with at most 32 active samplers. Histories expire
+within 24 hours and have bounded storage. Capacity/observer failure leaves the
+job running. Reads never start sampling. See [metrics contracts](contracts.md#process-metrics)
+for quotas and recovery rules.
 
 ## JSON for scripts
 
@@ -427,37 +382,26 @@ Configure an MCP client to launch txm over stdio with an explicit read scope:
 txm mcp serve --read-backend native --read-id AGENT_ID
 ```
 
-Replace `AGENT_ID` with the full managed ID returned at launch. Repeat selectors
-as needed. `--read-repo /owned/canonical/repo` permits owned tasks in that
-repository; when combined with IDs, the selectors intersect. `--read-host`
-restricts the local host identity and never enables SSH discovery. With no read
-scope, reads are denied. Omit `--json`: stdout belongs to the MCP transport.
+Repeat selectors as needed. IDs and `--read-repo /owned/canonical/repo` intersect;
+`--read-host` restricts local identity, not SSH discovery. No scope means denied.
+Omit `--json`: stdout is the MCP transport.
 
-The read catalog contains `list_agents`, `get_agent`, `list_sessions`,
-`get_session`, `list_tasks`, `get_task`, `wait_agent`, and `get_capabilities`.
-Session tools describe managed registrations, with backend liveness unverified.
-There is no unmanaged discovery, output preview, provider setup or remote read.
-Reads and finite waits neither start services nor create or repair state.
+Read tools cover managed agents, sessions, tasks, capabilities and finite waits.
+They do not discover unmanaged sessions, capture output, access remote hosts,
+start services or repair state. Session backend liveness remains unverified.
 
-Creation is a separate grant through `--create-policy /private/create.json`.
-Review the owned mode-0600 file before enabling it. It binds fixed argv,
-executable identity and canonical working directory to named templates; tasks
-also bind a committed base and disable repository commands. The child environment
-is empty. A policy that launches a shell or other interpreter still authorizes
-its exact code; an executable name alone is not a safe grant.
+Creation needs a separate reviewed mode-0600 `--create-policy` binding fixed
+argv, executable identity and cwd to named templates. Task templates also bind
+a committed base and disable repository commands. Children get an empty
+environment; an interpreter template grants its exact code.
 
-Only approved kinds expose `start_agent`/`start_task`. Calls require a unique
-32-hex `operation_id` and a `template_id`. Retry the same operation ID and
-request after a lost response. An uncertain outcome requires inspection of its
-reserved resource ID; do not retry it under a new ID. Retain the namespace's
-journal: it permanently reserves up to 1024 operation IDs within 1 MiB and refuses
-new creation at capacity. Changing a grant requires a separately reviewed
-namespace; deleting the journal cannot preserve retry safety.
+Creation calls require `template_id` and a unique 32-hex `operation_id`.
+Retry a lost response with the same ID/request; inspect uncertain outcomes
+instead of starting again with a new ID. Keep the namespace journal for retry
+safety. Stop, cleanup and merge remain human CLI handoffs.
 
-Stop, cleanup and merge are human CLI handoffs, absent from the executable MCP
-tool catalog. See the [MCP contracts](contracts.md#scoped-mcp-over-stdio) for
-transport eras, limits and the policy schema. Same-UID code remains trusted;
-these grants do not sandbox arbitrary programs.
+See [MCP contracts](contracts.md#scoped-mcp-over-stdio) for protocol eras, policy
+schema and limits. Grants do not sandbox arbitrary same-UID programs.
 
 ## Coding agents and attention
 
@@ -484,10 +428,9 @@ txm agent signal --from-env --state needs-input
 txm agent signal --from-env --state turn-complete
 ```
 
-For existing associations, `txm agent hooks enable AGENT_ID --provider generic`
-creates or rotates credentials. Hook input is authenticated, generation-bound,
-and checked for freshness and replay. Attention expires when it is no longer
-fresh; it does not remain a permanent success label.
+For existing work, `txm agent hooks enable AGENT_ID --provider generic`
+creates/rotates credentials. Signals are authenticated, generation-bound,
+freshness-checked and replay-protected. Attention expires.
 
 Inspect discovery separately from explicit executable/version probing:
 
@@ -497,27 +440,19 @@ txm agent doctor --probe --json
 txm agent providers --json
 ```
 
-Availability, exact schema compatibility, validation level and nullable
-enablement/trust are separate fields. A compatible version is not proof of a
-validated conversation or the trust configuration of a running instance.
-Live-reference verification also checks the recorded executable hash/platform.
-Unknown versions refuse hook activation while generic process supervision
-remains available. `agent doctor --probe --json` reports the exact installed
-version, compatibility and available validation reference.
+Doctor reports installed version, compatibility, validation references and
+trust separately. Compatibility is not live-instance verification. Unknown
+versions refuse hooks while generic process supervision remains available.
 
-Claude launches can opt in with `--provider claude`; generated settings stay
-private and do not edit user/project settings. Existing `--settings` arguments
-are refused by automatic composition, so review and compose those settings
-manually. Inspect all inherited hooks, managed policies and permissions before
-starting real work. `txm agent hooks config AGENT_ID` emits a standalone settings
-document for review; omit `--json` for this command.
+Claude can opt in with `--provider claude`; generated settings stay private.
+Existing `--settings` requires manual composition. Review inherited hooks,
+policies and permissions first. `txm agent hooks config AGENT_ID` emits settings
+for review; omit `--json`.
 
-Codex uses manual configuration and the provider's normal trust flow. Supervise
-the process without `--provider` when only its exit receipt is needed. For a
-reviewed observation setup, associate it with
-`txm agent hooks enable AGENT_ID --provider codex`, inspect the generated
-configuration, and review it in the intended private provider configuration and
-`/hooks` trust flow. txm does not install or trust Codex hooks automatically.
+Codex requires manual configuration and normal provider trust. Associate with
+`txm agent hooks enable AGENT_ID --provider codex`, inspect the generated config,
+and review it through the intended private configuration and `/hooks` flow.
+Use plain supervision if you only need exit receipts.
 
 | Adapter | Integration scope |
 | --- | --- |
@@ -526,9 +461,8 @@ configuration, and review it in the intended private provider configuration and
 | Codex | Exact-version neutral lifecycle hooks with manual configuration/trust; authorized live reference covers only the recorded Linux/amd64 interactive mode |
 | Other tools, including OpenCode | Generic process supervision and explicit worker signals |
 
-Any supported executable can be supervised as a process without a provider
-adapter. Attention and turn signals require an explicit integration. Use
-`agent doctor --probe --json` to inspect the installed adapter's capabilities.
+Any executable can use generic process supervision. Attention/turn signals need
+an explicit integration; inspect capabilities with doctor.
 
 ## Events, waits, and notifications
 
@@ -551,10 +485,8 @@ and tool contents. The [CLI contracts](contracts.md) define the delivery semanti
 
 ## Git worktree tasks
 
-A task combines a fresh Git branch and worktree with a supervised command. Use it
-for a build, an isolated project experiment, or a worker that needs its own files.
-The command starts from a committed base, `HEAD` by default; uncommitted source
-changes are not copied into the task.
+Tasks run supervised commands in fresh Git branches/worktrees. They start from
+a committed base (`HEAD` by default); uncommitted changes are not copied.
 
 ```sh
 txm task start build --repo /absolute/repo --dry-run -- go test ./...
@@ -580,10 +512,9 @@ txm task review TASK_ID --target refs/heads/main --diff --json
 txm task merge TASK_ID --target refs/heads/main --json
 ```
 
-Review and merge dry-run do not initialize state or start services. Diff output
-requires `--diff`, is limited to 16 KiB and strips terminal controls; it does not
-redact secrets. Treat repository content as untrusted. `merge` defaults to a
-read-only plan containing exact task/target OIDs and a review digest.
+Review/merge dry-run create no state or services. `--diff` opts into a
+control-stripped 16 KiB diff without secret redaction. Merge defaults to a
+read-only plan with exact OIDs and a review digest.
 
 A human may apply that exact reviewed fast-forward only after stopping all
 writers and external Git clients:
@@ -594,22 +525,17 @@ txm task merge TASK_ID --target refs/heads/main --dry-run=false --quiescent \
   --review-digest REVIEW_DIGEST --json
 ```
 
-Replace every placeholder with the full identity/value from the dry run.
-The target must be checked out in a distinct, positively identified clean
-worktree. All registered workers need immutable exit receipts; the task needs
-successful setup/main exit proof. Ref-only targets, sparse worktrees, submodules,
-dirty state, changed configuration and non-fast-forward merges are refused.
-The quiescence assertion includes editors, external Git clients and escaped
-descendants; a txm lock cannot exclude them. No push, branch deletion or cleanup
-is implied. An uncertain merge intent is retained for manual reconciliation;
-retry neither reapplies nor rolls back the operation.
+Use full values from the dry run. The target needs a distinct clean checked-out
+worktree; task/setup must have succeeded and registered workers must have exit
+receipts. Ref-only targets, sparse worktrees, submodules, changed config and
+non-fast-forwards are refused. `--quiescent` includes editors, external Git and
+escaped descendants. No push, branch deletion or cleanup follows. Uncertain
+outcomes require manual reconciliation; retries never reapply or roll back.
 
-Optional setup uses an explicitly reviewed mode-0600 JSON `--setup-policy`.
-It binds the exact task/worktree, committed base, setup/main argv, environment
-names and executable/configuration identities. Review `task start --dry-run`
-and supply its exact `--accept-setup` digest before applying. No repository setup
-command is inferred. Failure or timeout retains the setup worker/receipt and
-blocks the main launch; inspect `setup-status` before any cleanup.
+Optional `--setup-policy` needs a reviewed mode-0600 JSON file binding task,
+base, argv, environment and executable/config identities. Review dry-run and
+supply its `--accept-setup` digest. Failed/timed-out setup blocks main launch;
+inspect `setup-status` before cleanup.
 
 Inspect the task before cleaning up:
 
@@ -625,9 +551,8 @@ To deliberately discard those worktree files, both `--force` and
 `--confirm TASK_ID` are required; neither bypasses process or ownership checks.
 Cleanup retains the Git branch and committed work.
 
-Failed or uncertain starts retain resources for inspection. Missing registrations,
-moved worktrees, changed filesystem identities, or lost exit proof are not
-permission to guess a cleanup target. Keep the original state directory.
+Inspect failed/uncertain starts and keep the original state directory. Missing
+registrations, moved worktrees or lost exit proof never justify guessed cleanup.
 
 ## Metadata retention
 
@@ -641,11 +566,10 @@ txm agent prune AGENT_ID --dry-run
 txm agent prune AGENT_ID --confirm AGENT_ID
 ```
 
-Task pruning requires an absent worktree and validated launch/exit proof where
-applicable. Supervised registrations require a validated exit receipt;
-unsupervised registration pruning leaves the terminal session alive. Pruning
-retains branches, receipts, manifests, and hook files, so it is not disk garbage
-collection. Retired agent IDs are bounded at 16,384 and cannot be replayed.
+Pruning needs an absent task worktree and applicable launch/exit proof.
+Unsupervised registration pruning leaves its session alive. Branches, receipts,
+manifests and hook files remain; this reclaims index capacity, not disk space.
+Retired IDs cannot replay; see [contracts](contracts.md#dashboard-tasks-and-ssh).
 
 ## SSH hosts
 
@@ -685,17 +609,10 @@ rather than parsing human-readable session or agent listings.
 
 ## Updates and migration
 
-Read the target release's [upgrade notes](CHANGELOG.md) before replacing your
-binary, especially for changes to native protocols, persistent state, CLI exits,
-and JSON contracts. Keep the previous binary available to finish sessions that
-require it; updating the executable does not migrate running sessions.
+Read the target release's [upgrade notes](CHANGELOG.md). Keep the previous binary
+for sessions that need it; replacing the executable does not migrate sessions.
 
-Stable builds support `txm update`, which downloads only a newer stable version
-and refuses downgrades or malformed/prerelease metadata. Development and
-prerelease builds refuse automatic stable updates; install a selected release
-explicitly. The quick installer and GitHub's latest-release endpoint select
-stable releases.
-
-Before updating automation, review strict backend selection, nonzero failure
-exits, partial JSON results, and profile preflight in the [CLI contracts](contracts.md).
-Keep the original state directory and retain uncertain resources for inspection.
+`txm update` installs only a newer stable release. Development/prerelease builds
+require explicit installation. For scripts, review [CLI contracts](contracts.md)
+for backend selection, failure exits and partial JSON. Keep original state and
+inspect uncertain resources before cleanup.
