@@ -1,4 +1,4 @@
-name: Release
+name: Ship txm
 
 on:
   workflow_dispatch:

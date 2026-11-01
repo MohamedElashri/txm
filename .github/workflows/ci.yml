@@ -1,13 +1,22 @@
-name: CI
+name: Verify & Build
 
 on:
   push:
     branches: [ "main" ]
   workflow_dispatch:
+    inputs:
+      release_readiness:
+        description: Include the full native package matrix for release readiness
+        type: boolean
+        default: true
   workflow_call:
     inputs:
       force_full:
         description: Run the full suite when invoked by another workflow
+        type: boolean
+        default: true
+      release_readiness:
+        description: Include the full native package matrix
         type: boolean
         default: true
   pull_request:
@@ -31,6 +40,7 @@ jobs:
     timeout-minutes: 5
     outputs:
       full_ci: ${{ steps.scope.outputs.full_ci }}
+      release_ready: ${{ steps.scope.outputs.release_ready }}
     steps:
     - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # ref=v7.0.1
       with:
@@ -39,6 +49,7 @@ jobs:
       id: scope
       env:
         FORCE_FULL_CI: ${{ inputs.force_full || false }}
+        RELEASE_READINESS: ${{ inputs.release_readiness }}
       run: python3 scripts/check-ci-changes.py
     - name: Check release metadata
       run: python3 scripts/check-release.py
@@ -67,7 +78,7 @@ jobs:
         CGO_ENABLED: 1
 
   tests:
-    name: Tests / Generic
+    name: Tests
     needs: [scope, lint]
     if: needs.scope.outputs.full_ci == 'true'
     runs-on: ubuntu-latest
@@ -279,7 +290,7 @@ jobs:
   validate-packages:
     name: Validate package / ${{ matrix.label }}
     needs: [scope, validate-archives]
-    if: needs.scope.outputs.full_ci == 'true'
+    if: needs.scope.outputs.full_ci == 'true' && needs.scope.outputs.release_ready == 'true'
     timeout-minutes: 15
     strategy:
       fail-fast: false
@@ -395,10 +406,14 @@ jobs:
           stages=json.loads(os.environ['STAGES'])
           assert stages['scope']['result']=='success', 'Scope selection failed'
           full=stages['scope']['outputs'].get('full_ci')
+          release=stages['scope']['outputs'].get('release_ready')
           assert full in ('true','false'), 'Unknown CI scope'
-          expected='success' if full=='true' else 'skipped'
+          assert release in ('true','false'), 'Unknown release-readiness scope'
+          def expected(name):
+              enabled=full=='true' and (name!='validate-packages' or release=='true')
+              return 'success' if enabled else 'skipped'
           failed={name:stage['result'] for name,stage in stages.items()
-                  if name!='scope' and stage['result']!=expected}
+                  if name!='scope' and stage['result']!=expected(name)}
           assert not failed, f'Incomplete CI stages: {failed}'
           print('All required CI stages passed' if full=='true' else 'Documentation-only checks passed')
           PY_READY

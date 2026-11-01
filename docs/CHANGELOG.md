@@ -72,14 +72,13 @@ Changes follow [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) and
 | Claude 2.1.309 | Authorized Linux/amd64 interactive restricted/default-permission reference: eight callback kinds, turns, permission cancellation, tool success/failure, resume, API failure/recovery, exit, restart/expiry and negative identities. Direct user-cancellation signaling and other modes/platforms remain unverified or unsupported. |
 | Codex CLI 0.166.0 | Authorized Linux/amd64 interactive no-daemon reference with normally trusted neutral hooks: seven callback kinds, turns, permission cancellation, interrupt, resume, tool/turn/session end, restart/expiry and fork-rebind refusal. Other modes/platforms remain unverified. |
 | Claude 2.1.308 / Codex CLI 0.165.0 | Schema/fixture compatibility retained; no equivalent full live-lifecycle claim |
-| OpenCode 2.2.5 | Linux/macOS arm64 SDK/loader/auth/session-metadata/crash-restart fixtures pass. Canonical lifecycle activation remains disabled; successful completion, permission cancellation, interruption and resume are unverified. Generic process supervision remains available. |
 
 Exact reference executable hashes/platforms are checked by diagnostics; matching
 only a version string does not attest a running instance or its trust settings.
 
 ### Validation scope
 
-- CI orders lint, generic tests, parallel OS builds and separate runtime/archive/
+- Verify & Build orders lint, tests, parallel OS builds and separate runtime/archive/
   package validation, ending in a stable `CI ready` gate. The Python harness runs
   once; full race-instrumented runtime regressions run once per OS, with Linux
   fuzzing and macOS-specific Go/backend/SSH checks.
@@ -87,6 +86,9 @@ only a version string does not attest a running instance or its trust settings.
   universal archive, with both slices checked structurally. Release reuses the
   complete exact-commit CI bundle and original evidence, with no compilation or
   repeated tests; missing or expired artifacts block the preflight.
+- Pull requests use native Linux/macOS runtime and archive validation. Main and
+  release-readiness runs add the full seven-package matrix. Ship txm reuses those
+  exact validated artifacts.
 - Package validation exercises seven ZIPs on seven runners: Linux x86_64/ARM64
   GNU and static musl, universal Mac on Apple Silicon, and Windows x86_64/ARM64.
   Windows remains CLI smoke only; routine CI has no separate Intel Mac job.

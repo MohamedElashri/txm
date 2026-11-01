@@ -78,13 +78,16 @@ For documentation, check local links and anchors, compare commands with help,
 and run the release metadata checker. Update the man page when command semantics
 change; it is embedded in the binary.
 
-CI has an ordered job graph: **Scope → Lint → Generic tests → OS builds →
+The **Verify & Build** workflow has an ordered graph: **Scope → Lint → Tests → OS builds →
 Validation → CI ready**. Generic tests run the Python harness, Linux race unit
 tests and fuzzing once. Two build branches produce Linux/Windows archives and
 the universal Mac archive. Separate validation jobs consume those artifacts;
 they do not rebuild application binaries. macOS Go checks, full runtime
 regressions once per OS, backend/SSH checks and all seven package checks must
-pass before the stable `CI ready` gate succeeds.
+pass before the stable `CI ready` gate succeeds for release readiness. Pull
+requests use lighter validation: native Linux/macOS runtime and archive checks.
+The seven-package matrix runs on main and manual release-readiness runs; manual
+dispatch can set `release_readiness=false` for the lighter profile.
 
 `make build-race` prepares the runtime binary;
 `make test-runtime TEST_BINARY=/absolute/txm-race` runs the shared suite without
@@ -128,7 +131,6 @@ regression harness; keep them with the private evidence for that authorized run.
 executable and a new report path through `OPENCODE_BINARY`/`OPENCODE_REPORT`.
 It runs a private loopback SDK/loader/session-metadata fixture with provider use
 denied and no inference. Version mismatch is a blocker, not a passing skip.
-Canonical OpenCode lifecycle activation remains disabled.
 
 `tests/record_demo.py --binary /absolute/txm --destination /absolute/new-demo`
 records roughly 60 seconds of real generic CLI/PTY activity after installation.
@@ -191,8 +193,8 @@ expensive Linux, macOS, and lint jobs. Code under `docs/`, mixed code/docs chang
 and changes whose scope cannot be determined still run the full suite. Manual
 CI dispatches and reusable calls run the full suite by default.
 
-Full CI builds release archives and runs the seven-runner package matrix after
-lint and generic tests pass. Archives are stamped from `VERSION`. Release runs
+Release-ready CI builds archives and runs the seven-runner package matrix after
+lint and tests pass. Archives are stamped from `VERSION`. **Ship txm** runs
 only for version tags or an explicit dispatch and reuses the validated CI bundle;
 it does not compile or repeat the tests. Branch dispatches never create a draft.
 

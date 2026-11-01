@@ -524,7 +524,7 @@ configuration, and review it in the intended private provider configuration and
 | Generic | Authenticated worker signals; no AI provider required |
 | Claude | Exact-version neutral lifecycle hooks; authorized live reference covers only the recorded Linux/amd64 interactive mode |
 | Codex | Exact-version neutral lifecycle hooks with manual configuration/trust; authorized live reference covers only the recorded Linux/amd64 interactive mode |
-| OpenCode | Canonical activation disabled; v2 SDK/loader/session-metadata evidence does not establish provider lifecycle support |
+| Other tools, including OpenCode | Generic process supervision and explicit worker signals |
 
 Any supported executable can be supervised as a process without a provider
 adapter. Attention and turn signals require an explicit integration. Historical

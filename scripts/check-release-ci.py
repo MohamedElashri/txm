@@ -6,7 +6,7 @@ import re
 import subprocess
 from pathlib import Path
 
-REQUIRED_JOBS = {'Scope', 'Lint', 'Tests / Generic', 'Build / Linux + Windows',
+REQUIRED_JOBS = {'Scope', 'Lint', 'Tests', 'Build / Linux + Windows',
                  'Build / macOS universal', 'Validate / Linux', 'Validate / macOS',
                  'Validate / Archives', 'Validate package / Linux x86_64 GNU',
                  'Validate package / Linux x86_64 musl', 'Validate package / Linux ARM64 GNU',

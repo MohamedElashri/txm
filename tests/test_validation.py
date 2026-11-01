@@ -91,14 +91,19 @@ class ValidationChecks(unittest.TestCase):
         body = re.search(r"python3 - <<'PY_READY'\n(.*?)\n          PY_READY", ci, re.S)[1]
         body = textwrap.dedent(body)
         names = ['lint', 'tests', 'build', 'validate-runtime', 'validate-archives', 'validate-packages']
-        def run(full='true', changes=None, scope='success'):
-            stages = {name: {'result': 'success' if full == 'true' else 'skipped'} for name in names}
-            stages['scope'] = {'result': scope, 'outputs': {'full_ci': full}}
+        def run(full='true', changes=None, scope='success', release=None):
+            release = ('true' if full == 'true' else 'false') if release is None else release
+            stages = {name: {'result': 'success' if full == 'true' and
+                            (name != 'validate-packages' or release == 'true') else 'skipped'} for name in names}
+            stages['scope'] = {'result': scope, 'outputs': {'full_ci': full, 'release_ready': release}}
             for name, value in (changes or {}).items(): stages[name]['result'] = value
             return subprocess.run([sys.executable, '-c', body],
                                   env=dict(os.environ, STAGES=json.dumps(stages)), capture_output=True).returncode
         self.assertEqual(run(), 0)
         self.assertEqual(run(full='false'), 0)
+        self.assertEqual(run(release='false'), 0)
+        self.assertNotEqual(run(release='false', changes={'validate-packages': 'success'}), 0)
+        self.assertNotEqual(run(release='unknown'), 0)
         for name in names:
             for result in ['failure', 'cancelled', 'skipped']:
                 with self.subTest(stage=name, result=result):

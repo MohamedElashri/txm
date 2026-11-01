@@ -46,8 +46,10 @@ def main():
     full = select_scope(os.environ.get('GITHUB_EVENT_NAME'), event,
                         os.environ.get('FORCE_FULL_CI') == 'true')
     value = str(full).lower()
+    readiness = full and os.environ.get('GITHUB_EVENT_NAME') != 'pull_request' and os.environ.get('RELEASE_READINESS') != 'false'
     with Path(os.environ['GITHUB_OUTPUT']).open('a') as output:
         output.write('full_ci='+value+'\n')
+        output.write('release_ready='+str(readiness).lower()+'\n')
     print('Full CI required' if full else 'Documentation-only changes: skipping expensive jobs')
 
 
