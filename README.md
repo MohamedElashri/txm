@@ -48,8 +48,8 @@ curl -fsSL https://raw.githubusercontent.com/MohamedElashri/txm/main/utils/insta
 export PATH="$HOME/.local/bin:$PATH"
 ```
 
-[Release archives](https://github.com/MohamedElashri/txm/releases/latest) ·
-[Build from source](docs/user-guide.md#build-from-source)
+You can also use a [release archive](https://github.com/MohamedElashri/txm/releases/latest)
+or [build from source](docs/user-guide.md#build-from-source).
 
 ```sh
 # Start a persistent shell. Detach with Ctrl+backslash.
@@ -68,6 +68,6 @@ Use the ID returned by `agent start` in place of `AGENT_ID`.
 
 ## Contributing
 
-[Contributing guide](CONTRIBUTING.md) ·
-[Report an issue](https://github.com/MohamedElashri/txm/issues) ·
-[GPL-3.0 license](LICENSE)
+Read the [contributing guide](CONTRIBUTING.md) to get involved or
+[report an issue](https://github.com/MohamedElashri/txm/issues).
+txm is released under the [GPL-3.0 license](LICENSE).

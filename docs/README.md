@@ -1,13 +1,12 @@
 # txm documentation
 
-Use txm to keep interactive sessions running, reproduce a development workspace,
-supervise background jobs, or manage work across Git repositories and SSH hosts.
+Start with the user guide; use contracts for automation and development for builds.
 
 ## Guides and reference
 
 | You want to… | Read |
 | --- | --- |
-| Install, manage sessions, use profiles/dashboard, or automate jobs, tasks, and SSH hosts | [User guide](user-guide.md) |
+| Install and use sessions, jobs, profiles, tasks or SSH hosts | [User guide](user-guide.md) |
 | Check platform support or upgrade an existing installation | [Platform scope](user-guide.md#platforms-and-backends) and [updates](user-guide.md#updates-and-migration) |
 | Integrate with JSON, exit codes, state, events, or native IPC | [Contracts reference](contracts.md) |
 | Connect a local MCP client or inspect opt-in process metrics | [MCP](user-guide.md#mcp-for-local-clients) and [metrics](user-guide.md#optional-process-metrics) |
@@ -19,13 +18,7 @@ Use `txm COMMAND --help` and `man txm` for the command and flag reference.
 
 ## Versions and documentation
 
-These pages describe the source in this checkout. Run `txm version` to identify
-your binary; for an older release, read the docs at its matching Git tag.
-
-[VERSION](../VERSION) owns the build/release version. The changelog owns dated
-release notes and upgrade instructions. Validation evidence stays with CI. Guides
-use version-independent examples or read `VERSION` when a version is required.
-Dependency pins live in [go.mod](../go.mod),
-[scripts/dependencies.env](../scripts/dependencies.env), and the build/workflow
-configuration. Protocol and schema numbers are compatibility contracts and stay
-explicit in the reference.
+These pages describe this checkout. Run `txm version`; use the matching Git tag's
+docs for older builds. [VERSION](../VERSION) owns the release number, and the
+changelog records upgrade notes. Evidence stays in CI. Dependency pins live in
+[go.mod](../go.mod) and [scripts/dependencies.env](../scripts/dependencies.env).
