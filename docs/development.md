@@ -78,6 +78,12 @@ For documentation, check local links and anchors, compare commands with help,
 and run the release metadata checker. Update the man page when command semantics
 change; it is embedded in the binary.
 
+CI runs the Python harness once, then race-instrumented Go and full runtime
+regressions once per OS. `make build-race` prepares the runtime binary;
+`make test-runtime TEST_BINARY=/absolute/txm-race` runs the shared suite without
+rebuilding dependencies or repeating the harness. Fuzzing runs once on Linux;
+macOS backend and loopback SSH checks run once in source CI.
+
 ## Fixture isolation
 
 `tests/sandbox.py` builds private HOME, XDG, runtime, temp, and environment
@@ -164,7 +170,7 @@ Use `scripts/audit-artifacts.py` on explicit outputs for known credential forms;
 it reports redacted findings. Pair the scan with a review of fixture provenance.
 
 The [release process](#release-process) defines the complete package gate sequence.
-Both macOS package jobs install checksum-pinned Zellij using
+The macOS source job installs checksum-pinned Zellij using
 `scripts/install-ci-zellij.sh`. `tests/peer_checks.py` shares actual foreign-UID
 regressions between Linux containers and disposable macOS CI and refuses ordinary
 host-root execution. Windows checks cover version/help/completions and explicit
@@ -178,7 +184,7 @@ expensive Linux, macOS, and lint jobs. Code under `docs/`, mixed code/docs chang
 and changes whose scope cannot be determined still run the full suite. Manual
 CI dispatches and reusable calls run the full suite by default.
 
-Full archive builds and the eight-runner package matrix run only for version
+Full archive builds and the seven-runner package matrix run only for version
 tags or an explicit Release workflow dispatch.
 Branch dispatches use snapshots stamped from `VERSION` and never create a draft.
 Tag runs build and validate the official archives before draft creation.
@@ -193,23 +199,27 @@ Tag runs build and validate the official archives before draft creation.
    CI skipped documentation-only changes), then tag it with the version from
    `VERSION`: `git tag "v$(cat VERSION)"`.
 4. A short Linux preflight checks stable metadata and the latest CI run for that
-   exact commit on `main`, including successful Linux, macOS ARM64/Intel, and
+   exact commit on `main`, including successful Linux, Apple Silicon macOS, and
    lint jobs. Missing, pending, failed, cancelled, or skipped validation stops
-   the release before compilation. Existing CI is reused rather than repeated.
-5. Two parallel GoReleaser jobs build without publishing: Linux builds the
-   four Linux and two Windows archives; macOS builds both Darwin slices using
-   its SDK and combines them into one universal archive. Each job builds only
-   its required Ghostty libraries and retains
-   its partition. An inexpensive Linux job assembles the complete bundle using
-   the original build checksums.
+   the release before compilation. It also requires an unexpired universal Mac
+   artifact bound to that source commit; rerun full CI if it is unavailable.
+5. The single Apple Silicon source job on `macos-latest` builds both Darwin
+   slices and retains one universal archive. Release downloads that exact CI
+   artifact and its original checksums rather than rebuilding it. A Linux
+   GoReleaser job builds the four Linux and two Windows archives without
+   publishing; an inexpensive Linux job assembles both partitions. All Mac
+   jobs require ARM64 on the latest stable hosted image; there is no Intel
+   runner or architecture-specific Mac archive.
 6. `scripts/check-release-artifacts.py` checks the complete archive inventory,
    checksums, packaged documentation, binary OS/CPU headers, both bounded
    nonoverlapping universal Mac slices, and static-musl
    linkage. The same bundle is checked after each artifact download.
-7. Each Unix archive runs on its matching Linux/macOS architecture through private
-   installation and the runtime suites. The same universal Mac archive runs on
-   both Intel and Apple Silicon runners. Mac jobs additionally test real backends
-   and loopback SSH. Both platforms test actual different-UID rejection using
+7. Each Unix archive passes private installation and a short packaged-code smoke
+   check: native child startup, authenticated signals, exit receipts after
+   coordinator shutdown, and child-PID CPU/RSS. Full regressions reuse the exact
+   source CI result rather than running again for every ZIP. The universal Mac
+   file runs on Apple Silicon; both slices are checked structurally. This is not
+   a native Intel runtime claim. Both platforms test actual different-UID rejection using
    private fixtures: Linux in a disposable container, macOS as root only on the
    disposable CI runner. The Linux peer probe uses a pinned multi-architecture
    Python image directly, avoiding an unrelated SSH/tmux/Screen/Git image build.
@@ -223,6 +233,9 @@ Tag runs build and validate the official archives before draft creation.
    before manually publishing. Existing releases are not overwritten on rerun.
 
 The bundle and package reports are retained as Actions artifacts.
+Bundle privacy checks run once. Bounded annotations expose source/archive hashes
+and verified report hashes, so evidence remains inspectable through the API when
+an artifact-download host is unavailable.
 Reports include the run attempt in their artifact names, so a successful retry
 is distinct from an earlier incomplete report. On failure, use GitHub's **Re-run
 failed jobs** or `gh run rerun RUN_ID --failed`. A package failure reuses the

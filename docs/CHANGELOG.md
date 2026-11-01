@@ -79,14 +79,18 @@ only a version string does not attest a running instance or its trust settings.
 
 ### Validation scope
 
-- Full source CI passes Linux unit/race/fuzz/integration checks, lint and native
-  macOS Intel/Apple Silicon integration. Package validation exercises seven ZIPs
-  across eight matching native runners: Linux x86_64/ARM64 GNU and static musl,
-  the same universal Mac archive on both architectures, and Windows x86_64/ARM64.
-  Windows coverage remains CLI smoke only.
+- Source CI runs the Python harness once, full race-instrumented Go/runtime
+  regressions once per OS, Linux fuzzing, lint and macOS backend/SSH checks.
+  All Mac jobs use Apple Silicon on `macos-latest`; one build produces the
+  universal archive, with both slices checked structurally. Release reuses that
+  exact-commit CI artifact; missing or expired artifacts block the preflight.
+- Package validation exercises seven ZIPs on seven runners: Linux x86_64/ARM64
+  GNU and static musl, universal Mac on Apple Silicon, and Windows x86_64/ARM64.
+  Windows remains CLI smoke only; routine CI has no separate Intel Mac job.
 - Unix packages pass private installation, runtime and actual different-UID
-  rejection checks. Both Mac runners also pass backend and private loopback SSH
-  checks. Archive checks cover inventory, source documentation, checksums,
+  rejection smoke checks. Native child, signal, receipt and CPU/RSS checks run
+  against packaged bytes; the full regression matrix reuses exact-source CI.
+  Archive checks cover inventory, source documentation, checksums,
   executable headers, both universal Mac slices and static-musl linkage.
 - Native macOS 27.2 arm64 passes Go 1.27.3 unit/race, Go 1.26.10 minimum-toolchain
   tests, lint, module checks, five fuzz targets, all applicable normal/race runtime
@@ -95,8 +99,7 @@ only a version string does not attest a running instance or its trust settings.
 - Three alternating full-scale macOS/v2.0 comparisons pass every fixed and 20%
   relative budget: median startup +15.7%, list10 +19.9%, list100 -3.6%, and peak
   server RSS +1.9%. The final arm64 snapshot runtime check passes the 100-session
-  fixed budgets. Earlier attempts below the unchanged 4 GiB available-memory
-  guard remain recorded as refusals. These fixture measurements are not a
+  fixed budgets. These fixture measurements are not a
   performance SLA; historical Linux evidence retains its original scope.
 - A separate authorized macOS Codex 0.166.0 subscription demonstration passes
   two fixed-response turns, same-session resume, neutral callbacks and clean
@@ -110,8 +113,9 @@ only a version string does not attest a running instance or its trust settings.
   agent-skill package is supplied.
 - Keep lightweight CI scope/metadata checks for documentation-only changes and
   full manual CI for exact-source release validation. Retain independently
-  retryable build partitions and all eight matching-runner archive gates before
-  draft creation; no required check is disabled by local validation.
+  retryable build partitions and all seven package gates before draft creation.
+  Bundle privacy checks and hash-bound report annotations make evidence available
+  without repeating tests or relying solely on artifact-download access.
 
 ## [2.0.0] - 2026-10-31
 

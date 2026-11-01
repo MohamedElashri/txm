@@ -22,7 +22,9 @@ runs:
         case "$BUILD_MODE:$BUILD_PLATFORM" in host:|release:linux|release:darwin) ;; *) exit 2 ;; esac
         sdk=none
         if [[ "$RUNNER_OS" == macOS ]]; then
+          [[ "$RUNNER_ARCH" == ARM64 ]] || { echo 'Mac builds require Apple Silicon' >&2; exit 2; }
           sdk="$(xcrun --show-sdk-version)-$(xcrun --show-sdk-build-version)"
+          printf '::notice title=Mac build host::macOS %s; architecture %s; SDK %s\n' "$(sw_vers -productVersion)" "$(uname -m)" "$sdk"
         fi
         echo "prefix=txm-deps-v1-$RUNNER_OS-$RUNNER_ARCH-$sdk-$DEPENDENCY_HASH" >> "$GITHUB_OUTPUT"
         echo "scope=$BUILD_MODE-$BUILD_PLATFORM" >> "$GITHUB_OUTPUT"

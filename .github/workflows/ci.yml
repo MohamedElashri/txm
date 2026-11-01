@@ -17,6 +17,10 @@ concurrency:
   group: ci-${{ github.head_ref || github.ref_name }}
   cancel-in-progress: true
 
+defaults:
+  run:
+    shell: bash
+
 jobs:
   changes:
     runs-on: ubuntu-latest
@@ -35,7 +39,14 @@ jobs:
     - name: Check release metadata
       run: python3 scripts/check-release.py
     - name: Test CI scope selection
+      if: steps.scope.outputs.full_ci != 'true'
       run: python3 -m unittest discover -s tests -p 'test_ci_changes.py' -v
+    - name: Test validation harness once
+      if: steps.scope.outputs.full_ci == 'true'
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y tmux
+        make test-harness
 
   build-and-test:
     needs: changes
@@ -50,47 +61,89 @@ jobs:
     - name: Verify dependencies
       run: go mod verify
 
-    - name: Build
-      run: make build
+    - name: Race unit tests and runtime build
+      run: make test-race build-race 2>&1 | tee "$RUNNER_TEMP/source-validation.log"
 
-    - name: Run Tests
-      run: make test
+    - name: Fuzz protocols once
+      run: make test-fuzz 2>&1 | tee -a "$RUNNER_TEMP/source-validation.log"
 
-    - name: Guarded PTY and tmux integration
-      run: make test-integration
+    - name: Full runtime regression suite once
+      run: make test-runtime TEST_BINARY="$PWD/bin/txm-race" 2>&1 | tee -a "$RUNNER_TEMP/source-validation.log"
 
-    - name: Race tests
-      run: make test-race
-
-    - name: Native framing fuzz
-      run: make test-fuzz
-
-    - name: Native lifecycle with race detector
-      run: make test-integration-race
+    - name: Surface bounded Linux failure details
+      if: failure()
+      run: python3 .github/scripts/annotate-failure.py "$RUNNER_TEMP/source-validation.log"
 
   macos-integration:
     needs: changes
     if: needs.changes.outputs.full_ci == 'true'
-    timeout-minutes: 25
-    strategy:
-      fail-fast: false
-      matrix:
-        os: [macos-15, macos-15-intel]
-    runs-on: ${{ matrix.os }}
+    timeout-minutes: 35
+    runs-on: macos-latest
     steps:
     - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # ref=v7.0.1
+      with:
+        fetch-depth: 0
     - uses: ./.github/actions/setup-build
-    - name: Install tmux
-      run: brew install tmux
-    - name: Test and integrate on macOS
+    - name: Install test backends
       run: |
-        set -o pipefail
-        go test -count=1 -v ./pkg/metrics 2>&1 | tee "$RUNNER_TEMP/macos-validation.log"
-        make test test-race test-integration test-ssh 2>&1 | tee -a "$RUNNER_TEMP/macos-validation.log"
+        brew install tmux
+        bash scripts/install-ci-zellij.sh
+    - name: Race unit tests and runtime build
+      run: make test-race build-race 2>&1 | tee "$RUNNER_TEMP/macos-validation.log"
+    - name: Full runtime regression suite once
+      run: make test-runtime TEST_BINARY="$PWD/bin/txm-race" 2>&1 | tee -a "$RUNNER_TEMP/macos-validation.log"
+    - name: macOS backends once
+      run: python3 tests/macos_backend_checks.py --binary "$PWD/bin/txm-race" --report "$RUNNER_TEMP/backends.json" -v 2>&1 | tee -a "$RUNNER_TEMP/macos-validation.log"
+    - name: Loopback SSH once
+      run: python3 tests/ssh_checks.py --binary "$PWD/bin/txm-race" --report "$RUNNER_TEMP/ssh.json" -v 2>&1 | tee -a "$RUNNER_TEMP/macos-validation.log"
     - name: Surface bounded macOS failure details
       if: failure()
       shell: bash
       run: python3 .github/scripts/annotate-failure.py "$RUNNER_TEMP/macos-validation.log"
+    - name: Retain platform-specific source reports
+      if: always()
+      uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+      with:
+        name: source-macos-reports
+        path: |
+          ${{ runner.temp }}/backends.json
+          ${{ runner.temp }}/ssh.json
+        if-no-files-found: warn
+        retention-days: 14
+
+    - name: Prepare cached universal Mac dependencies
+      uses: ./.github/actions/setup-build
+      with:
+        mode: release
+        platform: darwin
+    - name: Prepare universal Mac completions and SDK
+      run: |
+        bash scripts/generate-completions.sh
+        echo "TXM_SNAPSHOT_VERSION=$(cat VERSION)" >> "$GITHUB_ENV"
+        echo "MACOS_SDK_PATH=$(xcrun --show-sdk-path)" >> "$GITHUB_ENV"
+    - name: Build universal Mac archive once
+      uses: goreleaser/goreleaser-action@f06c13b6b1a9625abc9e6e439d9c05a8f2190e94 # v7.2.3
+      with:
+        distribution: goreleaser
+        version: v2.19.0
+        args: release --snapshot --clean --skip=before,publish --parallelism=2
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        TXM_RELEASE_ROOT: ${{ github.workspace }}
+        TXM_RELEASE_PLATFORM: darwin
+    - name: Verify universal Mac partition
+      run: |
+        mkdir "$RUNNER_TEMP/universal"
+        cp dist/*.zip "$RUNNER_TEMP/universal/"
+        cp dist/checksums.txt "$RUNNER_TEMP/universal/checksums-darwin.txt"
+        python3 scripts/check-release-artifacts.py --directory "$RUNNER_TEMP/universal" --partition darwin
+    - name: Retain universal archive for exact-commit releases
+      uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+      with:
+        name: ci-macos-universal
+        path: ${{ runner.temp }}/universal/*
+        if-no-files-found: error
+        retention-days: 14
 
   lint:
     needs: changes

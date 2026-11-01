@@ -6,8 +6,8 @@ import re
 import subprocess
 from pathlib import Path
 
-REQUIRED_JOBS = {'build-and-test', 'lint', 'macos-integration (macos-15)',
-                 'macos-integration (macos-15-intel)'}
+REQUIRED_JOBS = {'build-and-test', 'lint', 'macos-integration'}
+MACOS_ARTIFACT = 'ci-macos-universal'
 
 
 def select_run(runs, repository, sha, branch, manual=False):
@@ -32,7 +32,17 @@ def verify_jobs(jobs):
     names = [job['name'] for job in jobs]
     if (not REQUIRED_JOBS.issubset(names) or len(names) != len(set(names))
             or any(job.get('status') != 'completed' or job.get('conclusion') != 'success' for job in jobs)):
-        raise ValueError('CI must include successful Linux, macOS ARM64/Intel and lint jobs; skipped jobs do not qualify')
+        raise ValueError('CI must include successful Linux, Apple Silicon macOS and lint jobs; skipped jobs do not qualify')
+
+
+def select_macos_artifact(artifacts, sha):
+    found = [item for item in artifacts if item.get('name') == MACOS_ARTIFACT]
+    if (len(found) != 1 or found[0].get('expired') is not False
+            or found[0].get('workflow_run', {}).get('head_sha') != sha
+            or not re.fullmatch(r'sha256:[0-9a-f]{64}', found[0].get('digest', ''))
+            or found[0].get('size_in_bytes', 0) <= 0):
+        raise ValueError('Exact-commit universal Mac artifact is missing, expired or invalid; rerun full CI before release')
+    return found[0]
 
 
 def api(endpoint):
@@ -55,8 +65,10 @@ def main():
         # The API returns the latest attempt, including rerun failed jobs.
         jobs = api(f'repos/{args.repository}/actions/runs/{run["id"]}/jobs?filter=latest&per_page=100')['jobs']
         verify_jobs(jobs)
+        artifact = select_macos_artifact(api(f'actions/runs/{run["id"]}/artifacts?per_page=100')['artifacts'], args.sha)
         report = {'passed': True, 'commit': args.sha, 'ci_run_id': run['id'],
-                  'ci_run_attempt': run['run_attempt'], 'url': run['html_url']}
+                  'ci_run_attempt': run['run_attempt'], 'url': run['html_url'],
+                  'macos_artifact': {key: artifact[key] for key in ['id', 'name', 'digest', 'size_in_bytes']}}
         with args.report.open('x') as output:
             output.write(json.dumps(report, indent=2)+'\n')
     except (OSError, ValueError, KeyError, subprocess.SubprocessError) as error:

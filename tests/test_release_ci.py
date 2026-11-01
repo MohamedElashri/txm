@@ -44,5 +44,14 @@ class ReleaseCITests(unittest.TestCase):
                     [dict(job, conclusion='failure') for job in good]]:
             with self.subTest(jobs=bad), self.assertRaises(ValueError):ci.verify_jobs(bad)
 
+    def test_universal_artifact_must_be_present_unexpired_and_bound_to_source(self):
+        good = {'id': 7, 'name': ci.MACOS_ARTIFACT, 'expired': False, 'workflow_run': {'head_sha': SHA},
+                'digest': 'sha256:'+'b'*64, 'size_in_bytes': 42}
+        self.assertEqual(ci.select_macos_artifact([good], SHA)['id'], 7)
+        for items in [[], [good, good], [dict(good, expired=True)], [dict(good, digest='')],
+                      [dict(good, workflow_run={'head_sha': 'c'*40})], [dict(good, size_in_bytes=0)]]:
+            with self.subTest(artifacts=items), self.assertRaises(ValueError):
+                ci.select_macos_artifact(items, SHA)
+
 
 if __name__ == '__main__':unittest.main()

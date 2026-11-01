@@ -17,10 +17,13 @@ concurrency:
 jobs:
   preflight:
     runs-on: ubuntu-24.04
+    outputs:
+      ci_run_id: ${{ steps.readiness.outputs.ci_run_id }}
     timeout-minutes: 3
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Validate release identity and reuse exact-commit CI
+        id: readiness
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
@@ -35,6 +38,8 @@ jobs:
             python3 scripts/check-release-ci.py --repository "$GITHUB_REPOSITORY" --sha "$GITHUB_SHA" \
               --branch "$GITHUB_REF_NAME" --manual --report "$RUNNER_TEMP/readiness/ci.json"
           fi
+          ci_run_id=$(python3 -c 'import json,sys; print(json.load(sys.stdin)["ci_run_id"])' < "$RUNNER_TEMP/readiness/ci.json")
+          echo "ci_run_id=$ci_run_id" >> "$GITHUB_OUTPUT"
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: release-readiness-attempt-${{ github.run_attempt }}
@@ -45,15 +50,7 @@ jobs:
   build:
     needs: preflight
     timeout-minutes: 30
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - os: ubuntu-24.04
-            platform: linux
-          - os: macos-15
-            platform: darwin
-    runs-on: ${{ matrix.os }}
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -61,8 +58,8 @@ jobs:
       - uses: ./.github/actions/setup-build
         with:
           mode: release
-          platform: ${{ matrix.platform }}
-      - name: Prepare completions, notes and SDK
+          platform: linux
+      - name: Prepare completions and release metadata
         run: |
           set -euo pipefail
           bash scripts/generate-completions.sh
@@ -72,11 +69,7 @@ jobs:
             python3 scripts/check-release.py --stable
           fi
           echo "TXM_SNAPSHOT_VERSION=$(cat VERSION)" >> "$GITHUB_ENV"
-          if [[ "$RUNNER_OS" == macOS ]]; then
-            echo "MACOS_SDK_PATH=$(xcrun --show-sdk-path)" >> "$GITHUB_ENV"
-          else
-            echo "MACOS_SDK_PATH=" >> "$GITHUB_ENV"
-          fi
+          echo "MACOS_SDK_PATH=" >> "$GITHUB_ENV"
       - name: Build archives without uploading a release
         uses: goreleaser/goreleaser-action@f06c13b6b1a9625abc9e6e439d9c05a8f2190e94 # v7.2.3
         with:
@@ -86,10 +79,10 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           TXM_RELEASE_ROOT: ${{ github.workspace }}
-          TXM_RELEASE_PLATFORM: ${{ matrix.platform }}
+          TXM_RELEASE_PLATFORM: linux
       - name: Collect build partition
         env:
-          PLATFORM: ${{ matrix.platform }}
+          PLATFORM: linux
         run: |
           mkdir "$RUNNER_TEMP/part"
           cp dist/*.zip "$RUNNER_TEMP/part/"
@@ -97,14 +90,14 @@ jobs:
           python3 scripts/check-release-artifacts.py --directory "$RUNNER_TEMP/part" --partition "$PLATFORM"
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
-          name: release-build-${{ matrix.platform }}
+          name: release-build-linux
           path: ${{ runner.temp }}/part/*
           overwrite: true
           if-no-files-found: error
           retention-days: 14
 
   bundle:
-    needs: build
+    needs: [preflight, build]
     runs-on: ubuntu-24.04
     timeout-minutes: 5
     steps:
@@ -113,6 +106,13 @@ jobs:
         with:
           pattern: release-build-*
           merge-multiple: true
+          path: ${{ runner.temp }}/parts
+      - name: Reuse exact-source CI universal Mac archive
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          name: ci-macos-universal
+          run-id: ${{ needs.preflight.outputs.ci_run_id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
           path: ${{ runner.temp }}/parts
       - name: Assemble and verify complete bundle
         run: |
@@ -124,6 +124,35 @@ jobs:
           name: release-bundle
           path: ${{ runner.temp }}/bundle/*
           overwrite: true
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Scan archives and expose bounded bundle proof
+        run: |
+          python3 scripts/audit-artifacts.py "$RUNNER_TEMP/bundle/"*.zip --report "$RUNNER_TEMP/archive-privacy.json"
+          python3 - <<'PY'
+          import hashlib,json,os
+          from pathlib import Path
+          root=Path(os.environ['RUNNER_TEMP'])
+          bundle=json.loads((root/'bundle-check.json').read_text())
+          raw=(root/'archive-privacy.json').read_bytes();privacy=json.loads(raw)
+          assert bundle['passed'] and privacy['passed'] and not privacy['findings']
+          assert len(bundle['archives'])==7
+          assert {row['archive']:row['sha256'] for row in bundle['archives']} == {
+              Path(row['path']).name:row['sha256'] for row in privacy['artifacts']}
+          proof={'source_sha':os.environ['GITHUB_SHA'],'archives':[
+              {key:row[key] for key in ['archive','sha256']} for row in bundle['archives']],
+              'privacy':{'passed':True,'findings':0,'archives_scanned':len(privacy['artifacts']),
+                         'report_sha256':hashlib.sha256(raw).hexdigest()}}
+          text=json.dumps(proof,separators=(',',':'));assert len(text.encode())<3000
+          print('::notice title=Verified bundle proof::'+text.replace('%','%25').replace('\n','%0A'))
+          PY
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: release-bundle-evidence
+          path: |
+            ${{ runner.temp }}/bundle-check.json
+            ${{ runner.temp }}/archive-privacy.json
           if-no-files-found: error
           retention-days: 14
 
@@ -142,9 +171,7 @@ jobs:
             archive: txm_Linux_arm64.zip
           - os: ubuntu-24.04-arm
             archive: txm_Linux_arm64-musl.zip
-          - os: macos-15
-            archive: txm_Darwin_universal.zip
-          - os: macos-15-intel
+          - os: macos-latest
             archive: txm_Darwin_universal.zip
           - os: windows-2025
             archive: txm_Windows_x86_64.zip
@@ -165,17 +192,10 @@ jobs:
           python-version: '3.13'
       - name: Verify downloaded bundle against source and checksums
         run: python scripts/check-release-artifacts.py --directory "$RUNNER_TEMP/bundle"
-      - name: Install Unix test backends
-        if: runner.os != 'Windows'
-        run: |
-          if [[ "$RUNNER_OS" == Linux ]]; then
-            sudo apt-get update
-            sudo apt-get install -y tmux
-          else
-            brew install tmux
-            bash scripts/install-ci-zellij.sh
-          fi
-      - name: Validate Unix install and packaged runtime
+      - name: Require Apple Silicon for universal Mac validation
+        if: runner.os == 'macOS'
+        run: test "$RUNNER_ARCH" = ARM64
+      - name: Validate Unix archive installation and runtime smoke
         if: runner.os != 'Windows'
         env:
           ARCHIVE: ${{ matrix.archive }}
@@ -186,13 +206,6 @@ jobs:
           python3 tests/archive_checks.py --archive "$RUNNER_TEMP/bundle/$ARCHIVE" --expected-version "$(cat VERSION)" --report "$RUNNER_TEMP/reports/install.json"
           unzip -q "$RUNNER_TEMP/bundle/$ARCHIVE" txm -d "$RUNNER_TEMP/package"
           chmod +x "$RUNNER_TEMP/package/txm"
-          for suite in cli_errors native_checks structured_checks profile_checks agent_checks agent_events_checks dashboard_checks extension_checks prune_checks mcp_checks task_review_checks metrics_checks; do
-            python3 "tests/$suite.py" --binary "$RUNNER_TEMP/package/txm"
-          done
-          if [[ "$RUNNER_OS" == macOS ]]; then
-            python3 tests/macos_backend_checks.py --binary "$RUNNER_TEMP/package/txm" --report "$RUNNER_TEMP/reports/backends.json" -v
-            python3 tests/ssh_checks.py --binary "$RUNNER_TEMP/package/txm" --report "$RUNNER_TEMP/reports/ssh.json" -v
-          fi
       - name: Verify actual foreign-UID rejection on macOS
         if: runner.os == 'macOS'
         run: |
@@ -221,6 +234,13 @@ jobs:
       - name: Surface bounded package failure details
         if: failure()
         run: python .github/scripts/annotate-failure.py "$RUNNER_TEMP/package-validation.log"
+      - name: Expose verified package report hashes
+        env:
+          ARCHIVE: ${{ matrix.archive }}
+        run: |
+          python .github/scripts/annotate-package-report.py --directory "$RUNNER_TEMP/reports" \
+            --archive "$RUNNER_TEMP/bundle/$ARCHIVE" --expected-version "$(cat VERSION)" \
+            --commit "$GITHUB_SHA" --system "$RUNNER_OS"
       - name: Retain package reports
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4

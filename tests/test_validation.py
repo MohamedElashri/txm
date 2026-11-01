@@ -23,16 +23,41 @@ scanner = module('audit-artifacts')
 
 class ValidationChecks(unittest.TestCase):
     def test_full_matrix_includes_new_control_task_and_metrics_boundaries(self):
-        # The same matrix runs normal/race binaries on actual Linux/macOS;
-        # omitting a suite would otherwise silently qualify incomplete runs.
+        # Source CI owns full regressions; release jobs own packaged-code smoke.
         self.assertTrue({'mcp_checks', 'task_review_checks', 'metrics_checks'}
                         .issubset(validator.SUITES))
         self.assertEqual(len(validator.SUITES), len(set(validator.SUITES)))
-        workflow = (REPO/'.github/workflows/release.yml').read_text()
-        suite_loop = next(line for line in workflow.splitlines()
-                          if 'for suite in ' in line)
+        makefile = (REPO/'Makefile').read_text()
+        runtime = makefile.split('test-runtime:\n', 1)[1].split('\n\n', 1)[0]
         for suite in validator.SUITES:
-            self.assertIn(suite, suite_loop.replace(';', ' ').split())
+            self.assertIn('tests/'+suite+'.py --binary "$(TEST_BINARY)"', runtime)
+        ci = (REPO/'.github/workflows/ci.yml').read_text()
+        self.assertEqual(ci.count('make test-runtime '), 2)
+        self.assertEqual(ci.count('make test-harness'), 1)
+        release = (REPO/'.github/workflows/release.yml').read_text()
+        self.assertNotIn('for suite in ', release)
+        self.assertIn('tests/archive_checks.py', release)
+        self.assertIn('tests/peer_checks.py', release)
+
+    def test_mac_jobs_use_latest_apple_silicon_and_one_universal_package(self):
+        ci = (REPO/'.github/workflows/ci.yml').read_text()
+        release = (REPO/'.github/workflows/release.yml').read_text()
+        for workflow in [ci, release]:
+            self.assertNotIn('macos-15', workflow)
+            self.assertNotIn('macos-26-intel', workflow)
+        self.assertIn('runs-on: macos-latest', ci)
+        for suite in ['macos_backend_checks.py', 'ssh_checks.py']:
+            command = next(line for line in ci.splitlines() if 'python3 tests/'+suite in line)
+            self.assertIn('--report ', command)
+        self.assertEqual(release.count('os: macos-latest'), 1)  # Package check; CI supplies the build.
+        self.assertEqual(release.count('archive: txm_Darwin_universal.zip'), 1)
+        self.assertIn('name: ci-macos-universal', ci)
+        self.assertIn('name: ci-macos-universal', release)
+        self.assertIn('run-id: ${{ needs.preflight.outputs.ci_run_id }}', release)
+        self.assertNotIn('platform: darwin', release)
+        self.assertIn('test "$RUNNER_ARCH" = ARM64', release)
+        setup = (REPO/'.github/actions/setup-build/action.yml').read_text()
+        self.assertIn('[[ "$RUNNER_ARCH" == ARM64 ]]', setup)
 
     def test_extracts_only_exact_binary_and_rejects_missing_or_duplicate_members(self):
         with tempfile.TemporaryDirectory(prefix='txm-validator-') as temp:
