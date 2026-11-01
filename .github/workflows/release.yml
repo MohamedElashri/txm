@@ -181,6 +181,7 @@ jobs:
           ARCHIVE: ${{ matrix.archive }}
         run: |
           set -euo pipefail
+          exec > >(tee "$RUNNER_TEMP/package-validation.log") 2>&1
           mkdir "$RUNNER_TEMP/package" "$RUNNER_TEMP/reports"
           python3 tests/archive_checks.py --archive "$RUNNER_TEMP/bundle/$ARCHIVE" --expected-version "$(cat VERSION)" --report "$RUNNER_TEMP/reports/install.json"
           unzip -q "$RUNNER_TEMP/bundle/$ARCHIVE" txm -d "$RUNNER_TEMP/package"
@@ -195,11 +196,13 @@ jobs:
       - name: Verify actual foreign-UID rejection on macOS
         if: runner.os == 'macOS'
         run: |
+          exec > >(tee -a "$RUNNER_TEMP/package-validation.log") 2>&1
           sudo env GITHUB_ACTIONS=true TXM_ISOLATED_CI=1 "$(command -v python3)" tests/peer_checks.py \
             --binary "$RUNNER_TEMP/package/txm" --report "$RUNNER_TEMP/reports/peer-credentials.json" -v
       - name: Verify actual foreign-UID rejection in a Linux container
         if: runner.os == 'Linux'
         run: |
+          exec > >(tee -a "$RUNNER_TEMP/package-validation.log") 2>&1
           docker run --rm --init --network none --read-only --tmpfs /tmp:rw,exec,size=512m \
             --env TXM_LINUX_FIXTURE=1 --env PYTHONDONTWRITEBYTECODE=1 \
             --mount "type=bind,src=$GITHUB_WORKSPACE/tests,dst=/work/tests,readonly" \
@@ -212,8 +215,12 @@ jobs:
         env:
           ARCHIVE: ${{ matrix.archive }}
         run: |
+          exec > >(tee "$RUNNER_TEMP/package-validation.log") 2>&1
           mkdir "$RUNNER_TEMP/reports"
           python tests/windows_archive_checks.py --archive "$RUNNER_TEMP/bundle/$ARCHIVE" --expected-version "$(cat VERSION)" --report "$RUNNER_TEMP/reports/windows-cli.json"
+      - name: Surface bounded package failure details
+        if: failure()
+        run: python .github/scripts/annotate-failure.py "$RUNNER_TEMP/package-validation.log"
       - name: Retain package reports
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
