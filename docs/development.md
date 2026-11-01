@@ -78,8 +78,15 @@ For documentation, check local links and anchors, compare commands with help,
 and run the release metadata checker. Update the man page when command semantics
 change; it is embedded in the binary.
 
-CI runs the Python harness once, then race-instrumented Go and full runtime
-regressions once per OS. `make build-race` prepares the runtime binary;
+CI has an ordered job graph: **Scope → Lint → Generic tests → OS builds →
+Validation → CI ready**. Generic tests run the Python harness, Linux race unit
+tests and fuzzing once. Two build branches produce Linux/Windows archives and
+the universal Mac archive. Separate validation jobs consume those artifacts;
+they do not rebuild application binaries. macOS Go checks, full runtime
+regressions once per OS, backend/SSH checks and all seven package checks must
+pass before the stable `CI ready` gate succeeds.
+
+`make build-race` prepares the runtime binary;
 `make test-runtime TEST_BINARY=/absolute/txm-race` runs the shared suite without
 rebuilding dependencies or repeating the harness. Fuzzing runs once on Linux;
 macOS backend and loopback SSH checks run once in source CI.
@@ -184,10 +191,10 @@ expensive Linux, macOS, and lint jobs. Code under `docs/`, mixed code/docs chang
 and changes whose scope cannot be determined still run the full suite. Manual
 CI dispatches and reusable calls run the full suite by default.
 
-Full archive builds and the seven-runner package matrix run only for version
-tags or an explicit Release workflow dispatch.
-Branch dispatches use snapshots stamped from `VERSION` and never create a draft.
-Tag runs build and validate the official archives before draft creation.
+Full CI builds release archives and runs the seven-runner package matrix after
+lint and generic tests pass. Archives are stamped from `VERSION`. Release runs
+only for version tags or an explicit dispatch and reuses the validated CI bundle;
+it does not compile or repeat the tests. Branch dispatches never create a draft.
 
 1. Update `VERSION` and its dated changelog section, including upgrade notes.
    `make release-check` requires a stable version and matching metadata.
@@ -199,22 +206,20 @@ Tag runs build and validate the official archives before draft creation.
    CI skipped documentation-only changes), then tag it with the version from
    `VERSION`: `git tag "v$(cat VERSION)"`.
 4. A short Linux preflight checks stable metadata and the latest CI run for that
-   exact commit on `main`, including successful Linux, Apple Silicon macOS, and
-   lint jobs. Missing, pending, failed, cancelled, or skipped validation stops
-   the release before compilation. It also requires an unexpired universal Mac
-   artifact bound to that source commit; rerun full CI if it is unavailable.
-5. The single Apple Silicon source job on `macos-latest` builds both Darwin
-   slices and retains one universal archive. Release downloads that exact CI
-   artifact and its original checksums rather than rebuilding it. A Linux
-   GoReleaser job builds the four Linux and two Windows archives without
-   publishing; an inexpensive Linux job assembles both partitions. All Mac
-   jobs require ARM64 on the latest stable hosted image; there is no Intel
-   runner or architecture-specific Mac archive.
+   exact commit on `main`, including every named stage and `CI ready`. Missing,
+   pending, failed, cancelled or skipped jobs stop release. The unexpired bundle
+   and validation-evidence artifacts must both belong to that exact commit.
+5. CI's Linux build branch produces four Linux and two Windows archives; its
+   Apple Silicon build branch on `macos-latest` produces one universal Mac
+   archive. CI validates and assembles both partitions. Release downloads that
+   exact bundle and its original validation evidence, without rebuilding any OS.
+   All Mac jobs require ARM64 on the latest stable hosted image; there is no
+   Intel runner or architecture-specific Mac archive.
 6. `scripts/check-release-artifacts.py` checks the complete archive inventory,
    checksums, packaged documentation, binary OS/CPU headers, both bounded
    nonoverlapping universal Mac slices, and static-musl
    linkage. The same bundle is checked after each artifact download.
-7. Each Unix archive passes private installation and a short packaged-code smoke
+7. In CI validation, each Unix archive passes private installation and a short packaged-code smoke
    check: native child startup, authenticated signals, exit receipts after
    coordinator shutdown, and child-PID CPU/RSS. Full regressions reuse the exact
    source CI result rather than running again for every ZIP. The universal Mac
@@ -224,26 +229,27 @@ Tag runs build and validate the official archives before draft creation.
    disposable CI runner. The Linux peer probe uses a pinned multi-architecture
    Python image directly, avoiding an unrelated SSH/tmux/Screen/Git image build.
    No accounts or host services are changed.
-8. Windows x86_64/ARM64 runners check their executable's version, help,
+8. In CI validation, Windows x86_64/ARM64 runners check their executable's version, help,
    completions, and explicit unsupported refusals. These are CLI smoke checks,
    not external-backend or Windows installer certification.
-9. Only after every package job passes does a write-enabled job create a
+9. Only after the full CI gate and downloaded-bundle verification pass does a write-enabled job create a
    **stable draft**, with seven ZIPs, checksums, and the canonical release notes.
    Review the tag/commit, jobs, reports, upgrade notes, and compatibility scope
    before manually publishing. Existing releases are not overwritten on rerun.
 
-The bundle and package reports are retained as Actions artifacts.
-Bundle privacy checks run once. Bounded annotations expose source/archive hashes
+The bundle and package reports are retained as CI artifacts.
+Bundle privacy checks run once in CI; release verifies that the original scan
+matches the downloaded archive hashes. Bounded annotations expose source/archive hashes
 and verified report hashes, so evidence remains inspectable through the API when
 an artifact-download host is unavailable.
 Reports include the run attempt in their artifact names, so a successful retry
 is distinct from an earlier incomplete report. On failure, use GitHub's **Re-run
 failed jobs** or `gh run rerun RUN_ID --failed`. A package failure reuses the
 existing bundle and other successful jobs; it does not repeat compilation.
-If one build partition fails, its successful sibling is retained. Job timeouts
+If one CI build partition fails, its successful sibling is retained. Job timeouts
 bound stalled work; unrelated package jobs finish so retries need not repeat them.
 
-CI and release builds cache pinned Ghostty sources, native outputs, and Zig's
+CI build and test jobs cache pinned Ghostty sources, native outputs, and Zig's
 incremental cache by OS, CPU, SDK version/build, and dependency lock. Every restore
 still runs the source/version guards and `zig build`; directory presence never
 proves validity. Validated dependencies are saved before application compilation

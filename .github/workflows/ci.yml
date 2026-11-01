@@ -13,6 +13,9 @@ on:
   pull_request:
     branches: [ "main" ]
 
+permissions:
+  contents: read
+
 concurrency:
   group: ci-${{ github.head_ref || github.ref_name }}
   cancel-in-progress: true
@@ -22,7 +25,8 @@ defaults:
     shell: bash
 
 jobs:
-  changes:
+  scope:
+    name: Scope
     runs-on: ubuntu-latest
     timeout-minutes: 5
     outputs:
@@ -41,115 +45,11 @@ jobs:
     - name: Test CI scope selection
       if: steps.scope.outputs.full_ci != 'true'
       run: python3 -m unittest discover -s tests -p 'test_ci_changes.py' -v
-    - name: Test validation harness once
-      if: steps.scope.outputs.full_ci == 'true'
-      run: |
-        sudo apt-get update
-        sudo apt-get install -y tmux
-        make test-harness
-
-  build-and-test:
-    needs: changes
-    if: needs.changes.outputs.full_ci == 'true'
-    runs-on: ubuntu-latest
-    timeout-minutes: 25
-    steps:
-    - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # ref=v7.0.1
-
-    - uses: ./.github/actions/setup-build
-
-    - name: Verify dependencies
-      run: go mod verify
-
-    - name: Race unit tests and runtime build
-      run: make test-race build-race 2>&1 | tee "$RUNNER_TEMP/source-validation.log"
-
-    - name: Fuzz protocols once
-      run: make test-fuzz 2>&1 | tee -a "$RUNNER_TEMP/source-validation.log"
-
-    - name: Full runtime regression suite once
-      run: make test-runtime TEST_BINARY="$PWD/bin/txm-race" 2>&1 | tee -a "$RUNNER_TEMP/source-validation.log"
-
-    - name: Surface bounded Linux failure details
-      if: failure()
-      run: python3 .github/scripts/annotate-failure.py "$RUNNER_TEMP/source-validation.log"
-
-  macos-integration:
-    needs: changes
-    if: needs.changes.outputs.full_ci == 'true'
-    timeout-minutes: 35
-    runs-on: macos-latest
-    steps:
-    - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # ref=v7.0.1
-      with:
-        fetch-depth: 0
-    - uses: ./.github/actions/setup-build
-    - name: Install test backends
-      run: |
-        brew install tmux
-        bash scripts/install-ci-zellij.sh
-    - name: Race unit tests and runtime build
-      run: make test-race build-race 2>&1 | tee "$RUNNER_TEMP/macos-validation.log"
-    - name: Full runtime regression suite once
-      run: make test-runtime TEST_BINARY="$PWD/bin/txm-race" 2>&1 | tee -a "$RUNNER_TEMP/macos-validation.log"
-    - name: macOS backends once
-      run: python3 tests/macos_backend_checks.py --binary "$PWD/bin/txm-race" --report "$RUNNER_TEMP/backends.json" -v 2>&1 | tee -a "$RUNNER_TEMP/macos-validation.log"
-    - name: Loopback SSH once
-      run: python3 tests/ssh_checks.py --binary "$PWD/bin/txm-race" --report "$RUNNER_TEMP/ssh.json" -v 2>&1 | tee -a "$RUNNER_TEMP/macos-validation.log"
-    - name: Surface bounded macOS failure details
-      if: failure()
-      shell: bash
-      run: python3 .github/scripts/annotate-failure.py "$RUNNER_TEMP/macos-validation.log"
-    - name: Retain platform-specific source reports
-      if: always()
-      uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
-      with:
-        name: source-macos-reports
-        overwrite: true
-        path: |
-          ${{ runner.temp }}/backends.json
-          ${{ runner.temp }}/ssh.json
-        if-no-files-found: warn
-        retention-days: 14
-
-    - name: Prepare cached universal Mac dependencies
-      uses: ./.github/actions/setup-build
-      with:
-        mode: release
-        platform: darwin
-    - name: Prepare universal Mac completions and SDK
-      run: |
-        bash scripts/generate-completions.sh
-        echo "TXM_SNAPSHOT_VERSION=$(cat VERSION)" >> "$GITHUB_ENV"
-        echo "MACOS_SDK_PATH=$(xcrun --show-sdk-path)" >> "$GITHUB_ENV"
-    - name: Build universal Mac archive once
-      uses: goreleaser/goreleaser-action@f06c13b6b1a9625abc9e6e439d9c05a8f2190e94 # v7.2.3
-      with:
-        distribution: goreleaser
-        version: v2.19.0
-        args: release --snapshot --clean --skip=before,publish --parallelism=2
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        TXM_RELEASE_ROOT: ${{ github.workspace }}
-        TXM_RELEASE_PLATFORM: darwin
-    - name: Verify universal Mac partition
-      run: |
-        mkdir "$RUNNER_TEMP/universal"
-        cp dist/*.zip "$RUNNER_TEMP/universal/"
-        cp dist/checksums.txt "$RUNNER_TEMP/universal/checksums-darwin.txt"
-        python3 scripts/check-release-artifacts.py --directory "$RUNNER_TEMP/universal" --partition darwin
-    - name: Retain universal archive for exact-commit releases
-      uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
-      with:
-        name: ci-macos-universal
-        overwrite: true
-        path: ${{ runner.temp }}/universal/*
-        if-no-files-found: error
-        retention-days: 14
 
   lint:
-    needs: changes
-    if: needs.changes.outputs.full_ci == 'true'
+    name: Lint
+    needs: scope
+    if: needs.scope.outputs.full_ci == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
@@ -165,3 +65,340 @@ jobs:
       env:
         PKG_CONFIG_PATH: ${{ github.workspace }}/.ghostty-host/share/pkgconfig
         CGO_ENABLED: 1
+
+  tests:
+    name: Tests / Generic
+    needs: [scope, lint]
+    if: needs.scope.outputs.full_ci == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Install fixture prerequisites
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y tmux
+      - name: Test Python validation harness once
+        run: make test-harness
+      - uses: ./.github/actions/setup-build
+      - name: Verify modules
+        run: go mod verify
+      - name: Race unit tests
+        run: make test-race 2>&1 | tee "$RUNNER_TEMP/generic-tests.log"
+      - name: Fuzz protocols once
+        run: make test-fuzz 2>&1 | tee -a "$RUNNER_TEMP/generic-tests.log"
+      - name: Surface bounded failure details
+        if: failure()
+        run: python3 .github/scripts/annotate-failure.py "$RUNNER_TEMP/generic-tests.log"
+
+  build:
+    name: Build / ${{ matrix.target }}
+    needs: [scope, tests]
+    if: needs.scope.outputs.full_ci == 'true'
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - target: Linux + Windows
+            os: ubuntu-latest
+            partition: linux
+            archives: ci-release-linux
+            runtime: ci-linux-runtime
+          - target: macOS universal
+            os: macos-latest
+            partition: darwin
+            archives: ci-macos-universal
+            runtime: ci-macos-runtime
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+      - uses: ./.github/actions/setup-build
+      - name: Build race runtime for downstream validation
+        run: make build-race
+      - name: Retain runtime binary
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: ${{ matrix.runtime }}
+          path: bin/txm-race
+          overwrite: true
+          if-no-files-found: error
+          retention-days: 14
+      - name: Prepare cached archive dependencies
+        uses: ./.github/actions/setup-build
+        with:
+          mode: release
+          platform: ${{ matrix.partition }}
+      - name: Generate completions and select SDK
+        run: |
+          bash scripts/generate-completions.sh
+          echo "TXM_SNAPSHOT_VERSION=$(cat VERSION)" >> "$GITHUB_ENV"
+          sdk=""
+          if [[ "$RUNNER_OS" == macOS ]]; then sdk=$(xcrun --show-sdk-path); fi
+          echo "MACOS_SDK_PATH=$sdk" >> "$GITHUB_ENV"
+      - name: Build release archives once
+        uses: goreleaser/goreleaser-action@f06c13b6b1a9625abc9e6e439d9c05a8f2190e94 # v7.2.3
+        with:
+          distribution: goreleaser
+          version: v2.19.0
+          args: release --snapshot --clean --skip=before,publish --parallelism=2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TXM_RELEASE_ROOT: ${{ github.workspace }}
+          TXM_RELEASE_PLATFORM: ${{ matrix.partition }}
+      - name: Collect archive partition
+        env:
+          PARTITION: ${{ matrix.partition }}
+        run: |
+          mkdir "$RUNNER_TEMP/archives"
+          cp dist/*.zip "$RUNNER_TEMP/archives/"
+          cp dist/checksums.txt "$RUNNER_TEMP/archives/checksums-$PARTITION.txt"
+      - name: Retain archives for validation
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: ${{ matrix.archives }}
+          path: ${{ runner.temp }}/archives/*
+          overwrite: true
+          if-no-files-found: error
+          retention-days: 14
+
+  validate-runtime:
+    name: Validate / ${{ matrix.target }}
+    needs: [scope, build]
+    if: needs.scope.outputs.full_ci == 'true'
+    timeout-minutes: 25
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - target: Linux
+            os: ubuntu-latest
+            runtime: ci-linux-runtime
+          - target: macOS
+            os: macos-latest
+            runtime: ci-macos-runtime
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Download built runtime
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          name: ${{ matrix.runtime }}
+          path: bin
+      - name: Restore executable permission
+        run: chmod 700 bin/txm-race
+      - name: Install Linux test backend
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y tmux
+      - name: Install macOS test backends
+        if: runner.os == 'macOS'
+        run: |
+          test "$RUNNER_ARCH" = ARM64
+          brew install tmux
+          bash scripts/install-ci-zellij.sh
+      - name: Prepare macOS unit-test dependencies
+        if: runner.os == 'macOS'
+        uses: ./.github/actions/setup-build
+      - name: Validate macOS-specific Go behavior
+        if: runner.os == 'macOS'
+        run: make test-race 2>&1 | tee "$RUNNER_TEMP/runtime-validation.log"
+      - name: Full runtime regression suite once per OS
+        run: make test-runtime TEST_BINARY="$PWD/bin/txm-race" 2>&1 | tee -a "$RUNNER_TEMP/runtime-validation.log"
+      - name: Validate macOS backends
+        if: runner.os == 'macOS'
+        run: python3 tests/macos_backend_checks.py --binary "$PWD/bin/txm-race" --report "$RUNNER_TEMP/backends.json" -v 2>&1 | tee -a "$RUNNER_TEMP/runtime-validation.log"
+      - name: Validate loopback SSH
+        if: runner.os == 'macOS'
+        run: python3 tests/ssh_checks.py --binary "$PWD/bin/txm-race" --report "$RUNNER_TEMP/ssh.json" -v 2>&1 | tee -a "$RUNNER_TEMP/runtime-validation.log"
+      - name: Surface bounded failure details
+        if: failure()
+        run: python3 .github/scripts/annotate-failure.py "$RUNNER_TEMP/runtime-validation.log"
+      - name: Retain macOS validation reports
+        if: always() && runner.os == 'macOS'
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: source-macos-reports
+          path: |
+            ${{ runner.temp }}/backends.json
+            ${{ runner.temp }}/ssh.json
+          overwrite: true
+          if-no-files-found: warn
+          retention-days: 14
+
+  validate-archives:
+    name: Validate / Archives
+    needs: [scope, build]
+    if: needs.scope.outputs.full_ci == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Download Linux and Windows archives
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          name: ci-release-linux
+          path: ${{ runner.temp }}/parts
+      - name: Download universal Mac archive
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          name: ci-macos-universal
+          path: ${{ runner.temp }}/parts
+      - name: Validate complete bundle
+        run: |
+          python3 scripts/check-release-artifacts.py --assemble-from "$RUNNER_TEMP/parts" \
+            --directory "$RUNNER_TEMP/bundle" --report "$RUNNER_TEMP/bundle-check.json"
+      - name: Scan archives once
+        run: python3 scripts/audit-artifacts.py "$RUNNER_TEMP/bundle/"*.zip --report "$RUNNER_TEMP/archive-privacy.json"
+      - name: Expose verified bundle proof
+        run: |
+          python3 .github/scripts/annotate-bundle-report.py --bundle-check "$RUNNER_TEMP/bundle-check.json" \
+            --privacy "$RUNNER_TEMP/archive-privacy.json" --commit "$GITHUB_SHA"
+      - name: Retain verified release bundle
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: ci-release-bundle
+          path: ${{ runner.temp }}/bundle/*
+          overwrite: true
+          if-no-files-found: error
+          retention-days: 14
+      - name: Retain bundle validation evidence
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: ci-release-evidence
+          path: |
+            ${{ runner.temp }}/bundle-check.json
+            ${{ runner.temp }}/archive-privacy.json
+          overwrite: true
+          if-no-files-found: error
+          retention-days: 14
+
+  validate-packages:
+    name: Validate package / ${{ matrix.label }}
+    needs: [scope, validate-archives]
+    if: needs.scope.outputs.full_ci == 'true'
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - label: Linux x86_64 GNU
+            os: ubuntu-24.04
+            archive: txm_Linux_x86_64.zip
+          - label: Linux x86_64 musl
+            os: ubuntu-24.04
+            archive: txm_Linux_x86_64-musl.zip
+          - label: Linux ARM64 GNU
+            os: ubuntu-24.04-arm
+            archive: txm_Linux_arm64.zip
+          - label: Linux ARM64 musl
+            os: ubuntu-24.04-arm
+            archive: txm_Linux_arm64-musl.zip
+          - label: macOS universal
+            os: macos-latest
+            archive: txm_Darwin_universal.zip
+          - label: Windows x86_64
+            os: windows-2025
+            archive: txm_Windows_x86_64.zip
+          - label: Windows ARM64
+            os: windows-11-arm
+            archive: txm_Windows_arm64.zip
+    runs-on: ${{ matrix.os }}
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          name: ci-release-bundle
+          path: ${{ runner.temp }}/bundle
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
+        with:
+          python-version: '3.13'
+      - name: Verify downloaded bundle against source and checksums
+        run: python scripts/check-release-artifacts.py --directory "$RUNNER_TEMP/bundle"
+      - name: Require Apple Silicon for universal Mac validation
+        if: runner.os == 'macOS'
+        run: test "$RUNNER_ARCH" = ARM64
+      - name: Validate Unix archive installation and runtime smoke
+        if: runner.os != 'Windows'
+        env:
+          ARCHIVE: ${{ matrix.archive }}
+        run: |
+          set -euo pipefail
+          exec > >(tee "$RUNNER_TEMP/package-validation.log") 2>&1
+          mkdir "$RUNNER_TEMP/package" "$RUNNER_TEMP/reports"
+          python3 tests/archive_checks.py --archive "$RUNNER_TEMP/bundle/$ARCHIVE" --expected-version "$(cat VERSION)" --report "$RUNNER_TEMP/reports/install.json"
+          unzip -q "$RUNNER_TEMP/bundle/$ARCHIVE" txm -d "$RUNNER_TEMP/package"
+          chmod +x "$RUNNER_TEMP/package/txm"
+      - name: Verify actual foreign-UID rejection on macOS
+        if: runner.os == 'macOS'
+        run: |
+          exec > >(tee -a "$RUNNER_TEMP/package-validation.log") 2>&1
+          sudo env GITHUB_ACTIONS=true TXM_ISOLATED_CI=1 "$(command -v python3)" tests/peer_checks.py \
+            --binary "$RUNNER_TEMP/package/txm" --report "$RUNNER_TEMP/reports/peer-credentials.json" -v
+      - name: Verify actual foreign-UID rejection in a Linux container
+        if: runner.os == 'Linux'
+        run: |
+          exec > >(tee -a "$RUNNER_TEMP/package-validation.log") 2>&1
+          docker run --rm --init --network none --read-only --tmpfs /tmp:rw,exec,size=512m \
+            --env TXM_LINUX_FIXTURE=1 --env PYTHONDONTWRITEBYTECODE=1 \
+            --mount "type=bind,src=$GITHUB_WORKSPACE/tests,dst=/work/tests,readonly" \
+            --mount "type=bind,src=$RUNNER_TEMP/package/txm,dst=/opt/txm,readonly" \
+            --mount "type=bind,src=$RUNNER_TEMP/reports,dst=/reports" \
+            python:3.13.17-slim@sha256:d98cc29d3266e535dd9da1099688d9cb3ca4753813571e071763d17725460962 \
+            python3 /work/tests/peer_checks.py --binary /opt/txm --report /reports/peer-credentials.json -v
+      - name: Smoke Windows CLI and unsupported refusals
+        if: runner.os == 'Windows'
+        env:
+          ARCHIVE: ${{ matrix.archive }}
+        run: |
+          exec > >(tee "$RUNNER_TEMP/package-validation.log") 2>&1
+          mkdir "$RUNNER_TEMP/reports"
+          python tests/windows_archive_checks.py --archive "$RUNNER_TEMP/bundle/$ARCHIVE" --expected-version "$(cat VERSION)" --report "$RUNNER_TEMP/reports/windows-cli.json"
+      - name: Surface bounded package failure details
+        if: failure()
+        run: python .github/scripts/annotate-failure.py "$RUNNER_TEMP/package-validation.log"
+      - name: Expose verified package report hashes
+        env:
+          ARCHIVE: ${{ matrix.archive }}
+        run: |
+          python .github/scripts/annotate-package-report.py --directory "$RUNNER_TEMP/reports" \
+            --archive "$RUNNER_TEMP/bundle/$ARCHIVE" --expected-version "$(cat VERSION)" \
+            --commit "$GITHUB_SHA" --system "$RUNNER_OS"
+      - name: Retain package reports
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: package-${{ matrix.os }}-${{ matrix.archive }}-attempt-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/reports/
+          if-no-files-found: warn
+          retention-days: 14
+
+  ready:
+    name: CI ready
+    needs: [scope, lint, tests, build, validate-runtime, validate-archives, validate-packages]
+    if: always()
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - name: Require every selected stage to pass
+        env:
+          STAGES: ${{ toJSON(needs) }}
+        run: |
+          python3 - <<'PY_READY'
+          import json,os
+          stages=json.loads(os.environ['STAGES'])
+          assert stages['scope']['result']=='success', 'Scope selection failed'
+          full=stages['scope']['outputs'].get('full_ci')
+          assert full in ('true','false'), 'Unknown CI scope'
+          expected='success' if full=='true' else 'skipped'
+          failed={name:stage['result'] for name,stage in stages.items()
+                  if name!='scope' and stage['result']!=expected}
+          assert not failed, f'Incomplete CI stages: {failed}'
+          print('All required CI stages passed' if full=='true' else 'Documentation-only checks passed')
+          PY_READY

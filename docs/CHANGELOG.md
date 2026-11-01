@@ -79,11 +79,14 @@ only a version string does not attest a running instance or its trust settings.
 
 ### Validation scope
 
-- Source CI runs the Python harness once, full race-instrumented Go/runtime
-  regressions once per OS, Linux fuzzing, lint and macOS backend/SSH checks.
+- CI orders lint, generic tests, parallel OS builds and separate runtime/archive/
+  package validation, ending in a stable `CI ready` gate. The Python harness runs
+  once; full race-instrumented runtime regressions run once per OS, with Linux
+  fuzzing and macOS-specific Go/backend/SSH checks.
   All Mac jobs use Apple Silicon on `macos-latest`; one build produces the
-  universal archive, with both slices checked structurally. Release reuses that
-  exact-commit CI artifact; missing or expired artifacts block the preflight.
+  universal archive, with both slices checked structurally. Release reuses the
+  complete exact-commit CI bundle and original evidence, with no compilation or
+  repeated tests; missing or expired artifacts block the preflight.
 - Package validation exercises seven ZIPs on seven runners: Linux x86_64/ARM64
   GNU and static musl, universal Mac on Apple Silicon, and Windows x86_64/ARM64.
   Windows remains CLI smoke only; routine CI has no separate Intel Mac job.

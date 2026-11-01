@@ -8,6 +8,8 @@ import unittest
 
 spec = importlib.util.spec_from_file_location('package_reports', Path(__file__).resolve().parents[1]/'.github/scripts/annotate-package-report.py')
 reports = importlib.util.module_from_spec(spec); spec.loader.exec_module(reports)
+bundle_spec = importlib.util.spec_from_file_location('bundle_reports', Path(__file__).resolve().parents[1]/'.github/scripts/annotate-bundle-report.py')
+bundles = importlib.util.module_from_spec(bundle_spec); bundle_spec.loader.exec_module(bundles)
 
 
 class PackageReportTests(unittest.TestCase):
@@ -67,6 +69,42 @@ class PackageReportTests(unittest.TestCase):
         report['version'] = 'txm version 2.1.0'; path.write_text(json.dumps(report))
         with self.assertRaises(ValueError):
             reports.summaries(directory, archive, '2.1.0', 'a'*40, 'Windows')
+
+
+class BundleReportTests(unittest.TestCase):
+    def fixture(self):
+        rows = [{'archive': f'fixture-{index}.zip', 'sha256': str(index)*64} for index in range(7)]
+        bundle = {'passed': True, 'archives': rows}
+        privacy = {'passed': True, 'findings': [], 'artifacts': [
+            {'path': '/fixture/'+row['archive'], 'sha256': row['sha256']} for row in rows]}
+        return bundle, privacy
+
+    def test_proof_binds_original_scan_bytes_without_exposing_fixture_paths(self):
+        bundle, privacy = self.fixture(); raw = json.dumps(privacy).encode()
+        text = bundles.proof(bundle, raw, 'a'*40); value = json.loads(text)
+        self.assertEqual(value['source_sha'], 'a'*40)
+        self.assertEqual(value['privacy']['report_sha256'], hashlib.sha256(raw).hexdigest())
+        self.assertEqual(value['privacy']['archives_scanned'], 7)
+        self.assertNotIn('/fixture/', text)
+
+    def test_missing_changed_or_failed_scan_cannot_be_reused(self):
+        for change in ['missing', 'changed', 'failed', 'finding']:
+            with self.subTest(change=change):
+                bundle, privacy = self.fixture()
+                if change == 'missing': privacy['artifacts'].pop()
+                elif change == 'changed': privacy['artifacts'][0]['sha256'] = 'f'*64
+                elif change == 'failed': privacy['passed'] = False
+                else: privacy['findings'] = [{'rule': 'fixture'}]
+                with self.assertRaises(ValueError): bundles.proof(bundle, json.dumps(privacy).encode(), 'a'*40)
+
+    def test_failed_duplicate_or_invalid_source_bundle_cannot_qualify(self):
+        for change in ['failed', 'duplicate', 'source']:
+            with self.subTest(change=change):
+                bundle, privacy = self.fixture()
+                if change == 'failed': bundle['passed'] = False
+                elif change == 'duplicate': bundle['archives'][0] = bundle['archives'][1]
+                with self.assertRaises(ValueError):
+                    bundles.proof(bundle, json.dumps(privacy).encode(), 'invalid' if change == 'source' else 'a'*40)
 
 
 if __name__ == '__main__':

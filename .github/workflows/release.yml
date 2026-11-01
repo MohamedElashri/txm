@@ -47,78 +47,45 @@ jobs:
           if-no-files-found: error
           retention-days: 14
 
-  build:
-    needs: preflight
-    timeout-minutes: 30
-    runs-on: ubuntu-24.04
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          fetch-depth: 0
-      - uses: ./.github/actions/setup-build
-        with:
-          mode: release
-          platform: linux
-      - name: Prepare completions and release metadata
-        run: |
-          set -euo pipefail
-          bash scripts/generate-completions.sh
-          if [[ "$GITHUB_REF_TYPE" == tag ]]; then
-            python3 scripts/check-release.py --stable --tag "$GITHUB_REF_NAME" --notes "$RUNNER_TEMP/release-notes.md"
-          else
-            python3 scripts/check-release.py --stable
-          fi
-          echo "TXM_SNAPSHOT_VERSION=$(cat VERSION)" >> "$GITHUB_ENV"
-          echo "MACOS_SDK_PATH=" >> "$GITHUB_ENV"
-      - name: Build archives without uploading a release
-        uses: goreleaser/goreleaser-action@f06c13b6b1a9625abc9e6e439d9c05a8f2190e94 # v7.2.3
-        with:
-          distribution: goreleaser
-          version: v2.19.0
-          args: release --clean --skip=before,publish --parallelism=2 ${{ github.ref_type != 'tag' && '--snapshot' || format('--release-notes "{0}/release-notes.md"', runner.temp) }}
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          TXM_RELEASE_ROOT: ${{ github.workspace }}
-          TXM_RELEASE_PLATFORM: linux
-      - name: Collect build partition
-        env:
-          PLATFORM: linux
-        run: |
-          mkdir "$RUNNER_TEMP/part"
-          cp dist/*.zip "$RUNNER_TEMP/part/"
-          cp dist/checksums.txt "$RUNNER_TEMP/part/checksums-$PLATFORM.txt"
-          python3 scripts/check-release-artifacts.py --directory "$RUNNER_TEMP/part" --partition "$PLATFORM"
-      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
-        with:
-          name: release-build-linux
-          path: ${{ runner.temp }}/part/*
-          overwrite: true
-          if-no-files-found: error
-          retention-days: 14
-
   bundle:
-    needs: [preflight, build]
+    name: Reuse validated CI bundle
+    needs: preflight
     runs-on: ubuntu-24.04
     timeout-minutes: 5
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
-        with:
-          pattern: release-build-*
-          merge-multiple: true
-          path: ${{ runner.temp }}/parts
-      - name: Reuse exact-source CI universal Mac archive
+      - name: Download exact-source CI release bundle
         uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
         with:
-          name: ci-macos-universal
+          name: ci-release-bundle
           run-id: ${{ needs.preflight.outputs.ci_run_id }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
-          path: ${{ runner.temp }}/parts
-      - name: Assemble and verify complete bundle
+          path: ${{ runner.temp }}/bundle
+      - name: Download original CI validation evidence
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          name: ci-release-evidence
+          run-id: ${{ needs.preflight.outputs.ci_run_id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          path: ${{ runner.temp }}/evidence
+      - name: Verify downloaded bundle against source and CI evidence
         run: |
-          python3 scripts/check-release-artifacts.py --assemble-from "$RUNNER_TEMP/parts" \
-            --directory "$RUNNER_TEMP/bundle" --report "$RUNNER_TEMP/bundle-check.json"
-      - name: Retain the immutable build bundle
+          python3 scripts/check-release-artifacts.py --directory "$RUNNER_TEMP/bundle" --report "$RUNNER_TEMP/download-check.json"
+          python3 - <<'PY_CHECK'
+          import json,os
+          from pathlib import Path
+          root=Path(os.environ['RUNNER_TEMP'])
+          original=json.loads((root/'evidence/bundle-check.json').read_text())
+          current=json.loads((root/'download-check.json').read_text())
+          assert original['passed'] and current['passed']
+          assert {r['archive']:r['sha256'] for r in original['archives']} == {
+              r['archive']:r['sha256'] for r in current['archives']}, 'CI bundle changed during download'
+          PY_CHECK
+      - name: Expose original validated bundle and privacy proof
+        run: |
+          python3 .github/scripts/annotate-bundle-report.py --bundle-check "$RUNNER_TEMP/evidence/bundle-check.json" \
+            --privacy "$RUNNER_TEMP/evidence/archive-privacy.json" --commit "$GITHUB_SHA"
+      - name: Retain immutable package inputs
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: release-bundle
@@ -126,134 +93,20 @@ jobs:
           overwrite: true
           if-no-files-found: error
           retention-days: 14
-
-      - name: Scan archives and expose bounded bundle proof
-        run: |
-          python3 scripts/audit-artifacts.py "$RUNNER_TEMP/bundle/"*.zip --report "$RUNNER_TEMP/archive-privacy.json"
-          python3 - <<'PY'
-          import hashlib,json,os
-          from pathlib import Path
-          root=Path(os.environ['RUNNER_TEMP'])
-          bundle=json.loads((root/'bundle-check.json').read_text())
-          raw=(root/'archive-privacy.json').read_bytes();privacy=json.loads(raw)
-          assert bundle['passed'] and privacy['passed'] and not privacy['findings']
-          assert len(bundle['archives'])==7
-          assert {row['archive']:row['sha256'] for row in bundle['archives']} == {
-              Path(row['path']).name:row['sha256'] for row in privacy['artifacts']}
-          proof={'source_sha':os.environ['GITHUB_SHA'],'archives':[
-              {key:row[key] for key in ['archive','sha256']} for row in bundle['archives']],
-              'privacy':{'passed':True,'findings':0,'archives_scanned':len(privacy['artifacts']),
-                         'report_sha256':hashlib.sha256(raw).hexdigest()}}
-          text=json.dumps(proof,separators=(',',':'));assert len(text.encode())<3000
-          print('::notice title=Verified bundle proof::'+text.replace('%','%25').replace('\n','%0A'))
-          PY
-      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+      - name: Retain bundle evidence
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: release-bundle-evidence
           overwrite: true
           path: |
-            ${{ runner.temp }}/bundle-check.json
-            ${{ runner.temp }}/archive-privacy.json
+            ${{ runner.temp }}/evidence/*.json
+            ${{ runner.temp }}/download-check.json
           if-no-files-found: error
-          retention-days: 14
-
-  packages:
-    needs: bundle
-    timeout-minutes: 15
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - os: ubuntu-24.04
-            archive: txm_Linux_x86_64.zip
-          - os: ubuntu-24.04
-            archive: txm_Linux_x86_64-musl.zip
-          - os: ubuntu-24.04-arm
-            archive: txm_Linux_arm64.zip
-          - os: ubuntu-24.04-arm
-            archive: txm_Linux_arm64-musl.zip
-          - os: macos-latest
-            archive: txm_Darwin_universal.zip
-          - os: windows-2025
-            archive: txm_Windows_x86_64.zip
-          - os: windows-11-arm
-            archive: txm_Windows_arm64.zip
-    runs-on: ${{ matrix.os }}
-    defaults:
-      run:
-        shell: bash
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
-        with:
-          name: release-bundle
-          path: ${{ runner.temp }}/bundle
-      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
-        with:
-          python-version: '3.13'
-      - name: Verify downloaded bundle against source and checksums
-        run: python scripts/check-release-artifacts.py --directory "$RUNNER_TEMP/bundle"
-      - name: Require Apple Silicon for universal Mac validation
-        if: runner.os == 'macOS'
-        run: test "$RUNNER_ARCH" = ARM64
-      - name: Validate Unix archive installation and runtime smoke
-        if: runner.os != 'Windows'
-        env:
-          ARCHIVE: ${{ matrix.archive }}
-        run: |
-          set -euo pipefail
-          exec > >(tee "$RUNNER_TEMP/package-validation.log") 2>&1
-          mkdir "$RUNNER_TEMP/package" "$RUNNER_TEMP/reports"
-          python3 tests/archive_checks.py --archive "$RUNNER_TEMP/bundle/$ARCHIVE" --expected-version "$(cat VERSION)" --report "$RUNNER_TEMP/reports/install.json"
-          unzip -q "$RUNNER_TEMP/bundle/$ARCHIVE" txm -d "$RUNNER_TEMP/package"
-          chmod +x "$RUNNER_TEMP/package/txm"
-      - name: Verify actual foreign-UID rejection on macOS
-        if: runner.os == 'macOS'
-        run: |
-          exec > >(tee -a "$RUNNER_TEMP/package-validation.log") 2>&1
-          sudo env GITHUB_ACTIONS=true TXM_ISOLATED_CI=1 "$(command -v python3)" tests/peer_checks.py \
-            --binary "$RUNNER_TEMP/package/txm" --report "$RUNNER_TEMP/reports/peer-credentials.json" -v
-      - name: Verify actual foreign-UID rejection in a Linux container
-        if: runner.os == 'Linux'
-        run: |
-          exec > >(tee -a "$RUNNER_TEMP/package-validation.log") 2>&1
-          docker run --rm --init --network none --read-only --tmpfs /tmp:rw,exec,size=512m \
-            --env TXM_LINUX_FIXTURE=1 --env PYTHONDONTWRITEBYTECODE=1 \
-            --mount "type=bind,src=$GITHUB_WORKSPACE/tests,dst=/work/tests,readonly" \
-            --mount "type=bind,src=$RUNNER_TEMP/package/txm,dst=/opt/txm,readonly" \
-            --mount "type=bind,src=$RUNNER_TEMP/reports,dst=/reports" \
-            python:3.13.17-slim@sha256:d98cc29d3266e535dd9da1099688d9cb3ca4753813571e071763d17725460962 \
-            python3 /work/tests/peer_checks.py --binary /opt/txm --report /reports/peer-credentials.json -v
-      - name: Smoke Windows CLI and unsupported refusals
-        if: runner.os == 'Windows'
-        env:
-          ARCHIVE: ${{ matrix.archive }}
-        run: |
-          exec > >(tee "$RUNNER_TEMP/package-validation.log") 2>&1
-          mkdir "$RUNNER_TEMP/reports"
-          python tests/windows_archive_checks.py --archive "$RUNNER_TEMP/bundle/$ARCHIVE" --expected-version "$(cat VERSION)" --report "$RUNNER_TEMP/reports/windows-cli.json"
-      - name: Surface bounded package failure details
-        if: failure()
-        run: python .github/scripts/annotate-failure.py "$RUNNER_TEMP/package-validation.log"
-      - name: Expose verified package report hashes
-        env:
-          ARCHIVE: ${{ matrix.archive }}
-        run: |
-          python .github/scripts/annotate-package-report.py --directory "$RUNNER_TEMP/reports" \
-            --archive "$RUNNER_TEMP/bundle/$ARCHIVE" --expected-version "$(cat VERSION)" \
-            --commit "$GITHUB_SHA" --system "$RUNNER_OS"
-      - name: Retain package reports
-        if: always()
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
-        with:
-          name: package-${{ matrix.os }}-${{ matrix.archive }}-attempt-${{ github.run_attempt }}
-          path: ${{ runner.temp }}/reports/
-          if-no-files-found: warn
           retention-days: 14
 
   draft:
     if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')
-    needs: [bundle, packages]
+    needs: bundle
     runs-on: ubuntu-24.04
     timeout-minutes: 5
     permissions:
