@@ -140,7 +140,9 @@ class ProfileChecks(unittest.TestCase):
             text='name="native"\nbackend="native"\n'+pane('',cwd,'pwd -P > '+shlex.quote(str(marker))+'; exec /bin/sleep 30')
             profile=write_profile(box,text)
             try:
-                box.run([BINARY,'profile','--detach',profile],timeout=8);wait_for(marker.exists)
+                result=box.run([BINARY,'profile','--detach',profile],timeout=8,check=False)
+                self.assertEqual(result.returncode,0,(result.stdout[-2000:],result.stderr[-2000:]))
+                wait_for(marker.exists)
                 self.assertEqual(marker.read_text().strip(),str(cwd));self.assertFalse((box.root/'state/txm').exists())
                 self.assertIn('pre_native',box.run([BINARY,'list']).stdout)
                 self.assertEqual(box.run([BINARY,'profile','--detach',profile],check=False).returncode,5)

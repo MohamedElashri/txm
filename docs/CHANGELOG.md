@@ -9,231 +9,41 @@ Changes follow [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) and
 
 ### Upgrade notes
 
-- Public JSON schema 1, exit codes, native protocol v1 and strict private v1
-  registry/receipt formats remain compatible. Canonical provider observations
-  and current-version associations use separate private sidecars. Actual tagged
-  v2.0/current coordinator fixtures cover both directions and credential rotation.
-- Restart an older coordinator explicitly before requesting new operations;
-  `agent stop-coordinator` leaves sessions and children running. Old coordinators
-  refuse unsupported metrics creation before launching work. Keep the original
-  state directory and previous binary for existing work.
-- macOS now uses `txm_Darwin_universal.zip`, containing Intel and Apple Silicon
-  slices in one executable. The installer prefers it and retains an
-  architecture-specific fallback for older stable releases.
-- Provider compatibility, validation and trust are separate. Unknown versions
-  refuse hook activation. No provider account, trust setting or permission is
-  enabled by upgrading. Claude automatic setup refuses an existing `--settings`
-  argument; manually review composition instead. Codex configuration/trust stays
-  manual. Other inherited-policy combinations and platforms remain unverified.
-- Merge apply is limited to a clean checked-out target and an explicitly reviewed
-  fast-forward, with operator quiescence and immutable worker exit proof.
-  Ref-only targets, sparse worktrees and submodules are refused. Retained uncertain
-  intents require inspection; retry never reapplies or rolls back a merge.
-- MCP reads and creation are independent default-deny grants. Preserve permanent
-  operation-ID journals after dropped responses or uncertainty. Stop, cleanup
-  and merge remain human CLI handoffs, not executable MCP tools.
-- Metrics are off by default and cover only the exact supervised child PID.
-  CPU 100% means one logical CPU; RSS is bytes. No descendant totals are claimed.
+- JSON schema 1 and existing private state remain compatible. Restart an older
+  coordinator before using new operations; running sessions remain intact.
+- macOS uses one universal archive for Intel and Apple Silicon.
+- Provider hooks and MCP remain opt-in. Review existing settings and trust before
+  enabling integrations.
 
 ### Added
 
-- Version-specific neutral Claude/Codex lifecycle observations with independent
-  process, attention and turn identity; stale/replay/foreign-session rejection,
-  natural expiry and restart preservation. Discovery reports capability,
-  compatibility, validation and nullable trust/enablement separately.
-- Strict existing-state CLI reads and scoped stdio MCP through the pinned Go SDK,
-  independently tested legacy initialization and modern per-request protocol
-  eras, bounded pagination/waits and reviewed fixed creation templates.
-- Config/executable-bound task setup acceptance, retained setup receipts, pure
-  bounded task review and checked-out fast-forward merge with frozen OIDs,
-  review digest and durable uncertain/applied outcomes.
-- Attention-first dashboard navigation, repository/task grouping and stable
-  selection; explicit sourced fresh/unknown observations and bounded previews.
-- Opt-in Linux/macOS child-PID CPU/RSS samples with kernel identity checks,
-  bounded sampler/storage/retention quotas and existing-only reads. Disabled jobs
-  allocate no sampling artifacts; observer failure leaves the job running.
-- Provider-free quick start, reviewed CLI/man/completion examples and a real
-  roughly 60-second generic CLI/PTY demonstration on Linux and macOS.
+- Claude/Codex lifecycle hooks with separate process, attention and turn state.
+- Scoped stdio MCP with reviewed task-creation templates.
+- Git task setup, review and explicitly authorized fast-forward merges.
+- Attention-first dashboard and optional Linux/macOS child-process CPU/RSS metrics.
 
 ### Fixed
 
-- Convert Darwin libproc CPU Mach ticks with the kernel timebase instead of
-  treating them as nanoseconds. Native Apple Silicon regression tests compare
-  CPU against getrusage and RSS against ps; the previous CPU value was about
-  42 times too small on the tested host.
-- Preserve provider prompt/session identity, resumed state and real failure/end
-  observations without treating provider turn completion as process exit.
-
-### Provider validation scope
-
-| Provider | Evidence and limits |
-| --- | --- |
-| Generic | Offline authenticated worker signals and immutable native/tmux exit receipts; no provider account |
-| Claude 2.1.309 | Authorized Linux/amd64 interactive restricted/default-permission reference: eight callback kinds, turns, permission cancellation, tool success/failure, resume, API failure/recovery, exit, restart/expiry and negative identities. Direct user-cancellation signaling and other modes/platforms remain unverified or unsupported. |
-| Codex CLI 0.166.0 | Authorized Linux/amd64 interactive no-daemon reference with normally trusted neutral hooks: seven callback kinds, turns, permission cancellation, interrupt, resume, tool/turn/session end, restart/expiry and fork-rebind refusal. Other modes/platforms remain unverified. |
-| Claude 2.1.308 / Codex CLI 0.165.0 | Schema/fixture compatibility retained; no equivalent full live-lifecycle claim |
-
-Exact reference executable hashes/platforms are checked by diagnostics; matching
-only a version string does not attest a running instance or its trust settings.
-
-### Validation scope
-
-- Verify & Build orders lint, tests, parallel OS builds and separate runtime/archive/
-  package validation, ending in a stable `CI ready` gate. The Python harness runs
-  once; full race-instrumented runtime regressions run once per OS, with Linux
-  fuzzing and macOS-specific Go/backend/SSH checks.
-  All Mac jobs use Apple Silicon on `macos-latest`; one build produces the
-  universal archive, with both slices checked structurally. Release reuses the
-  complete exact-commit CI bundle and original evidence, with no compilation or
-  repeated tests; missing or expired artifacts block the preflight.
-- Pull requests use native Linux/macOS runtime and archive validation. Main and
-  release-readiness runs add the full seven-package matrix. Ship txm reuses those
-  exact validated artifacts.
-- Package validation exercises seven ZIPs on seven runners: Linux x86_64/ARM64
-  GNU and static musl, universal Mac on Apple Silicon, and Windows x86_64/ARM64.
-  Windows remains CLI smoke only; routine CI has no separate Intel Mac job.
-- Unix packages pass private installation, runtime and actual different-UID
-  rejection smoke checks. Native child, signal, receipt and CPU/RSS checks run
-  against packaged bytes; the full regression matrix reuses exact-source CI.
-  Archive checks cover inventory, source documentation, checksums,
-  executable headers, both universal Mac slices and static-musl linkage.
-- Native macOS 27.2 arm64 passes Go 1.27.3 unit/race, Go 1.26.10 minimum-toolchain
-  tests, lint, module checks, five fuzz targets, all applicable normal/race runtime
-  suites, exact tagged compatibility, child metrics, isolated tmux 3.8,
-  Zellij 0.45.1, Apple Screen 4.00.03 and real private OpenSSH loopback checks.
-- Three alternating full-scale macOS/v2.0 comparisons pass every fixed and 20%
-  relative budget: median startup +15.7%, list10 +19.9%, list100 -3.6%, and peak
-  server RSS +1.9%. The final arm64 snapshot runtime check passes the 100-session
-  fixed budgets. These fixture measurements are not a
-  performance SLA; historical Linux evidence retains its original scope.
-- A separate authorized macOS Codex 0.166.0 subscription demonstration passes
-  two fixed-response turns, same-session resume, neutral callbacks and clean
-  provider/controller exits with sanitized recording and fixture cleanup.
-  This does not extend the full Linux lifecycle reference to macOS.
-
-### Documentation and release engineering
-
-- Consolidate operator workflows in the existing guides and publish the actual
-  MCP, setup/review/merge, metrics and provider validation limits. No installed
-  agent-skill package is supplied.
-- Keep lightweight CI scope/metadata checks for documentation-only changes and
-  full manual CI for exact-source release validation. Retain independently
-  retryable build partitions and all seven package gates before draft creation.
-  Bundle privacy checks and hash-bound report annotations make evidence available
-  without repeating tests or relying solely on artifact-download access.
+- Correct macOS CPU accounting and provider resume/session identity handling.
 
 ## [2.0.0] - 2026-10-31
 
-txm 2.0 brings persistent terminal workspaces, supervised commands, a dashboard,
-Git worktree tasks, and SSH hosts into one CLI. See the [compatibility matrix](user-guide.md#platforms-and-backends)
-for backend scope and platform validation.
-
 ### Upgrade notes
 
-- Native sessions use private framed protocol v1. Keep the old binary and its
-  original user/TMPDIR/config to finish existing legacy sessions. New clients
-  leave their sockets and processes untouched; native nuke refuses while
-  incompatible legacy candidates are present.
-- Command failures now return nonzero and write human diagnostics to stderr.
-  Scripts should use the versioned JSON envelopes and documented exit codes.
-- Explicit `--backend` is strict. Exact target operations reject ambiguity and
-  unsupported pane/layout behavior before mutation. Invalid profiles fail preflight.
-- Native provides one terminal, bounded visible snapshots and literal input to
-  terminal 0/0. Input acceptance is not command completion. Logging is opt-in.
-- Ordinary sessions and the picker remain independent of the optional coordinator.
-  Provider hooks require explicit opt-in; existing provider trust is unchanged.
+- Native sessions use private protocol v1. Keep the previous binary and its
+  original environment to finish legacy sessions.
+- Failures return nonzero exit codes; scripts should use the JSON envelope.
+- Explicit backend selection is strict and rejects unsupported operations.
 
 ### Added
 
-- Typed session inspection, capability data, versioned JSON and bounded plain/raw
-  output, including tmux history and exact session/window/pane identities.
-- Declarative profile preflight/dry-run, cwd/layout handling and cleanup limited
-  to resources whose creation and ownership are proven.
-- Supervised native/tmux agents with immutable exit receipts, authenticated
-  signals, bounded JSONL events, deterministic waits and explicit notifications.
-- A separate keyboard dashboard with search/filtering, freshness/capability
-  details, bounded previews, read-only attach and explicit agent subscriptions.
-- Opt-in owned Git worktrees and tasks with conservative recovery and cleanup;
-  explicit task/agent metadata pruning retains receipts and Git branches.
-- Allowlisted, host-pinned OpenSSH discovery and exact native/tmux attach with
-  protocol checks, partial results, cancellation and ControlMaster reuse.
+- Persistent native terminals, supervised jobs and a keyboard dashboard.
+- Workspace profiles, isolated Git worktree tasks and SSH host access.
+- Structured JSON, event streams, process receipts and agent notifications.
 
 ### Fixed
 
-- Stable updates compare semantic versions and retain a newer installed binary
-  when GitHub still reports an older stable release; invalid/prerelease metadata
-  cannot trigger an update download.
-
-- Development/prerelease builds refuse automatic stable updates, preventing a
-  development build from being replaced by an older stable release.
-- Native socket permissions/peer checks, duplicate startup, bounded IPC queues,
-  slow peers, process-group shutdown, detach and TTY/file-flag restoration.
-- Exact tmux input/profile targeting and literal keys, synchronized-pane refusal,
-  private host identity publication and corrupt-state handling.
-- Darwin concurrent locks, exclusive publication, zombie-only group shutdown,
-  dashboard feedback guards and Apple Screen listing/version exit statuses.
-- Zellij background readiness without repeated creation or name-based rollback.
-- Missing remote completeness fields and uncertain task recovery now fail closed.
-
-### Platform support
-
-- Linux amd64/ARM64 GNU/static-musl and macOS ARM64/Intel pass archive installation
-  and runtime checks on matching CI runners, including actual foreign-UID
-  rejection. Windows amd64/ARM64 pass CLI smoke checks on matching runners;
-  external backends and Windows installers remain unverified. The tag workflow
-  repeats validation of the final release archives before creating a draft.
-- Screen/Zellij retain degraded basic lifecycle/attach support for the recorded
-  versions; exact panes/layouts/capture/read-only remain unsupported.
-- Windows native persistence/private Unix state/dashboard are unsupported.
-- Generic supervision needs no AI provider. Claude has isolated initialization
-  coverage; full provider lifecycle needs reviewed setup. Codex hooks require
-  manual trust review; unsupported provider versions are refused.
-
-### Documentation and release engineering
-
-- A concise README, shared documentation index, getting-started and automation
-  guides, and contributor instructions organized around user workflows.
-- Stable 2.0.0 identity and release notes, checksum/archive validation, and native
-  package checks before draft creation. Publishing remains a separate step.
-
-### Validation evidence
-
-These are pre-publication snapshot results for this version, not proof of the
-final tagged release bytes. The tag workflow must validate its own archives
-before draft creation and publication review.
-
-| Platform | Recorded runtime coverage |
-| --- | --- |
-| Linux amd64 | GNU/static-musl archives pass private installation, native/tmux runtime suites, profiles, supervision/events, dashboard, tasks/pruning, and actual foreign-UID rejection. Normal/race/fuzz CI and additional local SSH/container checks also pass. |
-| macOS ARM64 | Archive installation and native/tmux runtime suites pass, including profiles, supervision/events, dashboard, tasks/pruning, real Screen/Zellij, loopback SSH, and actual foreign-UID rejection. Normal and race CI also pass. |
-| macOS Intel | The same archive installation, runtime, backend, SSH, and foreign-UID gates as macOS ARM64 pass on an Intel runner; normal and race CI also pass. |
-| Linux ARM64 | GNU/static-musl archives pass private installation, native/tmux runtime suites, profiles, supervision/events, dashboard, tasks/pruning, and actual foreign-UID rejection on ARM64 runners. |
-| Windows amd64/ARM64 | Both archives pass checksum/header validation and CLI version/help/completion/unsupported-refusal smoke checks on matching runners. External backends and Windows installers are unverified; native persistence, private Unix state, and dashboard are unsupported. |
-
-Basic Zellij 0.45.1 and GNU Screen lifecycle/attach have Linux/macOS runtime
-coverage; macOS Screen is 4.00.03. Their adapters remain degraded: exact panes,
-layouts, output capture, and read-only attachment are unsupported.
-
-The matrix records the successful [PR CI](https://github.com/MohamedElashri/txm/actions/runs/41153986716)
-and [eight-target package validation](https://github.com/MohamedElashri/txm/actions/runs/41153986791)
-at commit `0bb3ef3`, plus local coverage recorded here. These PR archives
-are snapshots stamped 2.0.0. Official release assets are rebuilt and must pass
-the exact-tag workflow before publication. Archive names alone do not establish
-runtime support.
-
-| Adapter | Recorded validation |
-| --- | --- |
-| Generic | Authenticated worker signals; no AI provider required |
-| Claude | Exact 2.1.308 adapter with offline SessionStart coverage; full conversations remain unverified |
-| Codex | 0.165.0 schema and manual configuration only; runtime/trusted lifecycle remains unverified. Installed 0.166.0 is refused. |
-| OpenCode | Installed v2.2.2 is unsupported; no v1 examples are applied to v2 |
-
-Local Linux amd64 GNU/static-musl checks passed 40 runtime/install/performance
-checks and 36 container groups across normal/race and actual archived binaries;
-25 harness tests, 13 Go/build checks, and four fuzz targets also passed. Reports
-remain outside the source tree. Local macOS ARM64 coverage included OpenSSH
-10.5p1. Windows external backends/installers and full trusted provider
-conversations remained outside the verified scope.
+- Improve terminal restoration, process ownership, shutdown and backend isolation.
 
 ## [1.3.1] - 2026-09-17
 

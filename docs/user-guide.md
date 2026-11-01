@@ -128,8 +128,8 @@ its terminal library; tmux, Zellij, and Screen require the corresponding executa
 | Windows amd64 / ARM64 | Limited external-backend CLI scope; native persistence, private Unix state, and dashboard unsupported; external backends and installer unverified |
 
 An archive target is not a runtime validation claim. For evidence tied to a
-particular version, read its [changelog entry](CHANGELOG.md) and release workflow
-reports. Official archives must pass the [package gates](development.md#release-process)
+particular version, read its CI and release workflow reports. Official archives
+must pass the [package gates](development.md#release-process)
 on matching runners before draft creation. Archives are unsigned and unnotarized;
 checksums identify bytes, not publisher identity.
 
@@ -400,7 +400,7 @@ instance and 30 MiB overall. Samples expire after at most 24 hours, subject to
 the tighter quotas. Oldest inactive histories are evicted first. A full sampler
 quota or observer failure does not stop the job. Reading metrics does not start
 a coordinator or sampler; jobs without metrics allocate no sampling artifacts.
-See the [changelog](CHANGELOG.md#210---2026-11-01) for tested platform scope.
+See [platforms and backends](#platforms-and-backends) for platform support.
 
 ## JSON for scripts
 
@@ -502,8 +502,8 @@ enablement/trust are separate fields. A compatible version is not proof of a
 validated conversation or the trust configuration of a running instance.
 Live-reference verification also checks the recorded executable hash/platform.
 Unknown versions refuse hook activation while generic process supervision
-remains available. Historical exact versions and validation limits are in the
-[changelog](CHANGELOG.md#210---2026-11-01).
+remains available. `agent doctor --probe --json` reports the exact installed
+version, compatibility and available validation reference.
 
 Claude launches can opt in with `--provider claude`; generated settings stay
 private and do not edit user/project settings. Existing `--settings` arguments
@@ -527,8 +527,8 @@ configuration, and review it in the intended private provider configuration and
 | Other tools, including OpenCode | Generic process supervision and explicit worker signals |
 
 Any supported executable can be supervised as a process without a provider
-adapter. Attention and turn signals require an explicit integration. Historical
-tested versions and limitations belong to the relevant [changelog entry](CHANGELOG.md).
+adapter. Attention and turn signals require an explicit integration. Use
+`agent doctor --probe --json` to inspect the installed adapter's capabilities.
 
 ## Events, waits, and notifications
 

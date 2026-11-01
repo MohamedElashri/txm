@@ -97,7 +97,14 @@ jobs:
       - name: Race unit tests
         run: make test-race 2>&1 | tee "$RUNNER_TEMP/generic-tests.log"
       - name: Fuzz protocols once
-        run: make test-fuzz 2>&1 | tee -a "$RUNNER_TEMP/generic-tests.log"
+        env:
+          RELEASE_READY: ${{ needs.scope.outputs.release_ready }}
+        run: |
+          if [[ "$RELEASE_READY" == true ]]; then
+            make test-fuzz 2>&1 | tee -a "$RUNNER_TEMP/generic-tests.log"
+          else
+            make test-fuzz FUZZ_TIME=5s 2>&1 | tee -a "$RUNNER_TEMP/generic-tests.log"
+          fi
       - name: Surface bounded failure details
         if: failure()
         run: python3 .github/scripts/annotate-failure.py "$RUNNER_TEMP/generic-tests.log"
@@ -111,12 +118,12 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - target: Linux + Windows
+          - target: Linux
             os: ubuntu-latest
             partition: linux
             archives: ci-release-linux
             runtime: ci-linux-runtime
-          - target: macOS universal
+          - target: macOS
             os: macos-latest
             partition: darwin
             archives: ci-macos-universal
@@ -138,11 +145,13 @@ jobs:
           if-no-files-found: error
           retention-days: 14
       - name: Prepare cached archive dependencies
+        if: needs.scope.outputs.release_ready == 'true'
         uses: ./.github/actions/setup-build
         with:
           mode: release
           platform: ${{ matrix.partition }}
       - name: Generate completions and select SDK
+        if: needs.scope.outputs.release_ready == 'true'
         run: |
           bash scripts/generate-completions.sh
           echo "TXM_SNAPSHOT_VERSION=$(cat VERSION)" >> "$GITHUB_ENV"
@@ -150,6 +159,7 @@ jobs:
           if [[ "$RUNNER_OS" == macOS ]]; then sdk=$(xcrun --show-sdk-path); fi
           echo "MACOS_SDK_PATH=$sdk" >> "$GITHUB_ENV"
       - name: Build release archives once
+        if: needs.scope.outputs.release_ready == 'true'
         uses: goreleaser/goreleaser-action@f06c13b6b1a9625abc9e6e439d9c05a8f2190e94 # v7.2.3
         with:
           distribution: goreleaser
@@ -160,6 +170,7 @@ jobs:
           TXM_RELEASE_ROOT: ${{ github.workspace }}
           TXM_RELEASE_PLATFORM: ${{ matrix.partition }}
       - name: Collect archive partition
+        if: needs.scope.outputs.release_ready == 'true'
         env:
           PARTITION: ${{ matrix.partition }}
         run: |
@@ -167,6 +178,7 @@ jobs:
           cp dist/*.zip "$RUNNER_TEMP/archives/"
           cp dist/checksums.txt "$RUNNER_TEMP/archives/checksums-$PARTITION.txt"
       - name: Retain archives for validation
+        if: needs.scope.outputs.release_ready == 'true'
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: ${{ matrix.archives }}
@@ -248,27 +260,40 @@ jobs:
     timeout-minutes: 5
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Check archive configuration for pull requests
+        if: needs.scope.outputs.release_ready != 'true'
+        uses: goreleaser/goreleaser-action@f06c13b6b1a9625abc9e6e439d9c05a8f2190e94 # v7.2.3
+        with:
+          distribution: goreleaser
+          version: v2.19.0
+          args: check
       - name: Download Linux and Windows archives
+        if: needs.scope.outputs.release_ready == 'true'
         uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
         with:
           name: ci-release-linux
           path: ${{ runner.temp }}/parts
       - name: Download universal Mac archive
+        if: needs.scope.outputs.release_ready == 'true'
         uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
         with:
           name: ci-macos-universal
           path: ${{ runner.temp }}/parts
       - name: Validate complete bundle
+        if: needs.scope.outputs.release_ready == 'true'
         run: |
           python3 scripts/check-release-artifacts.py --assemble-from "$RUNNER_TEMP/parts" \
             --directory "$RUNNER_TEMP/bundle" --report "$RUNNER_TEMP/bundle-check.json"
       - name: Scan archives once
+        if: needs.scope.outputs.release_ready == 'true'
         run: python3 scripts/audit-artifacts.py "$RUNNER_TEMP/bundle/"*.zip --report "$RUNNER_TEMP/archive-privacy.json"
       - name: Expose verified bundle proof
+        if: needs.scope.outputs.release_ready == 'true'
         run: |
           python3 .github/scripts/annotate-bundle-report.py --bundle-check "$RUNNER_TEMP/bundle-check.json" \
             --privacy "$RUNNER_TEMP/archive-privacy.json" --commit "$GITHUB_SHA"
       - name: Retain verified release bundle
+        if: needs.scope.outputs.release_ready == 'true'
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: ci-release-bundle
@@ -277,6 +302,7 @@ jobs:
           if-no-files-found: error
           retention-days: 14
       - name: Retain bundle validation evidence
+        if: needs.scope.outputs.release_ready == 'true'
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: ci-release-evidence

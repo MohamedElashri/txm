@@ -85,9 +85,13 @@ the universal Mac archive. Separate validation jobs consume those artifacts;
 they do not rebuild application binaries. macOS Go checks, full runtime
 regressions once per OS, backend/SSH checks and all seven package checks must
 pass before the stable `CI ready` gate succeeds for release readiness. Pull
-requests use lighter validation: native Linux/macOS runtime and archive checks.
+requests use lighter validation: native Linux/macOS runtime and archive-configuration checks.
 The seven-package matrix runs on main and manual release-readiness runs; manual
 dispatch can set `release_readiness=false` for the lighter profile.
+PR builds omit cross-platform release archives and use five-second fuzz smoke
+runs. Release-readiness builds retain the full targets and fuzz budgets. Go
+objects are cached per verified native ABI and source; modules have a separate
+cache, so switching host/release library prefixes cannot discard the host cache.
 
 `make build-race` prepares the runtime binary;
 `make test-runtime TEST_BINARY=/absolute/txm-race` runs the shared suite without
@@ -283,6 +287,6 @@ Use the pinned tools and runner configuration in the
 archive inventory, and job definitions live there and in
 [GoReleaser configuration](../.goreleaser.yaml).
 
-For each release, keep validation reports with the CI run and record relevant
-compatibility evidence in that version's [changelog entry](CHANGELOG.md). A prior
+For each release, keep validation and compatibility reports with the CI run.
+Keep the [changelog](CHANGELOG.md) focused on user-facing changes. A prior
 snapshot's passing checks do not validate changed source or final release bytes.

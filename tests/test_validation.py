@@ -86,6 +86,15 @@ class ValidationChecks(unittest.TestCase):
         self.assertIn('name: ci-release-bundle', jobs['validate-archives'])
         self.assertEqual(jobs['validate-runtime'].count('target:'), 2)
 
+    def test_prs_do_not_compile_cross_platform_release_archives(self):
+        ci = (REPO/'.github/workflows/ci.yml').read_text()
+        for name in ['Prepare cached archive dependencies', 'Generate completions and select SDK',
+                     'Build release archives once', 'Collect archive partition', 'Retain archives for validation']:
+            block = ci.split('      - name: '+name+'\n', 1)[1].split('      - name:', 1)[0]
+            self.assertIn("if: needs.scope.outputs.release_ready == 'true'", block)
+        self.assertIn('Check archive configuration for pull requests', ci)
+        self.assertIn('make test-fuzz FUZZ_TIME=5s', ci)
+
     def test_ci_ready_refuses_failed_cancelled_unknown_or_incomplete_stages(self):
         ci = (REPO/'.github/workflows/ci.yml').read_text()
         body = re.search(r"python3 - <<'PY_READY'\n(.*?)\n          PY_READY", ci, re.S)[1]

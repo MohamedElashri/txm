@@ -59,6 +59,7 @@ runs:
           .zig-cache-global
         key: ${{ steps.cache-key.outputs.prefix }}-${{ steps.cache-key.outputs.scope }}
     - name: Scope Go cache to the verified native libraries
+      id: go-cache
       shell: bash
       env:
         BUILD_MODE: ${{ inputs.mode }}
@@ -72,10 +73,20 @@ runs:
         # Go does not track external static-library changes. A fresh namespace
         # is required even if a fallback cache restored different native bytes.
         echo "GOCACHE=$GITHUB_WORKSPACE/.go-cache/$fingerprint" >> "$GITHUB_ENV"
+        echo "fingerprint=$fingerprint" >> "$GITHUB_OUTPUT"
     - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
       with:
         go-version: '1.26.10'
-        cache-dependency-path: |
-          go.sum
-          scripts/dependencies.env
-          scripts/build-deps.sh
+        cache: false
+    - name: Cache Go modules
+      if: inputs.mode == 'host'
+      uses: actions/cache@cdf6c1fa76f9f475f3d7449005a359c84ca0f306 # v5.0.3
+      with:
+        path: ~/go/pkg/mod
+        key: txm-mod-v1-${{ runner.os }}-1.26.10-${{ hashFiles('go.sum') }}
+    - name: Cache Go objects by native ABI and source
+      uses: actions/cache@cdf6c1fa76f9f475f3d7449005a359c84ca0f306 # v5.0.3
+      with:
+        path: ${{ github.workspace }}/.go-cache/${{ steps.go-cache.outputs.fingerprint }}
+        key: txm-go-v2-${{ runner.os }}-${{ runner.arch }}-1.26.10-${{ steps.go-cache.outputs.fingerprint }}-${{ hashFiles('main.go', 'pkg/**/*.go', 'docs/embeds.go', 'docs/txm.1', 'go.mod', 'go.sum') }}
+        restore-keys: txm-go-v2-${{ runner.os }}-${{ runner.arch }}-1.26.10-${{ steps.go-cache.outputs.fingerprint }}-

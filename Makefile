@@ -65,11 +65,11 @@ test-race: build-deps
 	PKG_CONFIG_PATH="$(GHOSTTY_HOST_DIR)/share/pkgconfig" CGO_ENABLED=1 go test -race ./...
 
 test-fuzz:
-	go test ./pkg/nativeprotocol -run='^$$' -fuzz=FuzzNativeFrame -fuzztime=30s -parallel=2
-	go test ./pkg/core -run='^$$' -fuzz=FuzzPlain -fuzztime=10s -parallel=2
-	go test ./pkg/localipc -run='^$$' -fuzz=FuzzLocalFrame -fuzztime=15s -parallel=2
-	go test ./pkg/remote -run='^$$' -fuzz=FuzzDecode -fuzztime=15s -parallel=2
-	go test ./pkg/mcp -run='^$$' -fuzz=FuzzMCPFrame -fuzztime=20s -parallel=2
+	go test ./pkg/nativeprotocol -run='^$$' -fuzz=FuzzNativeFrame -fuzztime=$(or $(FUZZ_TIME),30s) -parallel=2
+	go test ./pkg/core -run='^$$' -fuzz=FuzzPlain -fuzztime=$(or $(FUZZ_TIME),10s) -parallel=2
+	go test ./pkg/localipc -run='^$$' -fuzz=FuzzLocalFrame -fuzztime=$(or $(FUZZ_TIME),15s) -parallel=2
+	go test ./pkg/remote -run='^$$' -fuzz=FuzzDecode -fuzztime=$(or $(FUZZ_TIME),15s) -parallel=2
+	go test ./pkg/mcp -run='^$$' -fuzz=FuzzMCPFrame -fuzztime=$(or $(FUZZ_TIME),20s) -parallel=2
 
 build-race: build-deps
 	mkdir -p bin
