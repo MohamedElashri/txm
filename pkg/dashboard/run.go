@@ -270,8 +270,7 @@ func interact(parent context.Context, s tcell.Screen, m *Model, source Source) (
 		case result := <-agents:
 			m.AgentError = result.Err
 			if result.Err == nil {
-				m.Agents = result.Views
-				m.AgentUpdated = result.At
+				m.ApplyAgents(ctx, result.Views, result.At)
 			}
 		case result := <-previews:
 			if result.Generation == generation && result.Key == previewKey && m.Options.Preview {
@@ -357,9 +356,23 @@ func interact(parent context.Context, s tcell.Screen, m *Model, source Source) (
 						}
 					}
 				case tcell.KeyF1:
-					m.Message = "Sessions and registrations are separate. p preview | o read-only | Tab state/type filter | b backend | q quit"
+					m.Message = "[] fresh blocked | g repo/task/backend groups | c collapse | C expand | p preview | o read-only | Tab filter | b backend | q quit; registrations never authorize attach"
 				case tcell.KeyRune:
 					switch ev.Rune() {
+					case ']':
+						m.MoveBlocked(rows, 1)
+					case '[':
+						m.MoveBlocked(rows, -1)
+					case 'g':
+						m.GroupByTask = !m.GroupByTask
+						m.Collapsed = map[string]bool{}
+					case 'c':
+						if row != nil {
+							m.Collapsed[row.Group] = true
+							m.Message = "Group collapsed; C expands all"
+						}
+					case 'C':
+						m.Collapsed = map[string]bool{}
 					case 'q':
 						return nil, nil
 					case 'j':

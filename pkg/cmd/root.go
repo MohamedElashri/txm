@@ -329,9 +329,12 @@ func init() {
 
 // Backend-independent commands must also work when config or a mux is unavailable.
 func needsBackend(command *cobra.Command) bool {
+	if command.Parent() == taskCmd && (command.Name() == "review" || command.Name() == "setup-status" || command.Name() == "merge") {
+		return false
+	}
 	for c := command; c != nil; c = c.Parent() {
 		switch c.Name() {
-		case "__complete", "__completeNoDesc", "help", "completion", "config", "version", "install", "update", "uninstall", "generate-ssh-config", "server", "internal", "agent", "events", "dashboard":
+		case "__complete", "__completeNoDesc", "help", "completion", "config", "version", "install", "update", "uninstall", "generate-ssh-config", "server", "internal", "agent", "events", "dashboard", "mcp", "licenses":
 			return false
 		}
 	}

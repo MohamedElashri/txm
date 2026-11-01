@@ -11,6 +11,12 @@ spec.loader.exec_module(release)
 
 
 class ReleaseMetadataTests(unittest.TestCase):
+    def test_current_release_notes_are_concise_and_user_facing(self):
+        _, notes = release.release_notes(REPO, stable=True)
+        self.assertLessEqual(len(notes.split()), 200)
+        self.assertNotIn('### Validation', notes)
+        self.assertNotIn('### Provider validation', notes)
+
     def fixture(self, version='2.0.0'):
         temp = tempfile.TemporaryDirectory(prefix='txm-release-test-')
         self.addCleanup(temp.cleanup)

@@ -9,6 +9,15 @@ cache = importlib.util.module_from_spec(spec);spec.loader.exec_module(cache)
 
 
 class NativeCacheTests(unittest.TestCase):
+    def test_action_caches_each_native_abi_path_and_module_cache_explicitly(self):
+        action = (Path(__file__).resolve().parents[1]/'.github/actions/setup-build/action.yml').read_text()
+        self.assertIn('cache: false', action)
+        self.assertIn('path: ~/go/pkg/mod', action)
+        self.assertIn('path: ${{ github.workspace }}/.go-cache/${{ steps.go-cache.outputs.fingerprint }}', action)
+        prefix = 'txm-go-v2-${{ runner.os }}-${{ runner.arch }}-1.26.10-${{ steps.go-cache.outputs.fingerprint }}-'
+        self.assertIn('key: '+prefix, action)
+        self.assertIn('restore-keys: '+prefix, action)
+
     def test_library_and_sdk_changes_invalidate_go_cache_but_metadata_does_not(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp);library = root/'.ghostty-host/lib/libghostty-vt.a';library.parent.mkdir(parents=True)

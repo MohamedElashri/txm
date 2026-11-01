@@ -8,11 +8,12 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
+	"sync"
 
 	"golang.org/x/sys/unix"
 )
 
-var privateName = regexp.MustCompile(`^[a-zA-Z0-9][a-zA-Z0-9_.-]{0,100}$`)
+var privateName = sync.OnceValue(func() *regexp.Regexp { return regexp.MustCompile(`^[a-zA-Z0-9][a-zA-Z0-9_.-]{0,100}$`) })
 
 // OpenState uses the same private namespace and checks as host identity.
 func OpenState() (*Root, error) {
@@ -42,7 +43,7 @@ func OpenState() (*Root, error) {
 	return privateRoot(parent, base)
 }
 func (r *Root) Child(name string) (*Root, error) {
-	if !privateName.MatchString(name) {
+	if !privateName().MatchString(name) {
 		return nil, fmt.Errorf("invalid private directory name")
 	}
 	f, e := privateChild(r.dir, name)
@@ -52,7 +53,7 @@ func (r *Root) Child(name string) (*Root, error) {
 	return &Root{Path: filepath.Join(r.Path, name), dir: f}, nil
 }
 func (r *Root) openPrivate(name string) (*os.File, error) {
-	if !privateName.MatchString(name) {
+	if !privateName().MatchString(name) {
 		return nil, fmt.Errorf("invalid private file name")
 	}
 	fd, e := unix.Openat(int(r.dir.Fd()), name, unix.O_RDONLY|unix.O_NONBLOCK|unix.O_NOFOLLOW|unix.O_NOCTTY|unix.O_CLOEXEC, 0)
@@ -110,7 +111,7 @@ func (r *Root) RemovePrivate(name string) error {
 // WritePrivate atomically publishes a file. replace=false never overwrites a
 // receipt/manifest. Existing replacement targets must pass private-file checks.
 func (r *Root) WritePrivate(name string, data []byte, replace bool) error {
-	if !privateName.MatchString(name) || len(data) > 1<<20 {
+	if !privateName().MatchString(name) || len(data) > 1<<20 {
 		return fmt.Errorf("invalid private file/limit")
 	}
 	if replace {

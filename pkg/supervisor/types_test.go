@@ -9,7 +9,7 @@ import (
 )
 
 func validManifest() Manifest {
-	return Manifest{1, "11111111111111111111111111111111", "22222222222222222222222222222222", "native", []string{"/bin/sh", "-c", "private argv"}, "/tmp", []string{"PATH"}, ReceiptName("22222222222222222222222222222222"), nil}
+	return Manifest{SchemaVersion: 1, ManagedID: "11111111111111111111111111111111", InstanceID: "22222222222222222222222222222222", Backend: "native", Argv: []string{"/bin/sh", "-c", "private argv"}, Cwd: "/tmp", EnvNames: []string{"PATH"}, Receipt: ReceiptName("22222222222222222222222222222222")}
 }
 func TestManifestValidation(t *testing.T) {
 	m := validManifest()

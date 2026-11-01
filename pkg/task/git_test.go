@@ -23,6 +23,9 @@ func repository(t *testing.T) (git, string) {
 	if canonicalErr != nil {
 		t.Fatal(canonicalErr)
 	}
+	if e = os.Chmod(home, 0700); e != nil {
+		t.Fatal(e)
+	}
 	t.Setenv("HOME", home)
 	t.Setenv("XDG_CONFIG_HOME", filepath.Join(home, "config"))
 	root := filepath.Join(home, "repo")

@@ -11,7 +11,9 @@ import (
 
 	"github.com/MohamedElashri/txm/pkg/agent"
 	"github.com/MohamedElashri/txm/pkg/backend"
+	"github.com/MohamedElashri/txm/pkg/control"
 	"github.com/MohamedElashri/txm/pkg/core"
+	"github.com/MohamedElashri/txm/pkg/metrics"
 	"github.com/MohamedElashri/txm/pkg/runtimepath"
 	"github.com/MohamedElashri/txm/pkg/supervisor"
 	"github.com/spf13/cobra"
@@ -21,6 +23,38 @@ var agentCmd = &cobra.Command{Use: "agent", Short: "Opt-in supervised agents and
 var agentCwd string
 var agentEnv []string
 var agentProvider string
+var agentExisting bool
+var agentReadIDs []string
+var agentMetrics bool
+var agentMetricsInterval int
+
+func existingAgentResult(cmd *cobra.Command, id string) error {
+	ids := agentReadIDs
+	if id != "" {
+		ids = []string{id}
+	}
+	backends := []string{}
+	if selectedBackend != "" {
+		backends = append(backends, selectedBackend)
+	}
+	r, err := control.NewReader(core.ReadScope{Backends: backends, ManagedIDs: ids})
+	if err != nil {
+		return err
+	}
+	views, err := r.Agents(cmd.Context())
+	if id != "" && err == nil {
+		v, e := r.Agent(cmd.Context(), id)
+		if e != nil {
+			return e
+		}
+		return extensionResult(struct {
+			Agent agent.PublicView `json:"agent"`
+		}{v}, nil)
+	}
+	return extensionResult(struct {
+		Agents []agent.PublicView `json:"agents"`
+	}{views}, err)
+}
 
 func isAgent(cmd *cobra.Command) bool {
 	for c := cmd; c != nil; c = c.Parent() {
@@ -34,13 +68,14 @@ func agentResult(reply agent.Reply, e error, single bool) error {
 	if reply.Agents == nil {
 		reply.Agents = []agent.View{}
 	}
+	public := agent.PublicViews(reply.Agents)
 	var data any = struct {
-		Agents []agent.View `json:"agents"`
-	}{reply.Agents}
+		Agents []agent.PublicView `json:"agents"`
+	}{public}
 	if single && len(reply.Agents) > 0 {
 		data = struct {
-			Agent agent.View `json:"agent"`
-		}{reply.Agents[0]}
+			Agent agent.PublicView `json:"agent"`
+		}{public[0]}
 	}
 	if !jsonFlag {
 		for _, v := range reply.Agents {
@@ -60,6 +95,9 @@ var agentStartCmd = &cobra.Command{Use: "start NAME -- EXECUTABLE [ARGS...]", Sh
 	if !supervisor.Supported() {
 		return core.Failure("unsupported", "managed agents require Unix and CGO")
 	}
+	if agentProvider != "" && agentProvider != "generic" && agentProvider != "claude" {
+		return core.Failure("unsupported", "automatic provider configuration unavailable; supervise the command without --provider, then review agent hooks enable/config and provider trust manually")
+	}
 	name := getSessionName(args[0])
 	mgr, e := getManager(cmd.Context())
 	if e != nil {
@@ -77,6 +115,11 @@ var agentStartCmd = &cobra.Command{Use: "start NAME -- EXECUTABLE [ARGS...]", Sh
 		return e
 	}
 	argv := append([]string{executable}, args[2:]...)
+	if agentProvider == "claude" {
+		if e = agent.ValidateAutomaticClaudeArgs(argv); e != nil {
+			return e
+		}
+	}
 	names := []string{"HOME", "PATH", "TERM"}
 	seen := map[string]bool{"HOME": true, "PATH": true, "TERM": true}
 	for _, name := range agentEnv {
@@ -91,9 +134,6 @@ var agentStartCmd = &cobra.Command{Use: "start NAME -- EXECUTABLE [ARGS...]", Sh
 	}
 	provider := agent.Provider{}
 	if agentProvider != "" {
-		if agentProvider != "generic" && agentProvider != "claude" {
-			return core.Failure("unsupported", "automatic provider configuration unavailable; use reviewed hooks configuration")
-		}
 		provider = agent.InspectProvider(cmd.Context(), agentProvider)
 		if !provider.Supported {
 			return core.Failure("unsupported_version", provider.Reason)
@@ -112,11 +152,19 @@ var agentStartCmd = &cobra.Command{Use: "start NAME -- EXECUTABLE [ARGS...]", Sh
 				return err
 			}
 			if actual != installed {
-				return core.Failure("invalid_usage", "--provider claude requires the verified claude executable")
+				return core.Failure("invalid_usage", "--provider claude requires the matching installed Claude executable")
 			}
 		}
 	}
-	reply, e := agent.Call(cmd.Context(), agent.Request{Provider: agentProvider, ProviderVersion: provider.Version, Op: "start", Name: name, Backend: m.Backend, Argv: m.Argv, Cwd: m.Cwd, EnvNames: m.EnvNames}, true)
+	q := agent.Request{Provider: agentProvider, ProviderVersion: provider.Version, Op: "start", Name: name, Backend: m.Backend, Argv: m.Argv, Cwd: m.Cwd, EnvNames: m.EnvNames}
+	if agentMetrics {
+		q.Op = "start-metrics"
+		q.Metrics = &metrics.Config{IntervalSeconds: agentMetricsInterval}
+		if e = q.Metrics.Validate(); e != nil {
+			return e
+		}
+	}
+	reply, e := agent.Call(cmd.Context(), q, true)
 	return agentResult(reply, e, true)
 }}
 var agentRegisterCmd = &cobra.Command{Use: "register TARGET", Short: "Register an existing session without supervision", Args: cobra.ExactArgs(1), RunE: func(cmd *cobra.Command, args []string) error {
@@ -142,12 +190,18 @@ var agentRegisterCmd = &cobra.Command{Use: "register TARGET", Short: "Register a
 	return agentResult(reply, e, true)
 }}
 var agentListCmd = &cobra.Command{Use: "list", Short: "List registrations and reconcile supervised state", Args: cobra.NoArgs, RunE: func(cmd *cobra.Command, _ []string) error {
+	if agentExisting {
+		return existingAgentResult(cmd, "")
+	}
 	reply, e := agent.Call(cmd.Context(), agent.Request{Op: "list", Backend: selectedBackend}, true)
 	return agentResult(reply, e, false)
 }}
 var agentStatusCmd = &cobra.Command{Use: "status ID", Short: "Inspect one exact agent registration ID", Args: cobra.ExactArgs(1), RunE: func(cmd *cobra.Command, args []string) error {
 	if !runtimepath.ValidID(args[0]) {
 		return core.Failure("invalid_target", "agent status requires a full opaque ID")
+	}
+	if agentExisting {
+		return existingAgentResult(cmd, args[0])
 	}
 	reply, e := agent.Call(cmd.Context(), agent.Request{Op: "status", ID: args[0], Backend: selectedBackend}, true)
 	return agentResult(reply, e, true)
@@ -203,7 +257,13 @@ var coordinatorCmd = &cobra.Command{Use: "coordinator", Args: cobra.NoArgs, RunE
 }}
 
 func init() {
-	agentStartCmd.Flags().StringVar(&agentProvider, "provider", "", "Opt in to generic or verified Claude hooks")
+	agentStartCmd.Flags().BoolVar(&agentMetrics, "metrics", false, "Opt in to bounded child-PID CPU/RSS sampling; inspect with agent metrics ID; observer failure never stops the job")
+	agentStartCmd.Flags().IntVar(&agentMetricsInterval, "metrics-interval", 2, "Metrics sample interval in seconds (2..60, only with --metrics)")
+	for _, c := range []*cobra.Command{agentListCmd, agentStatusCmd} {
+		c.Flags().BoolVar(&agentExisting, "existing", false, "Use scoped existing metadata only; requires explicit --backend and IDs, no coordinator startup")
+	}
+	agentListCmd.Flags().StringArrayVar(&agentReadIDs, "read-id", nil, "Allow exact managed ID for --existing (repeatable; default deny)")
+	agentStartCmd.Flags().StringVar(&agentProvider, "provider", "", "Opt in to generic or exact schema-compatible Claude hooks; live validation is separate")
 	rootCmd.AddCommand(agentCmd, internalCmd)
 	agentCmd.AddCommand(agentStartCmd, agentRegisterCmd, agentListCmd, agentStatusCmd, agentStopCoordinatorCmd)
 	agentStartCmd.Flags().StringVar(&agentCwd, "cwd", "", "Working directory (default invocation cwd)")

@@ -13,6 +13,7 @@ import (
 
 	"github.com/MohamedElashri/txm/pkg/backend"
 	"github.com/MohamedElashri/txm/pkg/core"
+	"github.com/MohamedElashri/txm/pkg/metrics"
 	"github.com/MohamedElashri/txm/pkg/nativeprotocol"
 	"github.com/MohamedElashri/txm/pkg/runtimepath"
 	"github.com/MohamedElashri/txm/pkg/supervisor"
@@ -53,24 +54,26 @@ type Registry struct {
 	Agents        []Record `json:"agents"`
 }
 type Request struct {
-	DryRun          bool     `json:"dry_run,omitempty"`
-	Confirm         string   `json:"confirm,omitempty"`
-	SchemaVersion   int      `json:"schema_version"`
-	Epoch           string   `json:"epoch"`
-	HostID          string   `json:"host_id"`
-	StateRoot       string   `json:"state_root"`
-	Op              string   `json:"op"`
-	ID              string   `json:"id"`
-	Backend         string   `json:"backend"`
-	Name            string   `json:"name"`
-	Argv            []string `json:"argv"`
-	Cwd             string   `json:"cwd"`
-	EnvNames        []string `json:"env_names"`
-	Provider        string   `json:"provider"`
-	ProviderVersion string   `json:"provider_version"`
-	Signal          *Signal  `json:"signal"`
-	LastEpoch       string   `json:"last_epoch"`
-	LastSequence    uint64   `json:"last_sequence"`
+	DryRun          bool            `json:"dry_run,omitempty"`
+	Confirm         string          `json:"confirm,omitempty"`
+	SchemaVersion   int             `json:"schema_version"`
+	Epoch           string          `json:"epoch"`
+	HostID          string          `json:"host_id"`
+	StateRoot       string          `json:"state_root"`
+	Op              string          `json:"op"`
+	ID              string          `json:"id"`
+	Backend         string          `json:"backend"`
+	Name            string          `json:"name"`
+	Argv            []string        `json:"argv"`
+	Cwd             string          `json:"cwd"`
+	EnvNames        []string        `json:"env_names"`
+	Provider        string          `json:"provider"`
+	ProviderVersion string          `json:"provider_version"`
+	Signal          *Signal         `json:"signal"`
+	ProviderEvent   *ProviderEvent  `json:"provider_event,omitempty"`
+	Metrics         *metrics.Config `json:"metrics,omitempty"`
+	LastEpoch       string          `json:"last_epoch"`
+	LastSequence    uint64          `json:"last_sequence"`
 }
 type Reply struct {
 	SchemaVersion int                  `json:"schema_version"`
@@ -86,6 +89,13 @@ type Discovery struct {
 
 func (q Request) validate() error {
 	bad := func() error { return core.Failure("invalid_usage", "invalid agent request fields") }
+	if q.Op == "start-metrics" {
+		if q.Metrics == nil || q.Metrics.Validate() != nil {
+			return bad()
+		}
+	} else if q.Metrics != nil {
+		return bad()
+	}
 	if q.Backend != "" && q.Backend != "native" && q.Backend != "tmux" && q.Backend != "screen" && q.Backend != "zellij" {
 		return bad()
 	}
@@ -104,11 +114,14 @@ func (q Request) validate() error {
 		if !runtimepath.ValidID(q.ID) || q.Name != "" || q.Backend != "" || len(q.Argv) > 0 || q.Cwd != "" || len(q.EnvNames) > 0 || q.Signal != nil {
 			return bad()
 		}
-	case "signal":
+	case "signal", "provider-event":
 		if !runtimepath.ValidID(q.ID) || q.Signal == nil || q.Name != "" || q.Backend != "" || len(q.Argv) > 0 || q.Cwd != "" || len(q.EnvNames) > 0 || q.Provider != "" {
 			return bad()
 		}
-	case "start":
+		if q.Op == "provider-event" && (q.ProviderEvent == nil || q.ProviderEvent.Kind == "signal") {
+			return bad()
+		}
+	case "start", "start-metrics":
 		if (q.ID != "" && !runtimepath.ValidID(q.ID)) || q.Name == "" || q.Backend == "" || (q.Provider == "" && q.ProviderVersion != "") {
 			return bad()
 		}
@@ -137,13 +150,16 @@ func (q Request) validate() error {
 	default:
 		return bad()
 	}
-	if q.Op != "signal" && q.Signal != nil {
+	if q.Op != "signal" && q.Op != "provider-event" && q.Signal != nil {
+		return bad()
+	}
+	if q.Op != "provider-event" && q.ProviderEvent != nil {
 		return bad()
 	}
 	if q.Op != "subscribe" && (q.LastEpoch != "" || q.LastSequence != 0) {
 		return bad()
 	}
-	if q.Op != "start" && q.Op != "hooks-enable" && (q.Provider != "" || q.ProviderVersion != "") {
+	if q.Op != "start" && q.Op != "start-metrics" && q.Op != "hooks-enable" && (q.Provider != "" || q.ProviderVersion != "") {
 		return bad()
 	}
 	return nil

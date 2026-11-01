@@ -12,6 +12,7 @@ import (
 	"path/filepath"
 	"regexp"
 	"strings"
+	"sync"
 )
 
 type Root struct {
@@ -28,12 +29,12 @@ func NewID() (string, error) {
 	return hex.EncodeToString(id[:]), nil
 }
 
-var validName = regexp.MustCompile(`^[a-zA-Z0-9_-]+$`)
-var validID = regexp.MustCompile(`^[0-9a-f]{32}$`)
+var validName = sync.OnceValue(func() *regexp.Regexp { return regexp.MustCompile(`^[a-zA-Z0-9_-]+$`) })
+var validID = sync.OnceValue(func() *regexp.Regexp { return regexp.MustCompile(`^[0-9a-f]{32}$`) })
 
-func ValidID(id string) bool { return validID.MatchString(id) }
+func ValidID(id string) bool { return validID().MatchString(id) }
 func ValidateName(name string) error {
-	if !validName.MatchString(name) || len(name) > 128 {
+	if !validName().MatchString(name) || len(name) > 128 {
 		return fmt.Errorf("invalid native session name (1..128 ASCII letters, digits, dash or underscore)")
 	}
 	return nil

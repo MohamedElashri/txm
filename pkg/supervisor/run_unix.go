@@ -15,6 +15,7 @@ import (
 
 	"github.com/MohamedElashri/txm/pkg/core"
 	"github.com/MohamedElashri/txm/pkg/localipc"
+	"github.com/MohamedElashri/txm/pkg/metrics"
 	"github.com/MohamedElashri/txm/pkg/nativeprocess"
 	"github.com/MohamedElashri/txm/pkg/nativeprotocol"
 	"github.com/MohamedElashri/txm/pkg/runtimepath"
@@ -105,6 +106,13 @@ func Run(ctx context.Context, id string) error {
 	if e == nil {
 		started := Now()
 		receipt.StartedAt = &started
+		var stopMetrics func()
+		if m.Metrics != nil {
+			stopMetrics, _ = metrics.Start(ctx, metrics.Owner{ManagedID: m.ManagedID, InstanceID: id, Backend: m.Backend}, child.Process.Pid, *m.Metrics)
+			if stopMetrics != nil {
+				defer stopMetrics()
+			}
+		}
 		var mu sync.Mutex
 		live := true
 		serveDone := make(chan struct{})
@@ -157,6 +165,9 @@ func Run(ctx context.Context, id string) error {
 			return core.Failure("operation_failed", "managed child identity/observation lost; no group signal or receipt claimed")
 		}
 		_ = unix.Kill(-child.Process.Pid, unix.SIGKILL)
+		if stopMetrics != nil {
+			stopMetrics()
+		}
 		waitErr := child.Wait()
 		mu.Unlock()
 		_ = listener.Close()

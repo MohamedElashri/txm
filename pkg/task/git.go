@@ -9,6 +9,7 @@ import (
 	"path/filepath"
 	"regexp"
 	"strings"
+	"sync"
 	"time"
 )
 
@@ -17,7 +18,17 @@ type git struct {
 	allow bool
 }
 
-func newGit(allow bool) (git, error) { p, e := extension.Resolve("git"); return git{p, allow}, e }
+func newGit(allow bool) (git, error) {
+	p, e := extension.Resolve("git")
+	if e != nil {
+		return git{}, e
+	}
+	p, e = filepath.EvalSymlinks(p)
+	if e != nil {
+		return git{}, e
+	}
+	return git{p, allow}, nil
+}
 func (g git) run(ctx context.Context, dir string, args ...string) ([]byte, int, error) {
 	ctx, cancel := context.WithTimeout(ctx, 10*time.Second)
 	defer cancel()
@@ -28,7 +39,7 @@ func (g git) run(ctx context.Context, dir string, args ...string) ([]byte, int, 
 		}
 	}
 	env = append(env, "GIT_TERMINAL_PROMPT=0", "GIT_OPTIONAL_LOCKS=0")
-	flags := []string{"-c", "core.fsmonitor=false", "-c", "submodule.recurse=false", "-c", "gc.auto=0", "-c", "maintenance.auto=false"}
+	flags := []string{"--no-optional-locks", "-c", "core.fsmonitor=false", "-c", "submodule.recurse=false", "-c", "gc.auto=0", "-c", "maintenance.auto=false"}
 	if !g.allow {
 		flags = append(flags, "-c", "core.hooksPath=/dev/null")
 	}
@@ -55,7 +66,7 @@ func (g git) filters(ctx context.Context, dir string) error {
 	return nil
 }
 
-var commitPattern = regexp.MustCompile(`^([a-f0-9]{40}|[a-f0-9]{64})$`)
+var commitPattern = sync.OnceValue(func() *regexp.Regexp { return regexp.MustCompile(`^([a-f0-9]{40}|[a-f0-9]{64})$`) })
 
 func (g git) repo(ctx context.Context, p string) (string, string, error) {
 	a, e := filepath.Abs(p)

@@ -128,6 +128,20 @@ def rpc(box, body, fragmented=False):
 
 
 class AgentChecks(unittest.TestCase):
+    def test_human_stop_requires_exact_confirmation_and_backend(self):
+        with fixture() as box, coordinator(box):
+            job = start(box, 'human-stop', ['/bin/sleep', '30'])
+            registry = state(box) / 'registry.json'
+            before = registry.read_bytes()
+            envelope(box, ['agent', 'stop', job['id'], '--confirm', 'f'*32], code=2)
+            self.assertEqual(registry.read_bytes(), before)
+            self.assertEqual(status(box, job['id'])['lifecycle'], 'running')
+            envelope(box, ['--backend', 'tmux', 'agent', 'stop', job['id'], '--confirm', job['id']], code=2)
+            stopped = envelope(box, ['agent', 'stop', job['id'], '--confirm', job['id']])['data']['agent']
+            self.assertEqual(stopped['lifecycle'], 'exited'); self.assertIsNotNone(stopped['receipt'])
+            repeated = envelope(box, ['agent', 'stop', job['id'], '--confirm', job['id']])['data']['agent']
+            self.assertEqual(repeated['receipt'], stopped['receipt'])
+
     def test_different_state_identity_cannot_use_running_coordinator(self):
         with fixture() as box, coordinator(box) as service:
             envelope(box, ['agent', 'list'])

@@ -1,7 +1,10 @@
 """Release builds may reuse only successful CI of their exact trusted commit."""
 import importlib.util
+import json
 from pathlib import Path
+import tempfile
 import unittest
+from unittest.mock import patch
 
 spec = importlib.util.spec_from_file_location('release_ci', Path(__file__).resolve().parents[1]/'scripts/check-release-ci.py')
 ci = importlib.util.module_from_spec(spec);spec.loader.exec_module(ci)
@@ -43,6 +46,41 @@ class ReleaseCITests(unittest.TestCase):
         for bad in [good[:-1], good+[good[0]], [dict(job, conclusion='skipped') for job in good],
                     [dict(job, conclusion='failure') for job in good]]:
             with self.subTest(jobs=bad), self.assertRaises(ValueError):ci.verify_jobs(bad)
+
+    def test_release_artifacts_must_be_present_unexpired_and_bound_to_source(self):
+        good = [{'id': index+7, 'name': name, 'expired': False, 'workflow_run': {'head_sha': SHA},
+                 'digest': 'sha256:'+'b'*64, 'size_in_bytes': 42}
+                for index, name in enumerate(ci.RELEASE_ARTIFACTS)]
+        self.assertEqual(set(ci.select_release_artifacts(good, SHA)), set(ci.RELEASE_ARTIFACTS))
+        for bad in [[], good[:-1], good+[good[0]], [dict(good[0], expired=True), good[1]],
+                    [dict(good[0], digest=None), good[1]],
+                    [dict(good[0], workflow_run={'head_sha': 'c'*40}), good[1]],
+                    [dict(good[0], size_in_bytes=0), good[1]]]:
+            with self.subTest(artifacts=bad), self.assertRaises(ValueError):
+                ci.select_release_artifacts(bad, SHA)
+
+    def test_readiness_requests_repository_scoped_jobs_and_artifacts(self):
+        artifacts = [{'id': index+7, 'name': name, 'expired': False,
+                      'workflow_run': {'head_sha': SHA}, 'digest': 'sha256:'+'b'*64, 'size_in_bytes': 42}
+                     for index, name in enumerate(ci.RELEASE_ARTIFACTS)]
+        calls = []
+        def request(endpoint):
+            self.assertTrue(endpoint.startswith('repos/'+REPO+'/'), endpoint)
+            calls.append(endpoint)
+            if '/workflows/' in endpoint:
+                return {'workflow_runs': [run(run_attempt=1, html_url='https://example.invalid/run')]}
+            if '/jobs?' in endpoint:
+                return {'jobs': [{'name': name, 'status': 'completed', 'conclusion': 'success'} for name in ci.REQUIRED_JOBS]}
+            if '/artifacts?' in endpoint: return {'artifacts': artifacts}
+            self.fail('unexpected API route: '+endpoint)
+        with tempfile.TemporaryDirectory(prefix='txm-readiness-') as temp:
+            report = Path(temp)/'readiness.json'
+            argv = ['check-release-ci', '--repository', REPO, '--sha', SHA, '--report', str(report)]
+            with patch('sys.argv', argv), patch.object(ci, 'api', side_effect=request), patch('builtins.print'):
+                ci.main()
+            value = json.loads(report.read_text())
+            self.assertTrue(value['passed']); self.assertEqual(value['release_artifacts']['ci-release-bundle']['id'], 7)
+            self.assertEqual(len(calls), 3)
 
 
 if __name__ == '__main__':unittest.main()

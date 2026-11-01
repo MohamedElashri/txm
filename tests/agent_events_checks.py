@@ -7,6 +7,7 @@ import json
 from pathlib import Path
 import secrets
 import shutil
+import shlex
 import signal
 import subprocess
 import sys
@@ -25,7 +26,10 @@ def stamp(offset=0):
 
 
 def cred(box, v):
-    return json.loads((a.state(box) / ('h-' + v['hooks']['generation'] + '.json')).read_text())
+    path = a.state(box) / ('h-' + v['hooks']['generation'] + '.json')
+    if not path.exists():
+        path = a.state(box) / ('h2-' + v['hooks']['generation'] + '.json')
+    return json.loads(path.read_text())
 
 
 def signal_request(box, v, sequence, wanted_state, **changes):
@@ -205,22 +209,168 @@ class AgentEventsChecks(unittest.TestCase):
     def test_provider_bridge_session_binding_and_conservative_stop(self):
         with a.fixture() as box,a.coordinator(box):
             # Version probes are fixtures; this is schema coverage, not real provider execution.
-            for provider,version in [('claude','2.1.308 (Claude Code)'),('codex','codex-cli 0.165.0')]:
+            for provider,version in [('claude','2.1.308 (Claude Code)'),('claude','2.1.309 (Claude Code)'),('codex','codex-cli 0.165.0')]:
                 box.executable(provider,'#!/bin/sh\nprintf "%s\\n" '+repr(version)+'\n')
-                v=a.start(box,provider,['/bin/sleep','60'])
+                v=a.start(box,provider+('-new' if '309' in version else ''),['/bin/sleep','60'])
                 v=a.envelope(box,['agent','hooks','enable',v['id'],'--provider',provider])['data']['agent']
                 config=box.run([BINARY,'agent','hooks','config',v['id']]).stdout
                 self.assertNotIn(cred(box,v)['token'],config);self.assertIn('SessionStart',json.loads(config)['hooks'])
                 command=[BINARY,'agent','hook',v['id'],'--generation',v['hooks']['generation'],'--provider',provider]
-                for event,expected,extra in [('SessionStart','unknown',{}),('UserPromptSubmit','working',{}),('PermissionRequest','needs_input',{}),('Stop','idle',{'stop_hook_active':False})]:
+                for event,expected,extra in [('SessionStart','unknown',{}),('UserPromptSubmit','working',{}),('PermissionRequest','unknown',{}),('PostToolUse','working',{}),('Stop','idle',{'stop_hook_active':False})]:
                     out=box.run(command,input=json.dumps(dict(session_id='session-A',hook_event_name=event,prompt='PRIVATE_PROMPT',transcript_path='/must/not/open',**extra)))
                     self.assertEqual(out.stdout,'{}\n');self.assertFalse(out.stderr)
-                    current=a.status(box,v['id']);self.assertEqual(current['attention'],expected);self.assertIsNone(current['turn_complete_at'])
+                    current=a.status(box,v['id']);self.assertEqual(current['attention'],expected)
+                    observation=current['provider_observation']
+                    self.assertEqual(observation['identity']['generation'],v['hooks']['generation'])
+                    self.assertEqual(observation['session_id'],'session-A')
+                    self.assertEqual(observation['ordering'],'bridge_arrival')
+                    self.assertEqual(current['lifecycle'],'running');self.assertIsNone(current['receipt'])
+                    if event=='PermissionRequest':
+                        self.assertEqual(observation['attention'],'permission_requested')
+                    if event=='Stop':
+                        self.assertIsNotNone(current['turn_complete_at'])
+                        self.assertEqual(observation['turn_outcome'],'completed')
+                        self.assertEqual(observation['local_turn'],1)
+                    else:
+                        self.assertIsNone(current['turn_complete_at'])
                 before=a.status(box,v['id'])['hooks']['sequence']
                 for body in [dict(session_id='session-A',hook_event_name='Stop',stop_hook_active=True),dict(session_id='session-B',hook_event_name='UserPromptSubmit'),None]:
                     out=box.run(command,input=json.dumps(body));self.assertEqual(out.stdout,'{}\n')
                 self.assertEqual(a.status(box,v['id'])['hooks']['sequence'],before)
                 self.assertNotIn('PRIVATE_PROMPT',(a.state(box)/'registry.json').read_text())
+                self.assertNotIn('PRIVATE_PROMPT',(a.state(box)/('o-'+v['hooks']['generation']+'.json')).read_text())
+
+    def test_doctor_defaults_to_discovery_without_state_or_provider_execution(self):
+        with a.fixture() as box:
+            marker=box.root/'probed'
+            for provider in ('claude','codex','opencode'):
+                box.executable(provider,'#!/bin/sh\n: > '+shlex.quote(str(marker))+'\necho future-version\n')
+            report=a.envelope(box,['agent','doctor'])['data']
+            self.assertEqual(report['coordinator'],'not_contacted');self.assertFalse(report['probed'])
+            self.assertFalse(marker.exists())
+            self.assertFalse((box.root/'state/txm').exists());self.assertFalse((box.root/'runtime/txm').exists())
+            for provider in report['providers'][1:]:
+                self.assertTrue(provider['available']);self.assertIsNone(provider['compatible'])
+                self.assertFalse(provider['verified']);self.assertIsNone(provider['enabled'])
+            report=a.envelope(box,['agent','doctor','--probe'])['data']
+            self.assertTrue(marker.exists());self.assertTrue(report['probed'])
+            for provider in report['providers'][1:]:
+                self.assertFalse(provider['compatible']);self.assertFalse(provider['verified'])
+            self.assertFalse((box.root/'state/txm').exists());self.assertFalse((box.root/'runtime/txm').exists())
+
+    def test_claude_main_turn_survives_subagents_resume_failure_and_session_end(self):
+        with a.fixture() as box,a.coordinator(box):
+            box.executable('claude','#!/bin/sh\necho "2.1.308 (Claude Code)"\n')
+            v=a.start(box,'claude-observer',['/bin/sleep','60'])
+            v=a.envelope(box,['agent','hooks','enable',v['id'],'--provider','claude'])['data']['agent']
+            config=json.loads(box.run([BINARY,'agent','hooks','config',v['id']]).stdout)
+            self.assertEqual(set(config),{'hooks'})
+            self.assertTrue({'PostToolUse','PostToolUseFailure','StopFailure','SessionEnd'}<=set(config['hooks']))
+            for groups in config['hooks'].values():
+                for group in groups:
+                    for hook in group['hooks']:
+                        self.assertEqual(hook['type'],'command');self.assertEqual(hook['timeout'],2)
+                        self.assertNotIn(cred(box,v)['token'],hook['command'])
+            command=[BINARY,'agent','hook',v['id'],'--generation',v['hooks']['generation'],'--provider','claude']
+            def emit(event,**extra):
+                body=dict(hook_event_name=event,session_id='main',**extra)
+                result=box.run(command,input=json.dumps(body))
+                self.assertEqual(result.stdout,'{}\n')
+                return a.status(box,v['id'])
+            emit('SessionStart',source='startup');current=emit('UserPromptSubmit')
+            sequence=current['hooks']['sequence']
+            current=emit('Stop',agent_id='subagent-1',stop_hook_active=False)
+            self.assertEqual(current['hooks']['sequence'],sequence)
+            self.assertEqual(current['attention'],'working')
+            emit('PermissionRequest');emit('PostToolUse')
+            current=emit('Stop',stop_hook_active=False)
+            completed=current['turn_complete_at'];self.assertIsNotNone(completed)
+            current=emit('SessionEnd',reason='other')
+            self.assertEqual(current['turn_complete_at'],completed)
+            self.assertEqual(current['lifecycle'],'running');self.assertIsNone(current['receipt'])
+            emit('SessionStart',source='resume')
+            current=emit('Stop',stop_hook_active=False)
+            self.assertIsNone(current['turn_complete_at'])
+            self.assertEqual(current['provider_observation']['turn_outcome'],'unknown')
+            emit('UserPromptSubmit')
+            current=emit('StopFailure',error='PRIVATE_ERROR')
+            self.assertEqual(current['provider_observation']['turn_outcome'],'failed')
+            self.assertIsNone(current['turn_complete_at'])
+            self.assertNotIn('PRIVATE_ERROR',(a.state(box)/('o-'+v['hooks']['generation']+'.json')).read_text())
+
+    def test_automatic_claude_new_version_uses_sidecar_and_preserves_explicit_settings(self):
+        for version in ['2.1.308 (Claude Code)', '2.1.309 (Claude Code)']:
+            with self.subTest(version=version), a.fixture() as box, a.coordinator(box):
+                script = ('#!'+sys.executable+'\nimport json,subprocess,sys\nfrom pathlib import Path\n'
+                          'if "--version" in sys.argv:print('+repr(version)+');raise SystemExit(0)\n'
+                          'config=json.loads(Path(sys.argv[sys.argv.index("--settings")+1]).read_text())\n'
+                          'for event,extra in [("SessionStart",{"source":"startup"}),("UserPromptSubmit",{"prompt_id":"p-one"}),("Stop",{"prompt_id":"p-one","stop_hook_active":False})]:\n'
+                          ' command=config["hooks"][event][0]["hooks"][0]["command"]\n'
+                          ' p=subprocess.run(command,shell=True,input=json.dumps(dict(hook_event_name=event,session_id="fixture",**extra)),capture_output=True,text=True)\n'
+                          ' assert p.stdout=="{}\\n" and not p.stderr\n')
+                claude=box.executable('claude',script)
+                job=a.start(box,'automatic-claude',[str(claude),'--init-only'],extra=['--provider','claude'])
+                current=a.await_exit(box,job['id'])
+                self.assertEqual(current['receipt']['exit_code'],0)
+                self.assertEqual(current['provider_observation']['turn_id'],'p-one')
+                self.assertEqual(current['provider_observation']['turn_outcome'],'completed')
+                record=json.loads((a.state(box)/'registry.json').read_text())['agents'][0]
+                if '309' in version:
+                    self.assertIsNone(record.get('hook'))
+                    self.assertEqual(cred(box,current)['schema_version'],2)
+                else:
+                    self.assertEqual(record['hook']['version'],version)
+        with a.fixture() as box:
+            claude=box.executable('claude','#!/bin/sh\necho "2.1.309 (Claude Code)"\n')
+            settings=box.root/'explicit.json';settings.write_text('{"hooks":{}}');before=settings.read_bytes()
+            for args in [['--settings',str(settings)],['--settings={}']]:
+                a.envelope(box,['--backend','native','agent','start','--provider','claude','refused','--',str(claude),*args],4)
+            self.assertEqual(settings.read_bytes(),before)
+            self.assertFalse((box.root/'state/txm').exists())
+            self.assertFalse((box.root/'runtime/txm').exists())
+
+    def test_codex_turn_compact_interrupt_resume_and_manual_trust_boundary(self):
+        with a.fixture() as box:
+            a.envelope(box,['--backend','native','agent','start','--provider','codex','auto','--','/usr/bin/true'],4)
+            self.assertFalse((box.root/'state/txm').exists());self.assertFalse((box.root/'runtime/txm').exists())
+        for version in ('codex-cli 0.165.0', 'codex-cli 0.166.0'):
+            with self.subTest(version=version):
+                with a.fixture() as box,a.coordinator(box):
+                    box.executable('codex','#!/bin/sh\necho "' + version + '"\n')
+                    v=a.start(box,'codex-observer',['/bin/sleep','60'])
+                    v=a.envelope(box,['agent','hooks','enable',v['id'],'--provider','codex'])['data']['agent']
+                    config=box.run([BINARY,'agent','hooks','config',v['id']]).stdout
+                    self.assertIn('Interrupt',json.loads(config)['hooks'])
+                    self.assertNotIn('PostToolUseFailure',json.loads(config)['hooks'])
+                    self.assertNotIn('bypass',config);self.assertNotIn(cred(box,v)['token'],config)
+                    self.assertFalse((box.root/'home/.codex').exists());self.assertFalse((box.root/'repo/.codex').exists())
+                    command=[BINARY,'agent','hook',v['id'],'--generation',v['hooks']['generation'],'--provider','codex']
+                    def emit(event,**extra):
+                        result=box.run(command,input=json.dumps(dict(hook_event_name=event,session_id='thread',**extra)))
+                        self.assertEqual(result.stdout,'{}\n')
+                        return a.status(box,v['id'])
+                    emit('SessionStart',source='startup');emit('UserPromptSubmit',turn_id='turn-1')
+                    current=emit('SessionStart',source='compact')
+                    self.assertEqual(current['provider_observation']['turn_id'],'turn-1')
+                    self.assertTrue(current['provider_observation']['turn_active'])
+                    current=emit('Stop',turn_id='turn-1',stop_hook_active=False)
+                    self.assertEqual(current['provider_observation']['turn_outcome'],'completed')
+                    current=emit('UserPromptSubmit',turn_id='turn-2')
+                    sequence=current['hooks']['sequence']
+                    current=emit('Stop',turn_id='turn-1',stop_hook_active=False)
+                    self.assertEqual(current['hooks']['sequence'],sequence)
+                    current=emit('Interrupt',turn_id='turn-2')
+                    self.assertEqual(current['provider_observation']['turn_outcome'],'interrupted')
+                    self.assertIsNone(current['turn_complete_at']);self.assertEqual(current['lifecycle'],'running')
+                    emit('SessionStart',source='resume');current=emit('UserPromptSubmit',turn_id='turn-3')
+                    sequence=current['hooks']['sequence']
+                    current=emit('SessionStart',source='fork')
+                    self.assertEqual(current['hooks']['sequence'],sequence)
+                    current=emit('Stop',turn_id='turn-3',stop_hook_active=False)
+                    completed=current['turn_complete_at'];self.assertIsNotNone(completed)
+                    current=emit('SessionEnd',reason='other')
+                    self.assertEqual(current['turn_complete_at'],completed)
+                    self.assertIsNone(current['receipt']);self.assertEqual(current['lifecycle'],'running')
 
     def test_unsupported_providers_and_ordinary_independence(self):
         with a.fixture() as box:
@@ -255,12 +405,24 @@ class AgentEventsChecks(unittest.TestCase):
         with a.fixture() as box,a.coordinator(box):
             (box.root/'bin/claude').symlink_to(CLAUDE)
             box.env.update(CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC='1',DISABLE_AUTOUPDATER='1',DISABLE_TELEMETRY='1',CLAUDE_CONFIG_DIR=str(box.root/'home/.claude'))
-            v=a.start(box,'real-claude',[str(box.root/'bin/claude'),'--init-only','--setting-sources',''],extra=['--provider','claude',*sum((['--env',k] for k in ['CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC','DISABLE_AUTOUPDATER','DISABLE_TELEMETRY','CLAUDE_CONFIG_DIR']),[])])
+            settings=[]
+            for source,directory in [('user',box.root/'home/.claude'),('project',box.root/'repo/.claude')]:
+                directory.mkdir()
+                script=box.root/(source+'-hook.py')
+                script.write_text('from pathlib import Path\nPath('+repr(str(box.root/(source+'-ran')))+').touch()\nprint("{}")\n')
+                config=directory/'settings.json'
+                config.write_text(json.dumps({'hooks':{'SessionStart':[{'hooks':[{'type':'command','command':shlex.join([sys.executable,str(script)]),'timeout':2}]}]}}))
+                settings.append((config,config.read_bytes()))
+            v=a.start(box,'real-claude',[str(box.root/'bin/claude'),'--init-only','--setting-sources','user,project','--permission-mode','default','--tools',''],extra=['--provider','claude',*sum((['--env',k] for k in ['CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC','DISABLE_AUTOUPDATER','DISABLE_TELEMETRY','CLAUDE_CONFIG_DIR']),[])])
             current=a.await_exit(box,v['id'],timeout=15)
             self.assertEqual(current['receipt']['exit_code'],0)
             self.assertGreaterEqual(current['hooks']['sequence'],1);self.assertTrue(current['hooks']['session_bound'])
             self.assertEqual(current['attention'],'unknown');self.assertIsNone(current['turn_complete_at'])
             self.assertFalse((box.root/'home/.claude/.credentials.json').exists())
+            for source in ['user','project']:
+                self.assertTrue((box.root/(source+'-ran')).exists())
+            for config,before in settings:
+                self.assertEqual(config.read_bytes(),before)
 
 if __name__=='__main__':
     parser=argparse.ArgumentParser();parser.add_argument('--binary',type=Path,required=True);parser.add_argument('--real-claude',type=Path)

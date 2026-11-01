@@ -30,6 +30,18 @@ class CIChangesTests(unittest.TestCase):
             self.assertTrue(ci.select_scope('pull_request', {}, force=True))
             diff.assert_not_called()
 
+    def test_package_validation_is_light_for_prs_and_full_for_release_readiness(self):
+        cases = [('pull_request', 'true', True, False), ('push', '', True, True),
+                 ('workflow_dispatch', 'true', True, True),
+                 ('workflow_dispatch', 'false', True, False), ('push', 'true', False, False)]
+        for event, requested, full, expected in cases:
+            with self.subTest(event=event, requested=requested, full=full), tempfile.TemporaryDirectory() as tmp:
+                output = Path(tmp)/'outputs'
+                env = {'GITHUB_EVENT_NAME': event, 'GITHUB_OUTPUT': str(output), 'RELEASE_READINESS': requested}
+                with patch.dict(ci.os.environ, env, clear=True), patch.object(ci, 'select_scope', return_value=full):
+                    ci.main()
+                self.assertEqual(output.read_text(), 'full_ci='+str(full).lower()+'\nrelease_ready='+str(expected).lower()+'\n')
+
     def test_missing_invalid_or_unavailable_history_runs_full_ci(self):
         for event in [{}, {'before': '0'*40, 'after': 'a'*40},
                       {'before': '--output=README.md', 'after': 'a'*40}]:
@@ -72,7 +84,7 @@ class CIChangesTests(unittest.TestCase):
                 [sys.executable, str(Path(ci.__file__))], cwd=repo,
                 env=dict(env, GITHUB_EVENT_NAME='push', GITHUB_EVENT_PATH=str(event_path),
                          GITHUB_OUTPUT=str(output)), text=True)
-            self.assertEqual(output.read_text(), 'full_ci=false\n')
+            self.assertEqual(output.read_text(), 'full_ci=false\nrelease_ready=false\n')
             # The base branch changes code after the PR branches off. A PR must
             # compare against its merge base, while a push compares both tips.
             git('checkout', '-qb', 'fixture-base', base)

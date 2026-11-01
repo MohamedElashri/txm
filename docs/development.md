@@ -78,6 +78,26 @@ For documentation, check local links and anchors, compare commands with help,
 and run the release metadata checker. Update the man page when command semantics
 change; it is embedded in the binary.
 
+The **Verify & Build** workflow has an ordered graph: **Scope → Lint → Tests → OS builds →
+Validation → CI ready**. Generic tests run the Python harness, Linux race unit
+tests and fuzzing once. Two build branches produce Linux/Windows archives and
+the universal Mac archive. Separate validation jobs consume those artifacts;
+they do not rebuild application binaries. macOS Go checks, full runtime
+regressions once per OS, backend/SSH checks and all seven package checks must
+pass before the stable `CI ready` gate succeeds for release readiness. Pull
+requests use lighter validation: native Linux/macOS runtime and archive-configuration checks.
+The seven-package matrix runs on main and manual release-readiness runs; manual
+dispatch can set `release_readiness=false` for the lighter profile.
+PR builds omit cross-platform release archives and use five-second fuzz smoke
+runs. Release-readiness builds retain the full targets and fuzz budgets. Go
+objects are cached per verified native ABI and source; modules have a separate
+cache, so switching host/release library prefixes cannot discard the host cache.
+
+`make build-race` prepares the runtime binary;
+`make test-runtime TEST_BINARY=/absolute/txm-race` runs the shared suite without
+rebuilding dependencies or repeating the harness. Fuzzing runs once on Linux;
+macOS backend and loopback SSH checks run once in source CI.
+
 ## Fixture isolation
 
 `tests/sandbox.py` builds private HOME, XDG, runtime, temp, and environment
@@ -103,6 +123,24 @@ commands, source/artifact hashes, OS, architecture, backend versions, and skip
 reasons. A configured CI job or cross-build is not evidence of an executed runtime
 gate.
 
+Provider fixtures and live-provider validation are separate. The ordinary matrix
+does not authorize authentication, inference cost, workspace/hook trust changes,
+or use of personal provider configuration. Keep exact executable hashes,
+platforms, versions and modes with a separately authorized live run. An SDK
+loader test or a parsed callback fixture does not verify a provider lifecycle.
+One-off live-run controllers and account-specific profiles are not part of the
+regression harness; keep them with the private evidence for that authorized run.
+
+`make test-opencode-runtime` additionally requires an explicit exact OpenCode
+executable and a new report path through `OPENCODE_BINARY`/`OPENCODE_REPORT`.
+It runs a private loopback SDK/loader/session-metadata fixture with provider use
+denied and no inference. Version mismatch is a blocker, not a passing skip.
+
+`tests/record_demo.py --binary /absolute/txm --destination /absolute/new-demo`
+records roughly 60 seconds of real generic CLI/PTY activity after installation.
+It needs no provider account. Recordings and visual-review artifacts stay outside
+the source tree.
+
 ## Validate packaged builds
 
 The runtime runner takes existing binaries and archives. It verifies race
@@ -113,7 +151,7 @@ measures performance after the workers finish.
 ```sh
 python3 scripts/validate-runtime.py \
   --binary /absolute/check/txm --race-binary /absolute/check/txm-race \
-  --archive /absolute/check/txm_Darwin_arm64.zip \
+  --archive /absolute/check/txm_Darwin_universal.zip \
   --expected-version "$(cat VERSION)" --macos-backends --loopback-ssh \
   --output /absolute/new-runtime-report
 ```
@@ -133,11 +171,19 @@ read-only fixture/artifact mounts. Never run those probes as host root.
 installation, the man page, and completions. Match the archive to the runtime
 host; cross-compilation does not replace a native runtime check.
 
+The full 100-session performance fixture requires at least 4 GiB available
+memory. If that preflight refuses, preserve the failure and rerun on a suitable
+idle host; do not reduce the guard or report the scale gate as passing.
+Smaller matched startup/1/10-session measurements must be labeled with their
+actual scope and do not replace the full gate. Relative comparisons should use
+the same toolchain, native dependency and harness, without concurrent runtime
+workers; investigate repeatable regressions above 20%.
+
 Use `scripts/audit-artifacts.py` on explicit outputs for known credential forms;
 it reports redacted findings. Pair the scan with a review of fixture provenance.
 
 The [release process](#release-process) defines the complete package gate sequence.
-Both macOS package jobs install checksum-pinned Zellij using
+The macOS source job installs checksum-pinned Zellij using
 `scripts/install-ci-zellij.sh`. `tests/peer_checks.py` shares actual foreign-UID
 regressions between Linux containers and disposable macOS CI and refuses ordinary
 host-root execution. Windows checks cover version/help/completions and explicit
@@ -151,10 +197,10 @@ expensive Linux, macOS, and lint jobs. Code under `docs/`, mixed code/docs chang
 and changes whose scope cannot be determined still run the full suite. Manual
 CI dispatches and reusable calls run the full suite by default.
 
-Full archive builds and the eight-target package matrix run only for version
-tags or an explicit Release workflow dispatch.
-Branch dispatches use snapshots stamped from `VERSION` and never create a draft.
-Tag runs build and validate the official archives before draft creation.
+Release-ready CI builds archives and runs the seven-runner package matrix after
+lint and tests pass. Archives are stamped from `VERSION`. **Ship txm** runs
+only for version tags or an explicit dispatch and reuses the validated CI bundle;
+it does not compile or repeat the tests. Branch dispatches never create a draft.
 
 1. Update `VERSION` and its dated changelog section, including upgrade notes.
    `make release-check` requires a stable version and matching metadata.
@@ -166,41 +212,50 @@ Tag runs build and validate the official archives before draft creation.
    CI skipped documentation-only changes), then tag it with the version from
    `VERSION`: `git tag "v$(cat VERSION)"`.
 4. A short Linux preflight checks stable metadata and the latest CI run for that
-   exact commit on `main`, including successful Linux, macOS ARM64/Intel, and
-   lint jobs. Missing, pending, failed, cancelled, or skipped validation stops
-   the release before compilation. Existing CI is reused rather than repeated.
-5. Two parallel GoReleaser jobs build without publishing: Linux builds the
-   four Linux and two Windows archives; macOS builds the two Darwin archives
-   using its SDK. Each job builds only its required Ghostty libraries and retains
-   its partition. An inexpensive Linux job assembles the complete bundle using
-   the original build checksums.
+   exact commit on `main`, including every named stage and `CI ready`. Missing,
+   pending, failed, cancelled or skipped jobs stop release. The unexpired bundle
+   and validation-evidence artifacts must both belong to that exact commit.
+5. CI's Linux build branch produces four Linux and two Windows archives; its
+   Apple Silicon build branch on `macos-latest` produces one universal Mac
+   archive. CI validates and assembles both partitions. Release downloads that
+   exact bundle and its original validation evidence, without rebuilding any OS.
+   All Mac jobs require ARM64 on the latest stable hosted image; there is no
+   Intel runner or architecture-specific Mac archive.
 6. `scripts/check-release-artifacts.py` checks the complete archive inventory,
-   checksums, packaged documentation, binary OS/CPU headers, and static-musl
+   checksums, packaged documentation, binary OS/CPU headers, both bounded
+   nonoverlapping universal Mac slices, and static-musl
    linkage. The same bundle is checked after each artifact download.
-7. Each Unix archive runs on its matching Linux/macOS architecture through private
-   installation and the runtime suites. Mac jobs additionally test real backends
-   and loopback SSH. Both platforms test actual different-UID rejection using
+7. In CI validation, each Unix archive passes private installation and a short packaged-code smoke
+   check: native child startup, authenticated signals, exit receipts after
+   coordinator shutdown, and child-PID CPU/RSS. Full regressions reuse the exact
+   source CI result rather than running again for every ZIP. The universal Mac
+   file runs on Apple Silicon; both slices are checked structurally. This is not
+   a native Intel runtime claim. Both platforms test actual different-UID rejection using
    private fixtures: Linux in a disposable container, macOS as root only on the
    disposable CI runner. The Linux peer probe uses a pinned multi-architecture
    Python image directly, avoiding an unrelated SSH/tmux/Screen/Git image build.
    No accounts or host services are changed.
-8. Windows x86_64/ARM64 runners check their executable's version, help,
+8. In CI validation, Windows x86_64/ARM64 runners check their executable's version, help,
    completions, and explicit unsupported refusals. These are CLI smoke checks,
    not external-backend or Windows installer certification.
-9. Only after every package job passes does a write-enabled job create a
-   **stable draft**, with eight ZIPs, checksums, and the canonical release notes.
+9. Only after the full CI gate and downloaded-bundle verification pass does a write-enabled job create a
+   **stable draft**, with seven ZIPs, checksums, and the canonical release notes.
    Review the tag/commit, jobs, reports, upgrade notes, and compatibility scope
    before manually publishing. Existing releases are not overwritten on rerun.
 
-The bundle and package reports are retained as Actions artifacts.
+The bundle and package reports are retained as CI artifacts.
+Bundle privacy checks run once in CI; release verifies that the original scan
+matches the downloaded archive hashes. Bounded annotations expose source/archive hashes
+and verified report hashes, so evidence remains inspectable through the API when
+an artifact-download host is unavailable.
 Reports include the run attempt in their artifact names, so a successful retry
 is distinct from an earlier incomplete report. On failure, use GitHub's **Re-run
 failed jobs** or `gh run rerun RUN_ID --failed`. A package failure reuses the
 existing bundle and other successful jobs; it does not repeat compilation.
-If one build partition fails, its successful sibling is retained. Job timeouts
+If one CI build partition fails, its successful sibling is retained. Job timeouts
 bound stalled work; unrelated package jobs finish so retries need not repeat them.
 
-CI and release builds cache pinned Ghostty sources, native outputs, and Zig's
+CI build and test jobs cache pinned Ghostty sources, native outputs, and Zig's
 incremental cache by OS, CPU, SDK version/build, and dependency lock. Every restore
 still runs the source/version guards and `zig build`; directory presence never
 proves validity. Validated dependencies are saved before application compilation
@@ -210,9 +265,10 @@ SDK, preventing stale external-library links after a restore. Cache misses
 remain valid cold builds; GitHub's branch/tag cache scope can limit reuse.
 
 For an explicit pre-release package check on `main`, first wait for normal CI,
-then run `gh workflow run release.yml --ref main`. For a development branch,
-run `gh workflow run ci.yml --ref dev`, wait for that exact commit's manual CI
-to pass, then run `gh workflow run release.yml --ref dev`. Pushes or new commits
+then run `gh workflow run release.yml --ref main`. To validate another branch,
+run `gh workflow run ci.yml --ref BRANCH`, wait for that exact commit's manual CI
+to pass, then run `gh workflow run release.yml --ref BRANCH`, replacing `BRANCH`
+with the reviewed branch name. Pushes or new commits
 require matching fresh CI. A dry run on `main` also seeds default-branch release
 caches that later tags can restore. Neither branch dispatch publishes a release.
 
@@ -231,6 +287,6 @@ Use the pinned tools and runner configuration in the
 archive inventory, and job definitions live there and in
 [GoReleaser configuration](../.goreleaser.yaml).
 
-For each release, keep validation reports with the CI run and record relevant
-compatibility evidence in that version's [changelog entry](CHANGELOG.md). A prior
+For each release, keep validation and compatibility reports with the CI run.
+Keep the [changelog](CHANGELOG.md) focused on user-facing changes. A prior
 snapshot's passing checks do not validate changed source or final release bytes.

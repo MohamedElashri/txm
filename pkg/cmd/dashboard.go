@@ -16,7 +16,7 @@ import (
 
 var dashboardAgents, dashboardPreview bool
 var dashboardRefresh time.Duration
-var dashboardCmd = &cobra.Command{Use: "dashboard", Short: "Interactive local session observations and optional agent state", Args: cobra.NoArgs, RunE: func(cmd *cobra.Command, _ []string) error {
+var dashboardCmd = &cobra.Command{Use: "dashboard", Short: "Interactive local session observations and optional agent state", Long: "Persistent terminals. Supervised jobs. One CLI. Plain dashboard does not start an agent coordinator. --agents explicitly subscribes. Fresh authenticated needs-input agents sort first; permission requests remain unconfirmed. [] next/previous blocked; g repo/task/backend grouping; c collapse group; C expand all; / search; Tab filter; b backend; o read-only attach; p bounded preview; F1 help. Registrations and sessions keep separate identities; attach requires a live session binding.", Args: cobra.NoArgs, RunE: func(cmd *cobra.Command, _ []string) error {
 	if runtime.GOOS != "linux" && runtime.GOOS != "darwin" {
 		return core.Failure("unsupported", "dashboard terminal runtime is unverified on this platform")
 	}

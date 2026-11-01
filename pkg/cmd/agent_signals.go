@@ -135,18 +135,18 @@ var hookCmd = &cobra.Command{Use: "hook ID", Short: "Observational provider hook
 		if e != nil {
 			return e
 		}
-		state, session, e := agent.ProviderInput(hookProvider, data)
+		event, e := agent.ParseProviderEvent(hookProvider, data)
 		if e != nil {
 			return e
 		}
-		if state == "" {
+		if event.Kind == "" {
 			return nil
 		}
-		input, e := agent.NextSignal(ctx, c, state, session)
+		input, e := agent.NextSignal(ctx, c, "unknown", event.SessionID)
 		if e != nil {
 			return e
 		}
-		_, e = agent.Call(ctx, agent.Request{Op: "signal", ID: args[0], Signal: &input}, false)
+		_, e = agent.Call(ctx, agent.Request{Op: "provider-event", ID: args[0], Signal: &input, ProviderEvent: &event}, false)
 		return e
 	}
 	if run() != nil {
@@ -219,7 +219,7 @@ var notifyCmd = &cobra.Command{Use: "notify -- EXECUTABLE [ARGS...]", Short: "Ex
 }}
 
 func init() {
-	hooksEnableCmd.Flags().StringVar(&hooksProvider, "provider", "generic", "Provider: generic, claude or codex (verified versions only)")
+	hooksEnableCmd.Flags().StringVar(&hooksProvider, "provider", "generic", "Provider: generic, claude or codex (exact schema allowlist; live validation is separate)")
 	hooksCmd.AddCommand(hooksEnableCmd, hooksConfigCmd)
 	signalCmd.Flags().BoolVar(&signalFromEnv, "from-env", false, "Use the explicit managed hook context and allocate a sequence")
 	signalCmd.Flags().StringVar(&signalInstance, "instance", "", "Associated instance ID")
@@ -228,7 +228,7 @@ func init() {
 	signalCmd.Flags().StringVar(&signalTime, "time", "", "RFC3339 timestamp")
 	signalCmd.Flags().StringVar(&signalState, "state", "", "unknown, working, needs-input, idle or turn-complete")
 	hookCmd.Flags().StringVar(&hookGeneration, "generation", "", "Private credential generation")
-	hookCmd.Flags().StringVar(&hookProvider, "provider", "", "Verified provider adapter")
+	hookCmd.Flags().StringVar(&hookProvider, "provider", "", "Exact schema-compatible observational provider adapter")
 	waitCmd.Flags().StringVar(&waitUntil, "until", "exited", "exited, needs-input or idle")
 	waitCmd.Flags().DurationVar(&waitTimeout, "timeout", 30*time.Second, "Finite wait deadline (maximum 24h)")
 	waitCmd.Flags().BoolVar(&waitFail, "fail-on-nonzero", false, "Fail when the observed child exit was unsuccessful")

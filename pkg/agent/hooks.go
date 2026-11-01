@@ -6,10 +6,9 @@ import (
 	"encoding/json"
 	"io"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"regexp"
-	"strings"
+	"sync"
 	"time"
 
 	"github.com/MohamedElashri/txm/pkg/core"
@@ -64,25 +63,42 @@ type Signal struct {
 	State      string    `json:"state"`
 }
 type Provider struct {
-	Name      string `json:"name"`
-	Version   string `json:"version"`
-	Supported bool   `json:"supported"`
-	Reason    string `json:"reason"`
+	Name                string                        `json:"name"`
+	Version             string                        `json:"version"`
+	Supported           bool                          `json:"supported"`
+	Reason              string                        `json:"reason"`
+	Available           bool                          `json:"available"`
+	Compatible          *bool                         `json:"compatible"`
+	Verified            bool                          `json:"verified"`
+	Validation          string                        `json:"validation"`
+	Enabled             *bool                         `json:"enabled"`
+	TrustRequired       bool                          `json:"trust_required"`
+	Events              map[string]ProviderCapability `json:"events"`
+	ValidationReference *ProviderValidationReference  `json:"validation_reference,omitempty"`
 }
 
 var providerVersions = map[string]string{"generic": "1", "claude": "2.1.308 (Claude Code)", "codex": "codex-cli 0.165.0"}
-var providerSession = regexp.MustCompile(`^[a-zA-Z0-9][a-zA-Z0-9_.:-]{0,127}$`)
-var tokenPattern = regexp.MustCompile(`^[0-9a-f]{64}$`)
+
+const currentClaudeVersion = "2.1.309 (Claude Code)"
+
+var providerSession = sync.OnceValue(func() *regexp.Regexp { return regexp.MustCompile(`^[a-zA-Z0-9][a-zA-Z0-9_.:-]{0,127}$`) })
+var tokenPattern = sync.OnceValue(func() *regexp.Regexp { return regexp.MustCompile(`^[0-9a-f]{64}$`) })
 
 func validAttention(state string) bool {
 	return state == "unknown" || state == "working" || state == "needs_input" || state == "idle"
 }
 func validProvider(name, version string) bool {
+	return legacyProvider(name, version) || (name == "codex" && version == liveCodexVersion) || (name == "claude" && version == currentClaudeVersion)
+}
+func legacyProvider(name, version string) bool {
 	expected, ok := providerVersions[name]
 	return ok && version == expected
 }
 func (h HookState) validate(r Record) bool {
-	if !validProvider(h.Provider, h.Version) || !runtimepath.ValidID(h.InstanceID) || !runtimepath.ValidID(h.Generation) || !validAttention(h.Attention) || (h.SessionID != "" && !providerSession.MatchString(h.SessionID)) {
+	return legacyProvider(h.Provider, h.Version) && h.validateAssociation(r)
+}
+func (h HookState) validateAssociation(r Record) bool {
+	if !validProvider(h.Provider, h.Version) || !runtimepath.ValidID(h.InstanceID) || !runtimepath.ValidID(h.Generation) || !validAttention(h.Attention) || (h.SessionID != "" && !providerSession().MatchString(h.SessionID)) {
 		return false
 	}
 	if r.Supervised && (r.InstanceID == nil || h.InstanceID != *r.InstanceID) {
@@ -106,10 +122,15 @@ func ReadCredential(state *runtimepath.Root, id, generation string) (Credential,
 		return c, core.Failure("invalid_usage", "invalid hook association")
 	}
 	data, e := state.ReadPrivate(credentialName(generation), 4096)
+	schema := 1
+	if os.IsNotExist(e) {
+		data, e = state.ReadPrivate(externalCredentialName(generation), 4096)
+		schema = 2
+	}
 	if e != nil {
 		return c, core.Failure("invalid_config", "hook credential unavailable or unsafe")
 	}
-	if nativeprotocol.Decode(data, &c) != nil || c.SchemaVersion != 1 || c.AgentID != id || c.Generation != generation || !runtimepath.ValidID(c.InstanceID) || !tokenPattern.MatchString(c.Token) || !validProvider(c.Provider, c.Version) || !filepath.IsAbs(c.Namespace.StateHome) || !filepath.IsAbs(c.Namespace.TempDir) || (c.Namespace.RuntimeDir != "" && !filepath.IsAbs(c.Namespace.RuntimeDir)) {
+	if nativeprotocol.Decode(data, &c) != nil || c.SchemaVersion != schema || (schema == 1 && !legacyProvider(c.Provider, c.Version)) || (schema == 2 && legacyProvider(c.Provider, c.Version)) || c.AgentID != id || c.Generation != generation || !runtimepath.ValidID(c.InstanceID) || !tokenPattern().MatchString(c.Token) || !validProvider(c.Provider, c.Version) || !filepath.IsAbs(c.Namespace.StateHome) || !filepath.IsAbs(c.Namespace.TempDir) || (c.Namespace.RuntimeDir != "" && !filepath.IsAbs(c.Namespace.RuntimeDir)) {
 		return c, core.Failure("invalid_config", "invalid hook credential")
 	}
 	return c, nil
@@ -123,44 +144,6 @@ func (b *versionWriter) Write(p []byte) (int, error) {
 	}
 	b.data = append(b.data, p...)
 	return len(p), nil
-}
-func InspectProvider(ctx context.Context, name string) Provider {
-	p := Provider{Name: name, Reason: "provider executable unavailable"}
-	if name == "generic" {
-		return Provider{name, "1", true, "provider-neutral authenticated signals"}
-	}
-	if name != "claude" && name != "codex" && name != "opencode" {
-		p.Reason = "unknown provider"
-		return p
-	}
-	path, e := exec.LookPath(name)
-	if e != nil {
-		return p
-	}
-	ctx, cancel := context.WithTimeout(ctx, 2*time.Second)
-	defer cancel()
-	cmd := exec.CommandContext(ctx, path, "--version")
-	cmd.WaitDelay = 250 * time.Millisecond
-	var out versionWriter
-	cmd.Stdout = &out
-	cmd.Stderr = io.Discard
-	if cmd.Run() != nil {
-		p.Reason = "provider version could not be verified"
-		return p
-	}
-	p.Version = strings.TrimSpace(string(out.data))
-	p.Supported = validProvider(name, p.Version)
-	p.Reason = "installed version is not in the verified adapter allowlist"
-	if p.Supported {
-		p.Reason = "verified schema; real initialization coverage only; full conversations unverified"
-		if name == "codex" {
-			p.Reason = "verified schema only; manual trust review required; provider runtime unverified"
-		}
-	}
-	if name == "opencode" {
-		p.Reason = "installed v2 plugin/session API is not runtime-verified; v1 examples are not used"
-	}
-	return p
 }
 func hookView(v View, r Record) View {
 	if r.Hook == nil {
@@ -195,7 +178,7 @@ func ProviderInput(provider string, data []byte) (string, string, error) {
 	}
 	text := func(key string) string { var v string; _ = json.Unmarshal(fields[key], &v); return v }
 	session := text("session_id")
-	if !providerSession.MatchString(session) {
+	if !providerSession().MatchString(session) {
 		return "", "", core.Failure("invalid_usage", "invalid provider session association")
 	}
 	if provider != "claude" && provider != "codex" {
@@ -264,5 +247,5 @@ func NextSignal(ctx context.Context, c Credential, state string, session string)
 	return Signal{c.InstanceID, c.Generation, c.Token, session, cursor.Sequence, supervisor.Now(), state}, nil
 }
 func validToken(a, b string) bool {
-	return tokenPattern.MatchString(a) && tokenPattern.MatchString(b) && subtle.ConstantTimeCompare([]byte(a), []byte(b)) == 1
+	return tokenPattern().MatchString(a) && tokenPattern().MatchString(b) && subtle.ConstantTimeCompare([]byte(a), []byte(b)) == 1
 }
