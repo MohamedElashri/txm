@@ -5,10 +5,7 @@ Changes follow [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) and
 
 ## [Unreleased]
 
-## [2.1.0] - 2026-10-31
-
-Release preparation; no tag or published release is implied by this entry.
-The final signed-source and matching-platform archive gates remain required.
+## [2.1.0] - 2026-11-01
 
 ### Upgrade notes
 
@@ -66,12 +63,6 @@ The final signed-source and matching-platform archive gates remain required.
   42 times too small on the tested host.
 - Preserve provider prompt/session identity, resumed state and real failure/end
   observations without treating provider turn completion as process exit.
-- Canonicalize owned temporary fixture roots on macOS, use portable sleep paths,
-  retain bounded race-test task deadlines and verify recorder TTY restoration
-  before Darwin revokes its controlling session.
-- Publish native fixture identity receipts atomically and tolerate temporary
-  connection-pool refusals only in the bounded recovery probe. Rejected test
-  handshakes close their sockets.
 
 ### Provider validation scope
 
@@ -81,26 +72,26 @@ The final signed-source and matching-platform archive gates remain required.
 | Claude 2.1.309 | Authorized Linux/amd64 interactive restricted/default-permission reference: eight callback kinds, turns, permission cancellation, tool success/failure, resume, API failure/recovery, exit, restart/expiry and negative identities. Direct user-cancellation signaling and other modes/platforms remain unverified or unsupported. |
 | Codex CLI 0.166.0 | Authorized Linux/amd64 interactive no-daemon reference with normally trusted neutral hooks: seven callback kinds, turns, permission cancellation, interrupt, resume, tool/turn/session end, restart/expiry and fork-rebind refusal. Other modes/platforms remain unverified. |
 | Claude 2.1.308 / Codex CLI 0.165.0 | Schema/fixture compatibility retained; no equivalent full live-lifecycle claim |
-| OpenCode 2.2.5 | Linux/macOS arm64 SDK/loader/auth/session-metadata/crash-restart fixtures pass, including a retry against the upgraded installed v2 CLI. Signed-out free-model attempts emitted real execution-started/failed events and returned provider free-limit HTTP 429 at zero reported cost. Successful completion, permission/resume lifecycle and canonical activation remain unverified/disabled. A separate earlier v1.19.5 free-model attempt timed out; it does not establish v2 compatibility. |
+| OpenCode 2.2.5 | Linux/macOS arm64 SDK/loader/auth/session-metadata/crash-restart fixtures pass. Canonical lifecycle activation remains disabled; successful completion, permission cancellation, interruption and resume are unverified. Generic process supervision remains available. |
 
 Exact reference executable hashes/platforms are checked by diagnostics; matching
 only a version string does not attest a running instance or its trust settings.
-OpenCode's final release disposition remains a maintainer gate.
 
-### Validation and remaining release gates
+### Validation scope
 
-- Linux reference evidence covers the development checkpoint's Go/race/fuzz,
-  runtime, MCP/Git/metrics, provider lifecycles and GNU/static-musl build partition.
-  It does not certify changed final release bytes or native ARM64/Windows runners.
+- Full source CI passes Linux unit/race/fuzz/integration checks, lint and native
+  macOS Intel/Apple Silicon integration. Package validation exercises seven ZIPs
+  across eight matching native runners: Linux x86_64/ARM64 GNU and static musl,
+  the same universal Mac archive on both architectures, and Windows x86_64/ARM64.
+  Windows coverage remains CLI smoke only.
+- Unix packages pass private installation, runtime and actual different-UID
+  rejection checks. Both Mac runners also pass backend and private loopback SSH
+  checks. Archive checks cover inventory, source documentation, checksums,
+  executable headers, both universal Mac slices and static-musl linkage.
 - Native macOS 27.2 arm64 passes Go 1.27.3 unit/race, Go 1.26.10 minimum-toolchain
   tests, lint, module checks, five fuzz targets, all applicable normal/race runtime
   suites, exact tagged compatibility, child metrics, isolated tmux 3.8,
   Zellij 0.45.1, Apple Screen 4.00.03 and real private OpenSSH loopback checks.
-- Both Darwin architectures build and pass archive structural checks. The arm64
-  2.1.0 snapshot also passes private installation and the complete functional
-  runtime matrix. Intel runtime, final signed-source archive validation,
-  macOS foreign-UID CI, native Linux
-  ARM64, Windows CLI smoke and the complete final seven-archive gate remain open.
 - Three alternating full-scale macOS/v2.0 comparisons pass every fixed and 20%
   relative budget: median startup +15.7%, list10 +19.9%, list100 -3.6%, and peak
   server RSS +1.9%. The final arm64 snapshot runtime check passes the 100-session
@@ -110,8 +101,7 @@ OpenCode's final release disposition remains a maintainer gate.
 - A separate authorized macOS Codex 0.166.0 subscription demonstration passes
   two fixed-response turns, same-session resume, neutral callbacks and clean
   provider/controller exits with sanitized recording and fixture cleanup.
-  This does not extend the full Linux lifecycle reference to macOS. Final signed
-  universal-candidate source/CI validation remains pending.
+  This does not extend the full Linux lifecycle reference to macOS.
 
 ### Documentation and release engineering
 

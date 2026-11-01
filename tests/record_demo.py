@@ -57,7 +57,7 @@ def record(binary, destination):
             return json.loads(p.stdout)['data'] if structured else p.stdout
         with a.coordinator(box):
             started = time.monotonic()
-            emit('Persistent terminals. Supervised jobs. One CLI.\r\nDevelopment build; synthetic generic fixture; no provider account.\r\n')
+            emit('Persistent terminals. Supervised jobs. One CLI.\r\nSynthetic generic fixture; no provider account.\r\n')
             run(0, ['version'])
             run(3, ['--backend','native','session','create','demo-terminal','/bin/sleep','70'])
             run(5, ['--backend','native','list','--json'])
@@ -115,10 +115,10 @@ sys.exit(code)
             run(48, ['task','cleanup',task['id'],'--dry-run','--json'])
             run(52, ['task','cleanup',task['id'],'--json'])
             run(56, ['--backend','native','session','delete','demo-terminal'])
-            at(59); emit('\r\nGeneric exit receipts verified. Owned task cleaned; branch retained.\r\nDevelopment demonstration; release approval and remaining platform/provider gates are separate.\r\n')
+            at(59); emit('\r\nGeneric exit receipts verified. Owned task cleaned; branch retained.\r\n')
             at(60)
     header = {'version':2,'width':140,'height':40,'timestamp':int(time.time()),
-              'title':'txm development: generic supervised work','env':{'TERM':'xterm-256color'}}
+              'title':'txm: generic supervised work','env':{'TERM':'xterm-256color'}}
     recording = destination/'generic-demo.cast'
     with recording.open('w') as output:
         output.write(json.dumps(header)+'\n')

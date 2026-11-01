@@ -108,6 +108,8 @@ does not authorize authentication, inference cost, workspace/hook trust changes,
 or use of personal provider configuration. Keep exact executable hashes,
 platforms, versions and modes with a separately authorized live run. An SDK
 loader test or a parsed callback fixture does not verify a provider lifecycle.
+One-off live-run controllers and account-specific profiles are not part of the
+regression harness; keep them with the private evidence for that authorized run.
 
 `make test-opencode-runtime` additionally requires an explicit exact OpenCode
 executable and a new report path through `OPENCODE_BINARY`/`OPENCODE_REPORT`.
@@ -117,9 +119,8 @@ Canonical OpenCode lifecycle activation remains disabled.
 
 `tests/record_demo.py --binary /absolute/txm --destination /absolute/new-demo`
 records roughly 60 seconds of real generic CLI/PTY activity after installation.
-It needs no provider account. The fixture checks TTY/file flags before Darwin
-revokes the controlling PTY, then reaps its own dashboard child. Recordings and
-visual-review artifacts stay outside the source tree.
+It needs no provider account. Recordings and visual-review artifacts stay outside
+the source tree.
 
 ## Validate packaged builds
 
@@ -239,9 +240,10 @@ SDK, preventing stale external-library links after a restore. Cache misses
 remain valid cold builds; GitHub's branch/tag cache scope can limit reuse.
 
 For an explicit pre-release package check on `main`, first wait for normal CI,
-then run `gh workflow run release.yml --ref main`. For a development branch,
-run `gh workflow run ci.yml --ref dev`, wait for that exact commit's manual CI
-to pass, then run `gh workflow run release.yml --ref dev`. Pushes or new commits
+then run `gh workflow run release.yml --ref main`. To validate another branch,
+run `gh workflow run ci.yml --ref BRANCH`, wait for that exact commit's manual CI
+to pass, then run `gh workflow run release.yml --ref BRANCH`, replacing `BRANCH`
+with the reviewed branch name. Pushes or new commits
 require matching fresh CI. A dry run on `main` also seeds default-branch release
 caches that later tags can restore. Neither branch dispatch publishes a release.
 

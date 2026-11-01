@@ -400,7 +400,7 @@ instance and 30 MiB overall. Samples expire after at most 24 hours, subject to
 the tighter quotas. Oldest inactive histories are evicted first. A full sampler
 quota or observer failure does not stop the job. Reading metrics does not start
 a coordinator or sampler; jobs without metrics allocate no sampling artifacts.
-See the [changelog](CHANGELOG.md#210---2026-10-31) for tested platform scope.
+See the [changelog](CHANGELOG.md#210---2026-11-01) for tested platform scope.
 
 ## JSON for scripts
 
@@ -503,7 +503,7 @@ validated conversation or the trust configuration of a running instance.
 Live-reference verification also checks the recorded executable hash/platform.
 Unknown versions refuse hook activation while generic process supervision
 remains available. Historical exact versions and validation limits are in the
-[changelog](CHANGELOG.md#210---2026-10-31).
+[changelog](CHANGELOG.md#210---2026-11-01).
 
 Claude launches can opt in with `--provider claude`; generated settings stay
 private and do not edit user/project settings. Existing `--settings` arguments
